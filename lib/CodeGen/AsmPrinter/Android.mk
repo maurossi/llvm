@@ -18,7 +18,7 @@ LOCAL_SRC_FILES :=	\
 	DwarfCFIException.cpp \
 	DwarfDebug.cpp	\
 	DwarfException.cpp	\
-	DwarfUnit.cpp \
+        DwarfUnit.cpp \
 	ErlangGCPrinter.cpp \
 	OcamlGCPrinter.cpp \
 	Win64Exception.cpp \
@@ -48,9 +48,11 @@ LOCAL_SRC_FILES :=	\
 	DwarfCFIException.cpp \
 	DwarfDebug.cpp  \
 	DwarfException.cpp      \
+        DwarfUnit.cpp \
 	ErlangGCPrinter.cpp \
+	OcamlGCPrinter.cpp \
 	Win64Exception.cpp \
-	$(LOCAL_SRC_FILES)
+	WinCodeViewLineTables.cpp
 
 LOCAL_MODULE:= libLLVMAsmPrinter
 

@@ -52,12 +52,13 @@ endif
 LOCAL_CPPFLAGS :=	\
 	$(LOCAL_CPPFLAGS)	\
 	-Woverloaded-virtual	\
-	-Wno-sign-promo
+	-Wno-sign-promo         \
+	-std=c++11
 
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
 	bionic \
-	external/stlport/stlport \
+	external/libcxx/include \
 	$(LLVM_ROOT_PATH)	\
 	$(LLVM_ROOT_PATH)/include	\
 	$(LLVM_ROOT_PATH)/device/include	\

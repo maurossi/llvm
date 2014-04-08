@@ -126,7 +126,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES_arm64 += $(llvm_arm64_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES += $(llvm_post_static_libraries)
 
 #LOCAL_LDLIBS := -ldl -lpthread
-LOCAL_SHARED_LIBRARIES := libcutils libdl libstlport
+LOCAL_SHARED_LIBRARIES := libcutils libdl libcxx
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(BUILD_SHARED_LIBRARY)
