@@ -71,7 +71,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_opt_STATIC_LIBRARIES)
 LOCAL_SHARED_LIBRARIES :=  \
   libcutils  \
   libdl  \
-  libstlport
+  libcxx
 
 
 include $(LLVM_ROOT_PATH)/llvm.mk

@@ -74,6 +74,8 @@ support_SRC_FILES := \
   Unicode.cpp \
   Valgrind.cpp \
   Watchdog.cpp \
+  YAMLParser.cpp \
+  YAMLTraits.cpp \
   circular_raw_ostream.cpp \
   raw_os_ostream.cpp \
   raw_ostream.cpp \
@@ -83,6 +85,7 @@ support_SRC_FILES := \
   regfree.c \
   regstrlcpy.c \
   system_error.cpp
+
 
 # For the host
 # =====================================================
