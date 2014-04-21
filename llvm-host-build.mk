@@ -1,5 +1,7 @@
 LOCAL_CLANG := true
 
+include external/libcxx/libcxx.mk
+
 LOCAL_CFLAGS +=	\
 	-D_GNU_SOURCE	\
 	-D__STDC_LIMIT_MACROS	\
@@ -43,6 +45,7 @@ LOCAL_C_INCLUDES :=	\
 	$(LLVM_ROOT_PATH)	\
 	$(LLVM_ROOT_PATH)/include	\
 	$(LLVM_ROOT_PATH)/host/include	\
+        external/libcxx/include \
 	$(LOCAL_C_INCLUDES)
 
 LOCAL_IS_HOST_MODULE := true
