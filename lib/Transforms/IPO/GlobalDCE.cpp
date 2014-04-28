@@ -15,7 +15,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "globaldce"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/Statistic.h"
@@ -23,6 +22,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 using namespace llvm;
+
+#define DEBUG_TYPE "globaldce"
 
 STATISTIC(NumAliases  , "Number of global aliases removed");
 STATISTIC(NumFunctions, "Number of functions removed");
@@ -99,7 +100,7 @@ bool GlobalDCE::runOnModule(Module &M) {
        I != E; ++I)
     if (!AliveGlobals.count(I)) {
       DeadGlobalVars.push_back(I);         // Keep track of dead globals
-      I->setInitializer(0);
+      I->setInitializer(nullptr);
     }
 
   // The second pass drops the bodies of functions which are dead...
@@ -117,7 +118,7 @@ bool GlobalDCE::runOnModule(Module &M) {
        ++I)
     if (!AliveGlobals.count(I)) {
       DeadAliases.push_back(I);
-      I->setAliasee(0);
+      I->setAliasee(nullptr);
     }
 
   if (!DeadFunctions.empty()) {

@@ -12,7 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "asm-printer"
 #include "Sparc.h"
 #include "InstPrinter/SparcInstPrinter.h"
 #include "MCTargetDesc/SparcMCExpr.h"
@@ -35,6 +34,8 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
+#define DEBUG_TYPE "asm-printer"
+
 namespace {
   class SparcAsmPrinter : public AsmPrinter {
     SparcTargetStreamer &getTargetStreamer() {
@@ -51,7 +52,7 @@ namespace {
 
     void printOperand(const MachineInstr *MI, int opNum, raw_ostream &OS);
     void printMemOperand(const MachineInstr *MI, int opNum, raw_ostream &OS,
-                         const char *Modifier = 0);
+                         const char *Modifier = nullptr);
     void printCCOperand(const MachineInstr *MI, int opNum, raw_ostream &OS);
 
     virtual void EmitFunctionBodyStart();

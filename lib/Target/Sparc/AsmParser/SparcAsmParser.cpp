@@ -83,7 +83,8 @@ class SparcAsmParser : public MCTargetAsmParser {
   bool is64Bit() const { return STI.getTargetTriple().startswith("sparcv9"); }
 public:
   SparcAsmParser(MCSubtargetInfo &sti, MCAsmParser &parser,
-                const MCInstrInfo &MII)
+                const MCInstrInfo &MII,
+                const MCTargetOptions &Options)
       : MCTargetAsmParser(), STI(sti), Parser(parser) {
     // Initialize the set of available features.
     setAvailableFeatures(ComputeAvailableFeatures(STI.getFeatureBits()));
@@ -244,7 +245,7 @@ public:
     case k_Immediate: OS << "Imm: " << getImm() << "\n"; break;
     case k_MemoryReg: OS << "Mem: " << getMemBase() << "+"
                          << getMemOffsetReg() << "\n"; break;
-    case k_MemoryImm: assert(getMemOff() != 0);
+    case k_MemoryImm: assert(getMemOff() != nullptr);
       OS << "Mem: " << getMemBase()
          << "+" << *getMemOff()
          << "\n"; break;
@@ -264,7 +265,7 @@ public:
 
   void addExpr(MCInst &Inst, const MCExpr *Expr) const{
     // Add as immediate when possible.  Null MCExpr = 0.
-    if (Expr == 0)
+    if (!Expr)
       Inst.addOperand(MCOperand::CreateImm(0));
     else if (const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(Expr))
       Inst.addOperand(MCOperand::CreateImm(CE->getValue()));
@@ -323,7 +324,7 @@ public:
     assert(Op->Reg.Kind == rk_FloatReg);
     unsigned regIdx = Reg - Sparc::F0;
     if (regIdx % 2 || regIdx > 31)
-      return 0;
+      return nullptr;
     Op->Reg.RegNum = DoubleRegs[regIdx / 2];
     Op->Reg.Kind = rk_DoubleReg;
     return Op;
@@ -337,13 +338,13 @@ public:
     case rk_FloatReg:
       regIdx = Reg - Sparc::F0;
       if (regIdx % 4 || regIdx > 31)
-        return 0;
+        return nullptr;
       Reg = QuadFPRegs[regIdx / 4];
       break;
     case rk_DoubleReg:
       regIdx =  Reg - Sparc::D0;
       if (regIdx % 2 || regIdx > 31)
-        return 0;
+        return nullptr;
       Reg = QuadFPRegs[regIdx / 2];
       break;
     }
@@ -357,7 +358,7 @@ public:
     Op->Kind = k_MemoryReg;
     Op->Mem.Base = Base;
     Op->Mem.OffsetReg = offsetReg;
-    Op->Mem.Off = 0;
+    Op->Mem.Off = nullptr;
     return Op;
   }
 
@@ -564,7 +565,7 @@ parseMEMOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands)
   case AsmToken::Comma:
   case AsmToken::RBrac:
   case AsmToken::EndOfStatement:
-    Operands.push_back(SparcOperand::CreateMEMri(BaseReg, 0, S, E));
+    Operands.push_back(SparcOperand::CreateMEMri(BaseReg, nullptr, S, E));
     return MatchOperand_Success;
 
   case AsmToken:: Plus:
@@ -574,7 +575,7 @@ parseMEMOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands)
     break;
   }
 
-  SparcOperand *Offset = 0;
+  SparcOperand *Offset = nullptr;
   OperandMatchResultTy ResTy = parseSparcAsmOperand(Offset);
   if (ResTy != MatchOperand_Success || !Offset)
     return MatchOperand_NoMatch;
@@ -636,7 +637,7 @@ parseOperand(SmallVectorImpl<MCParsedAsmOperand*> &Operands,
     return MatchOperand_Success;
   }
 
-  SparcOperand *Op = 0;
+  SparcOperand *Op = nullptr;
 
   ResTy = parseSparcAsmOperand(Op, (Mnemonic == "call"));
   if (ResTy != MatchOperand_Success || !Op)
@@ -656,7 +657,7 @@ SparcAsmParser::parseSparcAsmOperand(SparcOperand *&Op, bool isCall)
   SMLoc E = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
   const MCExpr *EVal;
 
-  Op = 0;
+  Op = nullptr;
   switch (getLexer().getKind()) {
   default:  break;
 

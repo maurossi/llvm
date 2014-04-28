@@ -264,7 +264,8 @@ class PPCAsmParser : public MCTargetAsmParser {
 
 public:
   PPCAsmParser(MCSubtargetInfo &_STI, MCAsmParser &_Parser,
-               const MCInstrInfo &_MII)
+               const MCInstrInfo &_MII,
+               const MCTargetOptions &Options)
       : MCTargetAsmParser(), STI(_STI), Parser(_Parser), MII(_MII) {
     // Check for 64-bit vs. 32-bit pointer mode.
     Triple TheTriple(STI.getTargetTriple());
@@ -1021,7 +1022,7 @@ ExtractModifierFromExpr(const MCExpr *E,
   switch (E->getKind()) {
   case MCExpr::Target:
   case MCExpr::Constant:
-    return 0;
+    return nullptr;
 
   case MCExpr::SymbolRef: {
     const MCSymbolRefExpr *SRE = cast<MCSymbolRefExpr>(E);
@@ -1049,7 +1050,7 @@ ExtractModifierFromExpr(const MCExpr *E,
       Variant = PPCMCExpr::VK_PPC_HIGHESTA;
       break;
     default:
-      return 0;
+      return nullptr;
     }
 
     return MCSymbolRefExpr::Create(&SRE->getSymbol(), Context);
@@ -1059,7 +1060,7 @@ ExtractModifierFromExpr(const MCExpr *E,
     const MCUnaryExpr *UE = cast<MCUnaryExpr>(E);
     const MCExpr *Sub = ExtractModifierFromExpr(UE->getSubExpr(), Variant);
     if (!Sub)
-      return 0;
+      return nullptr;
     return MCUnaryExpr::Create(UE->getOpcode(), Sub, Context);
   }
 
@@ -1070,7 +1071,7 @@ ExtractModifierFromExpr(const MCExpr *E,
     const MCExpr *RHS = ExtractModifierFromExpr(BE->getRHS(), RHSVariant);
 
     if (!LHS && !RHS)
-      return 0;
+      return nullptr;
 
     if (!LHS) LHS = BE->getLHS();
     if (!RHS) RHS = BE->getRHS();
@@ -1082,7 +1083,7 @@ ExtractModifierFromExpr(const MCExpr *E,
     else if (LHSVariant == RHSVariant)
       Variant = LHSVariant;
     else
-      return 0;
+      return nullptr;
 
     return MCBinaryExpr::Create(BE->getOpcode(), LHS, RHS, Context);
   }
@@ -1593,6 +1594,6 @@ PPCAsmParser::applyModifierToExpr(const MCExpr *E,
   case MCSymbolRefExpr::VK_PPC_HIGHESTA:
     return PPCMCExpr::Create(PPCMCExpr::VK_PPC_HIGHESTA, E, false, Ctx);
   default:
-    return 0;
+    return nullptr;
   }
 }

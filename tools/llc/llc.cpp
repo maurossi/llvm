@@ -157,7 +157,7 @@ static tool_output_file *GetOutputStream(const char *TargetName,
   if (!error.empty()) {
     errs() << error << '\n';
     delete FDOut;
-    return 0;
+    return nullptr;
   }
 
   return FDOut;
@@ -207,17 +207,23 @@ static int compileModule(char **argv, LLVMContext &Context) {
   // Load the module to be compiled...
   SMDiagnostic Err;
   std::unique_ptr<Module> M;
-  Module *mod = 0;
+  Module *mod = nullptr;
   Triple TheTriple;
 
   bool SkipModule = MCPU == "help" ||
                     (!MAttrs.empty() && MAttrs.front() == "help");
 
+  // If user asked for the 'native' CPU, autodetect here. If autodection fails,
+  // this will set the CPU to an empty string which tells the target to
+  // pick a basic default.
+  if (MCPU == "native")
+    MCPU = sys::getHostCPUName();
+
   // If user just wants to list available options, skip module loading
   if (!SkipModule) {
     M.reset(ParseIRFile(InputFilename, Err, Context));
     mod = M.get();
-    if (mod == 0) {
+    if (mod == nullptr) {
       Err.print(argv[0], errs());
       return 1;
     }
@@ -315,8 +321,8 @@ static int compileModule(char **argv, LLVMContext &Context) {
   {
     formatted_raw_ostream FOS(Out->os());
 
-    AnalysisID StartAfterID = 0;
-    AnalysisID StopAfterID = 0;
+    AnalysisID StartAfterID = nullptr;
+    AnalysisID StopAfterID = nullptr;
     const PassRegistry *PR = PassRegistry::getPassRegistry();
     if (!StartAfter.empty()) {
       const PassInfo *PI = PR->getPassInfo(StartAfter);

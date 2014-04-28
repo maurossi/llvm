@@ -47,6 +47,7 @@ private:
   void splitScalar64BitOp(SmallVectorImpl<MachineInstr *> & Worklist,
                           MachineInstr *Inst, unsigned Opcode) const;
 
+  void addDescImplicitUseDef(const MCInstrDesc &Desc, MachineInstr *MI) const;
 
 public:
   explicit SIInstrInfo(AMDGPUTargetMachine &tm);
@@ -78,7 +79,7 @@ public:
                                            bool NewMI=false) const;
 
   bool isTriviallyReMaterializable(const MachineInstr *MI,
-                                   AliasAnalysis *AA = 0) const;
+                                   AliasAnalysis *AA = nullptr) const;
 
   virtual unsigned getIEQOpcode() const {
     llvm_unreachable("Unimplemented");

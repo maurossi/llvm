@@ -11,6 +11,7 @@
 #define LLVM_DEBUGINFO_DWARFDEBUGINFOENTRY_H
 
 #include "DWARFAbbreviationDeclaration.h"
+#include "DWARFDebugRangeList.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/DataTypes.h"
 
@@ -38,7 +39,7 @@ class DWARFDebugInfoEntryMinimal {
   const DWARFAbbreviationDeclaration *AbbrevDecl;
 public:
   DWARFDebugInfoEntryMinimal()
-    : Offset(0), ParentIdx(0), SiblingIdx(0), AbbrevDecl(0) {}
+    : Offset(0), ParentIdx(0), SiblingIdx(0), AbbrevDecl(nullptr) {}
 
   void dump(raw_ostream &OS, const DWARFUnit *u, unsigned recurseDepth,
             unsigned indent = 0) const;
@@ -51,7 +52,7 @@ public:
   bool extractFast(const DWARFUnit *U, uint32_t *OffsetPtr);
 
   uint32_t getTag() const { return AbbrevDecl ? AbbrevDecl->getTag() : 0; }
-  bool isNULL() const { return AbbrevDecl == 0; }
+  bool isNULL() const { return AbbrevDecl == nullptr; }
 
   /// Returns true if DIE represents a subprogram (not inlined).
   bool isSubprogramDIE() const;
@@ -65,27 +66,27 @@ public:
   // We know we are kept in a vector of contiguous entries, so we know
   // our parent will be some index behind "this".
   DWARFDebugInfoEntryMinimal *getParent() {
-    return ParentIdx > 0 ? this - ParentIdx : 0;
+    return ParentIdx > 0 ? this - ParentIdx : nullptr;
   }
   const DWARFDebugInfoEntryMinimal *getParent() const {
-    return ParentIdx > 0 ? this - ParentIdx : 0;
+    return ParentIdx > 0 ? this - ParentIdx : nullptr;
   }
   // We know we are kept in a vector of contiguous entries, so we know
   // our sibling will be some index after "this".
   DWARFDebugInfoEntryMinimal *getSibling() {
-    return SiblingIdx > 0 ? this + SiblingIdx : 0;
+    return SiblingIdx > 0 ? this + SiblingIdx : nullptr;
   }
   const DWARFDebugInfoEntryMinimal *getSibling() const {
-    return SiblingIdx > 0 ? this + SiblingIdx : 0;
+    return SiblingIdx > 0 ? this + SiblingIdx : nullptr;
   }
   // We know we are kept in a vector of contiguous entries, so we know
   // we don't need to store our child pointer, if we have a child it will
   // be the next entry in the list...
   DWARFDebugInfoEntryMinimal *getFirstChild() {
-    return hasChildren() ? this + 1 : 0;
+    return hasChildren() ? this + 1 : nullptr;
   }
   const DWARFDebugInfoEntryMinimal *getFirstChild() const {
-    return hasChildren() ? this + 1 : 0;
+    return hasChildren() ? this + 1 : nullptr;
   }
 
   void setParent(DWARFDebugInfoEntryMinimal *parent) {
@@ -135,9 +136,10 @@ public:
   bool getLowAndHighPC(const DWARFUnit *U, uint64_t &LowPC,
                        uint64_t &HighPC) const;
 
-  void buildAddressRangeTable(const DWARFUnit *U,
-                              DWARFDebugAranges *DebugAranges,
-                              uint32_t CUOffsetInAranges) const;
+  DWARFAddressRangesVector getAddressRanges(const DWARFUnit *U) const;
+
+  void collectChildrenAddressRanges(const DWARFUnit *U,
+                                    DWARFAddressRangesVector &Ranges) const;
 
   bool addressRangeContainsAddress(const DWARFUnit *U,
                                    const uint64_t Address) const;
@@ -166,7 +168,7 @@ public:
 /// (except the last DIE) in this chain is contained in address
 /// range for next DIE in the chain.
 struct DWARFDebugInfoEntryInlinedChain {
-  DWARFDebugInfoEntryInlinedChain() : U(0) {}
+  DWARFDebugInfoEntryInlinedChain() : U(nullptr) {}
   SmallVector<DWARFDebugInfoEntryMinimal, 4> DIEs;
   const DWARFUnit *U;
 };

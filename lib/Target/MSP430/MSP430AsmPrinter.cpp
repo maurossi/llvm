@@ -12,7 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "asm-printer"
 #include "MSP430.h"
 #include "InstPrinter/MSP430InstPrinter.h"
 #include "MSP430InstrInfo.h"
@@ -35,6 +34,8 @@
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
+#define DEBUG_TYPE "asm-printer"
+
 namespace {
   class MSP430AsmPrinter : public AsmPrinter {
   public:
@@ -46,7 +47,7 @@ namespace {
     }
 
     void printOperand(const MachineInstr *MI, int OpNum,
-                      raw_ostream &O, const char* Modifier = 0);
+                      raw_ostream &O, const char* Modifier = nullptr);
     void printSrcMemOperand(const MachineInstr *MI, int OpNum,
                             raw_ostream &O);
     bool PrintAsmOperand(const MachineInstr *MI, unsigned OpNo,

@@ -25,6 +25,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include <map>
 
+#define DEBUG_TYPE "ir"
+
 namespace llvm {
 template<class ValType>
 struct ConstantTraits;
@@ -584,7 +586,7 @@ public:
   /// necessary.
   ConstantClass *getOrCreate(TypeClass *Ty, ValRefType V) {
     MapKey Lookup(Ty, V);
-    ConstantClass* Result = 0;
+    ConstantClass* Result = nullptr;
     
     typename MapTy::iterator I = Map.find(Lookup);
     // Is it in the map?  
@@ -720,7 +722,7 @@ public:
   /// necessary.
   ConstantClass *getOrCreate(TypeClass *Ty, Operands V) {
     LookupKey Lookup(Ty, V);
-    ConstantClass* Result = 0;
+    ConstantClass* Result = nullptr;
 
     typename MapTy::iterator I = Map.find_as(Lookup);
     // Is it in the map?

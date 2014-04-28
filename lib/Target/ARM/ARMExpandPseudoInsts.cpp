@@ -14,7 +14,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "arm-pseudo"
 #include "ARM.h"
 #include "ARMBaseInstrInfo.h"
 #include "ARMBaseRegisterInfo.h"
@@ -30,6 +29,8 @@
 #include "llvm/Target/TargetFrameLowering.h"
 #include "llvm/Target/TargetRegisterInfo.h"
 using namespace llvm;
+
+#define DEBUG_TYPE "arm-pseudo"
 
 static cl::opt<bool>
 VerifyARMPseudo("verify-arm-pseudo-expand", cl::Hidden,
@@ -345,7 +346,7 @@ static const NEONLdStTableEntry *LookupNEONLdSt(unsigned Opcode) {
     std::lower_bound(NEONLdStTable, NEONLdStTable + NumEntries, Opcode);
   if (I != NEONLdStTable + NumEntries && I->PseudoOpc == Opcode)
     return I;
-  return NULL;
+  return nullptr;
 }
 
 /// GetDSubRegs - Get 4 D subregisters of a Q, QQ, or QQQQ register,

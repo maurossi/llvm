@@ -43,7 +43,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "mergefunc"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/FoldingSet.h"
@@ -66,6 +65,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include <vector>
 using namespace llvm;
+
+#define DEBUG_TYPE "mergefunc"
 
 STATISTIC(NumFunctionsMerged, "Number of functions merged");
 STATISTIC(NumThunksWritten, "Number of thunks generated");
@@ -120,12 +121,12 @@ public:
   void release() {
     assert(Func &&
            "Attempted to release function twice, or release empty/tombstone!");
-    Func = NULL;
+    Func = nullptr;
   }
 
 private:
   explicit ComparableFunction(unsigned Hash)
-    : Func(NULL), Hash(Hash), DL(NULL) {}
+    : Func(nullptr), Hash(Hash), DL(nullptr) {}
 
   AssertingVH<Function> Func;
   unsigned Hash;
@@ -683,7 +684,7 @@ ModulePass *llvm::createMergeFunctionsPass() {
 bool MergeFunctions::runOnModule(Module &M) {
   bool Changed = false;
   DataLayoutPass *DLP = getAnalysisIfAvailable<DataLayoutPass>();
-  DL = DLP ? &DLP->getDataLayout() : 0;
+  DL = DLP ? &DLP->getDataLayout() : nullptr;
 
   for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I) {
     if (!I->isDeclaration() && !I->hasAvailableExternallyLinkage())

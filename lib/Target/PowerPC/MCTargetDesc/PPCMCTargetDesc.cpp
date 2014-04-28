@@ -26,6 +26,8 @@
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/TargetRegistry.h"
 
+using namespace llvm;
+
 #define GET_INSTRINFO_MC_DESC
 #include "PPCGenInstrInfo.inc"
 
@@ -34,8 +36,6 @@
 
 #define GET_REGINFO_MC_DESC
 #include "PPCGenRegisterInfo.inc"
-
-using namespace llvm;
 
 // Pin the vtable to this file.
 PPCTargetStreamer::~PPCTargetStreamer() {}
@@ -80,7 +80,7 @@ static MCAsmInfo *createPPCMCAsmInfo(const MCRegisterInfo &MRI, StringRef TT) {
   // Initial state of the frame pointer is R1.
   unsigned Reg = isPPC64 ? PPC::X1 : PPC::R1;
   MCCFIInstruction Inst =
-      MCCFIInstruction::createDefCfa(0, MRI.getDwarfRegNum(Reg, true), 0);
+      MCCFIInstruction::createDefCfa(nullptr, MRI.getDwarfRegNum(Reg, true), 0);
   MAI->addInitialFrameState(Inst);
 
   return MAI;

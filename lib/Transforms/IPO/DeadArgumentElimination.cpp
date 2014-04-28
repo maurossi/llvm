@@ -17,7 +17,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "deadargelim"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
@@ -39,6 +38,8 @@
 #include <map>
 #include <set>
 using namespace llvm;
+
+#define DEBUG_TYPE "deadargelim"
 
 STATISTIC(NumArgumentsEliminated, "Number of unread args removed");
 STATISTIC(NumRetValsEliminated  , "Number of unused return values removed");
@@ -764,7 +765,7 @@ bool DAE::RemoveDeadStuffFromFunction(Function *F) {
 
   // Find out the new return value.
   Type *RetTy = FTy->getReturnType();
-  Type *NRetTy = NULL;
+  Type *NRetTy = nullptr;
   unsigned RetCount = NumRetVals(F);
 
   // -1 means unused, other numbers are the new index
@@ -1050,7 +1051,7 @@ bool DAE::RemoveDeadStuffFromFunction(Function *F) {
         Value *RetVal;
 
         if (NFTy->getReturnType()->isVoidTy()) {
-          RetVal = 0;
+          RetVal = nullptr;
         } else {
           assert (RetTy->isStructTy());
           // The original return value was a struct, insert

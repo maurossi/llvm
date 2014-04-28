@@ -10,6 +10,7 @@
 #include "DWARFDebugAranges.h"
 #include "DWARFCompileUnit.h"
 #include "DWARFContext.h"
+#include "DWARFDebugArangeSet.h"
 #include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
@@ -58,11 +59,21 @@ void DWARFDebugAranges::generate(DWARFContext *CTX) {
   // manually build aranges for the rest of them.
   for (const auto &CU : CTX->compile_units()) {
     uint32_t CUOffset = CU->getOffset();
-    if (ParsedCUOffsets.insert(CUOffset).second)
-      CU->buildAddressRangeTable(this, true, CUOffset);
+    if (ParsedCUOffsets.insert(CUOffset).second) {
+      DWARFAddressRangesVector CURanges;
+      CU->collectAddressRanges(CURanges);
+      for (const auto &R : CURanges) {
+        appendRange(CUOffset, R.first, R.second);
+      }
+    }
   }
 
   sortAndMinimize();
+}
+
+void DWARFDebugAranges::clear() {
+  Aranges.clear();
+  ParsedCUOffsets.clear();
 }
 
 void DWARFDebugAranges::appendRange(uint32_t CUOffset, uint64_t LowPC,

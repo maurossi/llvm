@@ -11,9 +11,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "arm64-isel"
 #include "ARM64TargetMachine.h"
 #include "MCTargetDesc/ARM64AddressingModes.h"
+#include "llvm/ADT/APSInt.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
 #include "llvm/IR/Function.h" // To access function attributes.
 #include "llvm/IR/GlobalValue.h"
@@ -24,6 +24,8 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
+
+#define DEBUG_TYPE "arm64-isel"
 
 //===--------------------------------------------------------------------===//
 /// ARM64DAGToDAGISel - ARM64 specific code to select ARM64 machine
@@ -156,9 +158,6 @@ public:
   SDNode *SelectSIMDAddSubNarrowing(unsigned IntNo, SDNode *Node);
   SDNode *SelectSIMDXtnNarrowing(unsigned IntNo, SDNode *Node);
 
-  SDNode *SelectAtomic(SDNode *Node, unsigned Op8, unsigned Op16, unsigned Op32,
-                       unsigned Op64);
-
   SDNode *SelectBitfieldExtractOp(SDNode *N);
   SDNode *SelectBitfieldInsertOp(SDNode *N);
 
@@ -179,6 +178,13 @@ private:
   bool isWorthFolding(SDValue V) const;
   bool SelectExtendedSHL(SDValue N, unsigned Size, SDValue &Offset,
                          SDValue &Imm);
+
+  template<unsigned RegWidth>
+  bool SelectCVTFixedPosOperand(SDValue N, SDValue &FixedPos) {
+    return SelectCVTFixedPosOperand(N, FixedPos, RegWidth);
+  }
+
+  bool SelectCVTFixedPosOperand(SDValue N, SDValue &FixedPos, unsigned Width);
 };
 } // end anonymous namespace
 
@@ -431,9 +437,9 @@ static bool checkV64LaneV128(SDValue Op0, SDValue Op1, SDValue &StdOp,
   return true;
 }
 
-/// SelectMLAV64LaneV128 - ARM64 supports 64-bit vector MLAs (v4i16 and v2i32)
-/// where one multiplicand is a lane in the upper half of a 128-bit vector.
-/// Recognize and select this so that we don't emit unnecessary lane extracts.
+/// SelectMLAV64LaneV128 - ARM64 supports vector MLAs where one multiplicand is
+/// a lane in the upper half of a 128-bit vector.  Recognize and select this so
+/// that we don't emit unnecessary lane extracts.
 SDNode *ARM64DAGToDAGISel::SelectMLAV64LaneV128(SDNode *N) {
   SDValue Op0 = N->getOperand(0);
   SDValue Op1 = N->getOperand(1);
@@ -448,7 +454,7 @@ SDNode *ARM64DAGToDAGISel::SelectMLAV64LaneV128(SDNode *N) {
     if (Op1.getOpcode() != ISD::MUL ||
         !checkV64LaneV128(Op1.getOperand(0), Op1.getOperand(1), MLAOp1, MLAOp2,
                           LaneIdx))
-      return 0;
+      return nullptr;
   }
 
   SDValue LaneIdxVal = CurDAG->getTargetConstant(LaneIdx, MVT::i64);
@@ -463,8 +469,14 @@ SDNode *ARM64DAGToDAGISel::SelectMLAV64LaneV128(SDNode *N) {
   case MVT::v4i16:
     MLAOpc = ARM64::MLAv4i16_indexed;
     break;
+  case MVT::v8i16:
+    MLAOpc = ARM64::MLAv8i16_indexed;
+    break;
   case MVT::v2i32:
     MLAOpc = ARM64::MLAv2i32_indexed;
+    break;
+  case MVT::v4i32:
+    MLAOpc = ARM64::MLAv4i32_indexed;
     break;
   }
 
@@ -478,7 +490,7 @@ SDNode *ARM64DAGToDAGISel::SelectMULLV64LaneV128(unsigned IntNo, SDNode *N) {
 
   if (!checkV64LaneV128(N->getOperand(1), N->getOperand(2), SMULLOp0, SMULLOp1,
                         LaneIdx))
-    return 0;
+    return nullptr;
 
   SDValue LaneIdxVal = CurDAG->getTargetConstant(LaneIdx, MVT::i64);
 
@@ -526,7 +538,7 @@ bool ARM64DAGToDAGISel::SelectArithExtendedRegister(SDValue N, SDValue &Reg,
     if (!CSD)
       return false;
     ShiftVal = CSD->getZExtValue();
-    if ((ShiftVal & 0x3) != ShiftVal)
+    if (ShiftVal > 4)
       return false;
 
     Ext = getExtendTypeForNode(N.getOperand(0));
@@ -714,8 +726,7 @@ bool ARM64DAGToDAGISel::SelectAddrModeRO(SDValue N, unsigned Size,
   // operation.  If yes, do not try to fold this node into the address
   // computation, since the computation will be kept.
   const SDNode *Node = N.getNode();
-  for (SDNode::use_iterator UI = Node->use_begin(), UE = Node->use_end();
-       UI != UE; ++UI) {
+  for (SDNode *UI : Node->uses()) {
     if (!isa<MemSDNode>(*UI))
       return false;
   }
@@ -841,7 +852,7 @@ SDNode *ARM64DAGToDAGISel::SelectTable(SDNode *N, unsigned NumVecs,
 SDNode *ARM64DAGToDAGISel::SelectIndexedLoad(SDNode *N, bool &Done) {
   LoadSDNode *LD = cast<LoadSDNode>(N);
   if (LD->isUnindexed())
-    return NULL;
+    return nullptr;
   EVT VT = LD->getMemoryVT();
   EVT DstVT = N->getValueType(0);
   ISD::MemIndexedMode AM = LD->getAddressingMode();
@@ -899,7 +910,7 @@ SDNode *ARM64DAGToDAGISel::SelectIndexedLoad(SDNode *N, bool &Done) {
   } else if (VT == MVT::f64) {
     Opcode = IsPre ? ARM64::LDRDpre_isel : ARM64::LDRDpost_isel;
   } else
-    return NULL;
+    return nullptr;
   SDValue Chain = LD->getChain();
   SDValue Base = LD->getBasePtr();
   ConstantSDNode *OffsetOp = cast<ConstantSDNode>(LD->getOffset());
@@ -918,7 +929,7 @@ SDNode *ARM64DAGToDAGISel::SelectIndexedLoad(SDNode *N, bool &Done) {
     ReplaceUses(SDValue(N, 0), SDValue(Sub, 0));
     ReplaceUses(SDValue(N, 1), SDValue(Res, 1));
     ReplaceUses(SDValue(N, 2), SDValue(Res, 2));
-    return 0;
+    return nullptr;
   }
   return Res;
 }
@@ -966,7 +977,7 @@ SDNode *ARM64DAGToDAGISel::SelectLoad(SDNode *N, unsigned NumVecs, unsigned Opc,
 
   ReplaceUses(SDValue(N, NumVecs), SDValue(Ld, 1));
 
-  return 0;
+  return nullptr;
 }
 
 SDNode *ARM64DAGToDAGISel::SelectStore(SDNode *N, unsigned NumVecs,
@@ -1125,37 +1136,6 @@ SDNode *ARM64DAGToDAGISel::SelectStoreLane(SDNode *N, unsigned NumVecs,
   return St;
 }
 
-SDNode *ARM64DAGToDAGISel::SelectAtomic(SDNode *Node, unsigned Op8,
-                                        unsigned Op16, unsigned Op32,
-                                        unsigned Op64) {
-  // Mostly direct translation to the given operations, except that we preserve
-  // the AtomicOrdering for use later on.
-  AtomicSDNode *AN = cast<AtomicSDNode>(Node);
-  EVT VT = AN->getMemoryVT();
-
-  unsigned Op;
-  if (VT == MVT::i8)
-    Op = Op8;
-  else if (VT == MVT::i16)
-    Op = Op16;
-  else if (VT == MVT::i32)
-    Op = Op32;
-  else if (VT == MVT::i64)
-    Op = Op64;
-  else
-    llvm_unreachable("Unexpected atomic operation");
-
-  SmallVector<SDValue, 4> Ops;
-  for (unsigned i = 1; i < AN->getNumOperands(); ++i)
-    Ops.push_back(AN->getOperand(i));
-
-  Ops.push_back(CurDAG->getTargetConstant(AN->getOrdering(), MVT::i32));
-  Ops.push_back(AN->getOperand(0)); // Chain moves to the end
-
-  return CurDAG->SelectNodeTo(Node, Op, AN->getValueType(0), MVT::Other,
-                              &Ops[0], Ops.size());
-}
-
 static bool isBitfieldExtractOpFromAnd(SelectionDAG *CurDAG, SDNode *N,
                                        unsigned &Opc, SDValue &Opd0,
                                        unsigned &LSB, unsigned &MSB,
@@ -1204,6 +1184,14 @@ static bool isBitfieldExtractOpFromAnd(SelectionDAG *CurDAG, SDNode *N,
     // Make sure to clamp the MSB so that we preserve the semantics of the
     // original operations.
     ClampMSB = true;
+  } else if (VT == MVT::i32 && Op0->getOpcode() == ISD::TRUNCATE &&
+             isOpcWithIntImmediate(Op0->getOperand(0).getNode(), ISD::SRL,
+                                   Srl_imm)) {
+    // If the shift result was truncated, we can still combine them.
+    Opd0 = Op0->getOperand(0).getOperand(0);
+
+    // Use the type of SRL node.
+    VT = Opd0->getValueType(0);
   } else if (isOpcWithIntImmediate(Op0, ISD::SRL, Srl_imm)) {
     Opd0 = Op0->getOperand(0);
   } else if (BiggerPattern) {
@@ -1298,8 +1286,19 @@ static bool isBitfieldExtractOpFromShr(SDNode *N, unsigned &Opc, SDValue &Opd0,
 
   // we're looking for a shift of a shift
   uint64_t Shl_imm = 0;
+  uint64_t Trunc_bits = 0;
   if (isOpcWithIntImmediate(N->getOperand(0).getNode(), ISD::SHL, Shl_imm)) {
     Opd0 = N->getOperand(0).getOperand(0);
+  } else if (VT == MVT::i32 && N->getOpcode() == ISD::SRL &&
+             N->getOperand(0).getNode()->getOpcode() == ISD::TRUNCATE) {
+    // We are looking for a shift of truncate. Truncate from i64 to i32 could
+    // be considered as setting high 32 bits as zero. Our strategy here is to
+    // always generate 64bit UBFM. This consistency will help the CSE pass
+    // later find more redundancy.
+    Opd0 = N->getOperand(0).getOperand(0);
+    Trunc_bits = Opd0->getValueType(0).getSizeInBits() - VT.getSizeInBits();
+    VT = Opd0->getValueType(0);
+    assert(VT == MVT::i64 && "the promoted type should be i64");
   } else if (BiggerPattern) {
     // Let's pretend a 0 shift left has been performed.
     // FIXME: Currently we limit this to the bigger pattern case,
@@ -1316,7 +1315,7 @@ static bool isBitfieldExtractOpFromShr(SDNode *N, unsigned &Opc, SDValue &Opd0,
   assert(Srl_imm > 0 && Srl_imm < VT.getSizeInBits() &&
          "bad amount in shift node!");
   // Note: The width operand is encoded as width-1.
-  unsigned Width = VT.getSizeInBits() - Srl_imm - 1;
+  unsigned Width = VT.getSizeInBits() - Trunc_bits - Srl_imm - 1;
   int sLSB = Srl_imm - Shl_imm;
   if (sLSB < 0)
     return false;
@@ -1372,36 +1371,44 @@ SDNode *ARM64DAGToDAGISel::SelectBitfieldExtractOp(SDNode *N) {
   unsigned Opc, LSB, MSB;
   SDValue Opd0;
   if (!isBitfieldExtractOp(CurDAG, N, Opc, Opd0, LSB, MSB))
-    return NULL;
+    return nullptr;
 
   EVT VT = N->getValueType(0);
-  SDValue Ops[] = { Opd0, CurDAG->getTargetConstant(LSB, VT),
-                    CurDAG->getTargetConstant(MSB, VT) };
-  return CurDAG->SelectNodeTo(N, Opc, VT, Ops, 3);
-}
 
-// Is mask a i32 or i64 binary sequence 1..10..0 and
-// CountTrailingZeros(mask) == ExpectedTrailingZeros
-static bool isHighMask(uint64_t Mask, unsigned ExpectedTrailingZeros,
-                       unsigned NumberOfIgnoredHighBits, EVT VT) {
-  assert((VT == MVT::i32 || VT == MVT::i64) &&
-         "i32 or i64 mask type expected!");
+  // If the bit extract operation is 64bit but the original type is 32bit, we
+  // need to add one EXTRACT_SUBREG.
+  if ((Opc == ARM64::SBFMXri || Opc == ARM64::UBFMXri) && VT == MVT::i32) {
+    SDValue Ops64[] = {Opd0, CurDAG->getTargetConstant(LSB, MVT::i64),
+                       CurDAG->getTargetConstant(MSB, MVT::i64)};
 
-  uint64_t ExpectedMask;
-  if (VT == MVT::i32) {
-    uint32_t ExpectedMaski32 = ~0 << ExpectedTrailingZeros;
-    ExpectedMask = ExpectedMaski32;
-    if (NumberOfIgnoredHighBits) {
-      uint32_t highMask = ~0 << (32 - NumberOfIgnoredHighBits);
-      Mask |= highMask;
-    }
-  } else {
-    ExpectedMask = ((uint64_t) ~0) << ExpectedTrailingZeros;
-    if (NumberOfIgnoredHighBits)
-      Mask |= ((uint64_t) ~0) << (64 - NumberOfIgnoredHighBits);
+    SDNode *BFM = CurDAG->getMachineNode(Opc, SDLoc(N), MVT::i64, Ops64);
+    SDValue SubReg = CurDAG->getTargetConstant(ARM64::sub_32, MVT::i32);
+    MachineSDNode *Node =
+        CurDAG->getMachineNode(TargetOpcode::EXTRACT_SUBREG, SDLoc(N), MVT::i32,
+                               SDValue(BFM, 0), SubReg);
+    return Node;
   }
 
-  return Mask == ExpectedMask;
+  SDValue Ops[] = {Opd0, CurDAG->getTargetConstant(LSB, VT),
+                   CurDAG->getTargetConstant(MSB, VT)};
+  return CurDAG->SelectNodeTo(N, Opc, VT, Ops);
+}
+
+/// Does DstMask form a complementary pair with the mask provided by
+/// BitsToBeInserted, suitable for use in a BFI instruction. Roughly speaking,
+/// this asks whether DstMask zeroes precisely those bits that will be set by
+/// the other half.
+static bool isBitfieldDstMask(uint64_t DstMask, APInt BitsToBeInserted,
+                              unsigned NumberOfIgnoredHighBits, EVT VT) {
+  assert((VT == MVT::i32 || VT == MVT::i64) &&
+         "i32 or i64 mask type expected!");
+  unsigned BitWidth = VT.getSizeInBits() - NumberOfIgnoredHighBits;
+
+  APInt SignificantDstMask = APInt(BitWidth, DstMask);
+  APInt SignificantBitsToBeInserted = BitsToBeInserted.zextOrTrunc(BitWidth);
+
+  return (SignificantDstMask & SignificantBitsToBeInserted) == 0 &&
+         (SignificantDstMask | SignificantBitsToBeInserted).isAllOnesValue();
 }
 
 // Look for bits that will be useful for later uses.
@@ -1567,18 +1574,90 @@ static void getUsefulBits(SDValue Op, APInt &UsefulBits, unsigned Depth) {
   }
   APInt UsersUsefulBits(UsefulBits.getBitWidth(), 0);
 
-  for (SDNode::use_iterator UseIt = Op.getNode()->use_begin(),
-                            UseEnd = Op.getNode()->use_end();
-       UseIt != UseEnd; ++UseIt) {
+  for (SDNode *Node : Op.getNode()->uses()) {
     // A use cannot produce useful bits
     APInt UsefulBitsForUse = APInt(UsefulBits);
-    getUsefulBitsForUse(*UseIt, UsefulBitsForUse, Op, Depth);
+    getUsefulBitsForUse(Node, UsefulBitsForUse, Op, Depth);
     UsersUsefulBits |= UsefulBitsForUse;
   }
   // UsefulBits contains the produced bits that are meaningful for the
   // current definition, thus a user cannot make a bit meaningful at
   // this point
   UsefulBits &= UsersUsefulBits;
+}
+
+/// Create a machine node performing a notional SHL of Op by ShlAmount. If
+/// ShlAmount is negative, do a (logical) right-shift instead. If ShlAmount is
+/// 0, return Op unchanged.
+static SDValue getLeftShift(SelectionDAG *CurDAG, SDValue Op, int ShlAmount) {
+  if (ShlAmount == 0)
+    return Op;
+
+  EVT VT = Op.getValueType();
+  unsigned BitWidth = VT.getSizeInBits();
+  unsigned UBFMOpc = BitWidth == 32 ? ARM64::UBFMWri : ARM64::UBFMXri;
+
+  SDNode *ShiftNode;
+  if (ShlAmount > 0) {
+    // LSL wD, wN, #Amt == UBFM wD, wN, #32-Amt, #31-Amt
+    ShiftNode = CurDAG->getMachineNode(
+        UBFMOpc, SDLoc(Op), VT, Op,
+        CurDAG->getTargetConstant(BitWidth - ShlAmount, VT),
+        CurDAG->getTargetConstant(BitWidth - 1 - ShlAmount, VT));
+  } else {
+    // LSR wD, wN, #Amt == UBFM wD, wN, #Amt, #32-1
+    assert(ShlAmount < 0 && "expected right shift");
+    int ShrAmount = -ShlAmount;
+    ShiftNode = CurDAG->getMachineNode(
+        UBFMOpc, SDLoc(Op), VT, Op, CurDAG->getTargetConstant(ShrAmount, VT),
+        CurDAG->getTargetConstant(BitWidth - 1, VT));
+  }
+
+  return SDValue(ShiftNode, 0);
+}
+
+/// Does this tree qualify as an attempt to move a bitfield into position,
+/// essentially "(and (shl VAL, N), Mask)".
+static bool isBitfieldPositioningOp(SelectionDAG *CurDAG, SDValue Op,
+                                    SDValue &Src, int &ShiftAmount,
+                                    int &MaskWidth) {
+  EVT VT = Op.getValueType();
+  unsigned BitWidth = VT.getSizeInBits();
+  (void)BitWidth;
+  assert(BitWidth == 32 || BitWidth == 64);
+
+  APInt KnownZero, KnownOne;
+  CurDAG->ComputeMaskedBits(Op, KnownZero, KnownOne);
+
+  // Non-zero in the sense that they're not provably zero, which is the key
+  // point if we want to use this value
+  uint64_t NonZeroBits = (~KnownZero).getZExtValue();
+
+  // Discard a constant AND mask if present. It's safe because the node will
+  // already have been factored into the ComputeMaskedBits calculation above.
+  uint64_t AndImm;
+  if (isOpcWithIntImmediate(Op.getNode(), ISD::AND, AndImm)) {
+    assert((~APInt(BitWidth, AndImm) & ~KnownZero) == 0);
+    Op = Op.getOperand(0);
+  }
+
+  uint64_t ShlImm;
+  if (!isOpcWithIntImmediate(Op.getNode(), ISD::SHL, ShlImm))
+    return false;
+  Op = Op.getOperand(0);
+
+  if (!isShiftedMask_64(NonZeroBits))
+    return false;
+
+  ShiftAmount = countTrailingZeros(NonZeroBits);
+  MaskWidth = CountTrailingOnes_64(NonZeroBits >> ShiftAmount);
+
+  // BFI encompasses sufficiently many nodes that it's worth inserting an extra
+  // LSL/LSR if the mask in NonZeroBits doesn't quite match up with the ISD::SHL
+  // amount.
+  Src = getLeftShift(CurDAG, Op, ShlImm - ShiftAmount);
+
+  return true;
 }
 
 // Given a OR operation, check if we have the following pattern
@@ -1590,9 +1669,9 @@ static void getUsefulBits(SDValue Op, APInt &UsefulBits, unsigned Depth) {
 // if yes, given reference arguments will be update so that one can replace
 // the OR instruction with:
 // f = Opc Opd0, Opd1, LSB, MSB ; where Opc is a BFM, LSB = imm, and MSB = imm2
-static bool isBitfieldInsertOpFromOr(SDNode *N, unsigned &Opc, SDValue &Opd0,
-                                     SDValue &Opd1, unsigned &LSB,
-                                     unsigned &MSB, SelectionDAG *CurDAG) {
+static bool isBitfieldInsertOpFromOr(SDNode *N, unsigned &Opc, SDValue &Dst,
+                                     SDValue &Src, unsigned &ImmR,
+                                     unsigned &ImmS, SelectionDAG *CurDAG) {
   assert(N->getOpcode() == ISD::OR && "Expect a OR operation");
 
   // Set Opc
@@ -1620,30 +1699,36 @@ static bool isBitfieldInsertOpFromOr(SDNode *N, unsigned &Opc, SDValue &Opd0,
   for (int i = 0; i < 2;
        ++i, std::swap(OrOpd0, OrOpd1), OrOpd1Val = N->getOperand(0)) {
     unsigned BFXOpc;
-    // Set Opd1, LSB and MSB arguments by looking for
-    // c = ubfm b, imm, imm2
-    if (!isBitfieldExtractOp(CurDAG, OrOpd0, BFXOpc, Opd1, LSB, MSB,
-                             NumberOfIgnoredLowBits, true))
-      continue;
+    int DstLSB, Width;
+    if (isBitfieldExtractOp(CurDAG, OrOpd0, BFXOpc, Src, ImmR, ImmS,
+                            NumberOfIgnoredLowBits, true)) {
+      // Check that the returned opcode is compatible with the pattern,
+      // i.e., same type and zero extended (U and not S)
+      if ((BFXOpc != ARM64::UBFMXri && VT == MVT::i64) ||
+          (BFXOpc != ARM64::UBFMWri && VT == MVT::i32))
+        continue;
 
-    // Check that the returned opcode is compatible with the pattern,
-    // i.e., same type and zero extended (U and not S)
-    if ((BFXOpc != ARM64::UBFMXri && VT == MVT::i64) ||
-        (BFXOpc != ARM64::UBFMWri && VT == MVT::i32))
-      continue;
+      // Compute the width of the bitfield insertion
+      DstLSB = 0;
+      Width = ImmS - ImmR + 1;
+      // FIXME: This constraint is to catch bitfield insertion we may
+      // want to widen the pattern if we want to grab general bitfied
+      // move case
+      if (Width <= 0)
+        continue;
 
-    // Compute the width of the bitfield insertion
-    int sMSB = MSB - LSB + 1;
-    // FIXME: This constraints is to catch bitfield insertion we may
-    // want to widen the pattern if we want to grab general bitfied
-    // move case
-    if (sMSB <= 0)
+      // If the mask on the insertee is correct, we have a BFXIL operation. We
+      // can share the ImmR and ImmS values from the already-computed UBFM.
+    } else if (isBitfieldPositioningOp(CurDAG, SDValue(OrOpd0, 0), Src,
+                                       DstLSB, Width)) {
+      ImmR = (VT.getSizeInBits() - DstLSB) % VT.getSizeInBits();
+      ImmS = Width - 1;
+    } else
       continue;
 
     // Check the second part of the pattern
     EVT VT = OrOpd1->getValueType(0);
-    if (VT != MVT::i32 && VT != MVT::i64)
-      continue;
+    assert((VT == MVT::i32 || VT == MVT::i64) && "unexpected OR operand");
 
     // Compute the Known Zero for the candidate of the first operand.
     // This allows to catch more general case than just looking for
@@ -1654,19 +1739,22 @@ static bool isBitfieldInsertOpFromOr(SDNode *N, unsigned &Opc, SDValue &Opd0,
 
     // Check if there is enough room for the second operand to appear
     // in the first one
-    if (KnownZero.countTrailingOnes() < (unsigned)sMSB)
+    APInt BitsToBeInserted =
+        APInt::getBitsSet(KnownZero.getBitWidth(), DstLSB, DstLSB + Width);
+
+    if ((BitsToBeInserted & ~KnownZero) != 0)
       continue;
 
     // Set the first operand
     uint64_t Imm;
     if (isOpcWithIntImmediate(OrOpd1, ISD::AND, Imm) &&
-        isHighMask(Imm, sMSB, NumberOfIgnoredHighBits, VT))
+        isBitfieldDstMask(Imm, BitsToBeInserted, NumberOfIgnoredHighBits, VT))
       // In that case, we can eliminate the AND
-      Opd0 = OrOpd1->getOperand(0);
+      Dst = OrOpd1->getOperand(0);
     else
       // Maybe the AND has been removed by simplify-demanded-bits
       // or is useful because it discards more bits
-      Opd0 = OrOpd1Val;
+      Dst = OrOpd1Val;
 
     // both parts match
     return true;
@@ -1677,21 +1765,21 @@ static bool isBitfieldInsertOpFromOr(SDNode *N, unsigned &Opc, SDValue &Opd0,
 
 SDNode *ARM64DAGToDAGISel::SelectBitfieldInsertOp(SDNode *N) {
   if (N->getOpcode() != ISD::OR)
-    return NULL;
+    return nullptr;
 
   unsigned Opc;
   unsigned LSB, MSB;
   SDValue Opd0, Opd1;
 
   if (!isBitfieldInsertOpFromOr(N, Opc, Opd0, Opd1, LSB, MSB, CurDAG))
-    return NULL;
+    return nullptr;
 
   EVT VT = N->getValueType(0);
   SDValue Ops[] = { Opd0,
                     Opd1,
                     CurDAG->getTargetConstant(LSB, VT),
                     CurDAG->getTargetConstant(MSB, VT) };
-  return CurDAG->SelectNodeTo(N, Opc, VT, Ops, 4);
+  return CurDAG->SelectNodeTo(N, Opc, VT, Ops);
 }
 
 SDNode *ARM64DAGToDAGISel::SelectLIBM(SDNode *N) {
@@ -1705,14 +1793,14 @@ SDNode *ARM64DAGToDAGISel::SelectLIBM(SDNode *N) {
   } else if (VT == MVT::f64) {
     Variant = 1;
   } else
-    return 0; // Unrecognized argument type. Fall back on default codegen.
+    return nullptr; // Unrecognized argument type. Fall back on default codegen.
 
   // Pick the FRINTX variant needed to set the flags.
   unsigned FRINTXOpc = FRINTXOpcs[Variant];
 
   switch (N->getOpcode()) {
   default:
-    return 0; // Unrecognized libm ISD node. Fall back on default codegen.
+    return nullptr; // Unrecognized libm ISD node. Fall back on default codegen.
   case ISD::FCEIL: {
     unsigned FRINTPOpcs[] = { ARM64::FRINTPSr, ARM64::FRINTPDr };
     Opc = FRINTPOpcs[Variant];
@@ -1748,6 +1836,50 @@ SDNode *ARM64DAGToDAGISel::SelectLIBM(SDNode *N) {
   return CurDAG->getMachineNode(Opc, dl, VT, Ops);
 }
 
+bool
+ARM64DAGToDAGISel::SelectCVTFixedPosOperand(SDValue N, SDValue &FixedPos,
+                                              unsigned RegWidth) {
+  APFloat FVal(0.0);
+  if (ConstantFPSDNode *CN = dyn_cast<ConstantFPSDNode>(N))
+    FVal = CN->getValueAPF();
+  else if (LoadSDNode *LN = dyn_cast<LoadSDNode>(N)) {
+    // Some otherwise illegal constants are allowed in this case.
+    if (LN->getOperand(1).getOpcode() != ARM64ISD::ADDlow ||
+        !isa<ConstantPoolSDNode>(LN->getOperand(1)->getOperand(1)))
+      return false;
+
+    ConstantPoolSDNode *CN =
+        dyn_cast<ConstantPoolSDNode>(LN->getOperand(1)->getOperand(1));
+    FVal = cast<ConstantFP>(CN->getConstVal())->getValueAPF();
+  } else
+    return false;
+
+  // An FCVT[SU] instruction performs: convertToInt(Val * 2^fbits) where fbits
+  // is between 1 and 32 for a destination w-register, or 1 and 64 for an
+  // x-register.
+  //
+  // By this stage, we've detected (fp_to_[su]int (fmul Val, THIS_NODE)) so we
+  // want THIS_NODE to be 2^fbits. This is much easier to deal with using
+  // integers.
+  bool IsExact;
+
+  // fbits is between 1 and 64 in the worst-case, which means the fmul
+  // could have 2^64 as an actual operand. Need 65 bits of precision.
+  APSInt IntVal(65, true);
+  FVal.convertToInteger(IntVal, APFloat::rmTowardZero, &IsExact);
+
+  // N.b. isPowerOf2 also checks for > 0.
+  if (!IsExact || !IntVal.isPowerOf2()) return false;
+  unsigned FBits = IntVal.logBase2();
+
+  // Checks above should have guaranteed that we haven't lost information in
+  // finding FBits, but it must still be in range.
+  if (FBits == 0 || FBits > RegWidth) return false;
+
+  FixedPos = CurDAG->getTargetConstant(FBits, MVT::i32);
+  return true;
+}
+
 SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
   // Dump information about the Node being selected
   DEBUG(errs() << "Selecting: ");
@@ -1758,11 +1890,11 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
   if (Node->isMachineOpcode()) {
     DEBUG(errs() << "== "; Node->dump(CurDAG); errs() << "\n");
     Node->setNodeId(-1);
-    return NULL;
+    return nullptr;
   }
 
   // Few custom selection stuff.
-  SDNode *ResNode = 0;
+  SDNode *ResNode = nullptr;
   EVT VT = Node->getValueType(0);
 
   switch (Node->getOpcode()) {
@@ -1773,54 +1905,6 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
     if (SDNode *I = SelectMLAV64LaneV128(Node))
       return I;
     break;
-
-  case ISD::ATOMIC_LOAD_ADD:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_ADD_I8,
-                        ARM64::ATOMIC_LOAD_ADD_I16, ARM64::ATOMIC_LOAD_ADD_I32,
-                        ARM64::ATOMIC_LOAD_ADD_I64);
-  case ISD::ATOMIC_LOAD_SUB:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_SUB_I8,
-                        ARM64::ATOMIC_LOAD_SUB_I16, ARM64::ATOMIC_LOAD_SUB_I32,
-                        ARM64::ATOMIC_LOAD_SUB_I64);
-  case ISD::ATOMIC_LOAD_AND:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_AND_I8,
-                        ARM64::ATOMIC_LOAD_AND_I16, ARM64::ATOMIC_LOAD_AND_I32,
-                        ARM64::ATOMIC_LOAD_AND_I64);
-  case ISD::ATOMIC_LOAD_OR:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_OR_I8,
-                        ARM64::ATOMIC_LOAD_OR_I16, ARM64::ATOMIC_LOAD_OR_I32,
-                        ARM64::ATOMIC_LOAD_OR_I64);
-  case ISD::ATOMIC_LOAD_XOR:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_XOR_I8,
-                        ARM64::ATOMIC_LOAD_XOR_I16, ARM64::ATOMIC_LOAD_XOR_I32,
-                        ARM64::ATOMIC_LOAD_XOR_I64);
-  case ISD::ATOMIC_LOAD_NAND:
-    return SelectAtomic(
-        Node, ARM64::ATOMIC_LOAD_NAND_I8, ARM64::ATOMIC_LOAD_NAND_I16,
-        ARM64::ATOMIC_LOAD_NAND_I32, ARM64::ATOMIC_LOAD_NAND_I64);
-  case ISD::ATOMIC_LOAD_MIN:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_MIN_I8,
-                        ARM64::ATOMIC_LOAD_MIN_I16, ARM64::ATOMIC_LOAD_MIN_I32,
-                        ARM64::ATOMIC_LOAD_MIN_I64);
-  case ISD::ATOMIC_LOAD_MAX:
-    return SelectAtomic(Node, ARM64::ATOMIC_LOAD_MAX_I8,
-                        ARM64::ATOMIC_LOAD_MAX_I16, ARM64::ATOMIC_LOAD_MAX_I32,
-                        ARM64::ATOMIC_LOAD_MAX_I64);
-  case ISD::ATOMIC_LOAD_UMIN:
-    return SelectAtomic(
-        Node, ARM64::ATOMIC_LOAD_UMIN_I8, ARM64::ATOMIC_LOAD_UMIN_I16,
-        ARM64::ATOMIC_LOAD_UMIN_I32, ARM64::ATOMIC_LOAD_UMIN_I64);
-  case ISD::ATOMIC_LOAD_UMAX:
-    return SelectAtomic(
-        Node, ARM64::ATOMIC_LOAD_UMAX_I8, ARM64::ATOMIC_LOAD_UMAX_I16,
-        ARM64::ATOMIC_LOAD_UMAX_I32, ARM64::ATOMIC_LOAD_UMAX_I64);
-  case ISD::ATOMIC_SWAP:
-    return SelectAtomic(Node, ARM64::ATOMIC_SWAP_I8, ARM64::ATOMIC_SWAP_I16,
-                        ARM64::ATOMIC_SWAP_I32, ARM64::ATOMIC_SWAP_I64);
-  case ISD::ATOMIC_CMP_SWAP:
-    return SelectAtomic(Node, ARM64::ATOMIC_CMP_SWAP_I8,
-                        ARM64::ATOMIC_CMP_SWAP_I16, ARM64::ATOMIC_CMP_SWAP_I32,
-                        ARM64::ATOMIC_CMP_SWAP_I64);
 
   case ISD::LOAD: {
     // Try to select as an indexed load. Fall through to normal processing
@@ -1907,19 +1991,22 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
     SDValue TFI = CurDAG->getTargetFrameIndex(FI, TLI->getPointerTy());
     SDValue Ops[] = { TFI, CurDAG->getTargetConstant(0, MVT::i32),
                       CurDAG->getTargetConstant(Shifter, MVT::i32) };
-    return CurDAG->SelectNodeTo(Node, ARM64::ADDXri, MVT::i64, Ops, 3);
+    return CurDAG->SelectNodeTo(Node, ARM64::ADDXri, MVT::i64, Ops);
   }
   case ISD::INTRINSIC_W_CHAIN: {
     unsigned IntNo = cast<ConstantSDNode>(Node->getOperand(1))->getZExtValue();
     switch (IntNo) {
     default:
       break;
+    case Intrinsic::arm64_ldaxp:
     case Intrinsic::arm64_ldxp: {
+      unsigned Op =
+          IntNo == Intrinsic::arm64_ldaxp ? ARM64::LDAXPX : ARM64::LDXPX;
       SDValue MemAddr = Node->getOperand(2);
       SDLoc DL(Node);
       SDValue Chain = Node->getOperand(0);
 
-      SDNode *Ld = CurDAG->getMachineNode(ARM64::LDXPX, DL, MVT::i64, MVT::i64,
+      SDNode *Ld = CurDAG->getMachineNode(Op, DL, MVT::i64, MVT::i64,
                                           MVT::Other, MemAddr, Chain);
 
       // Transfer memoperands.
@@ -1928,7 +2015,10 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
       cast<MachineSDNode>(Ld)->setMemRefs(MemOp, MemOp + 1);
       return Ld;
     }
+    case Intrinsic::arm64_stlxp:
     case Intrinsic::arm64_stxp: {
+      unsigned Op =
+          IntNo == Intrinsic::arm64_stlxp ? ARM64::STLXPX : ARM64::STXPX;
       SDLoc DL(Node);
       SDValue Chain = Node->getOperand(0);
       SDValue ValLo = Node->getOperand(2);
@@ -1942,8 +2032,7 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
       Ops.push_back(MemAddr);
       Ops.push_back(Chain);
 
-      SDNode *St =
-          CurDAG->getMachineNode(ARM64::STXPX, DL, MVT::i32, MVT::Other, Ops);
+      SDNode *St = CurDAG->getMachineNode(Op, DL, MVT::i32, MVT::Other, Ops);
       // Transfer memoperands.
       MachineSDNode::mmo_iterator MemOp = MF->allocateMemRefsArray(1);
       MemOp[0] = cast<MemIntrinsicSDNode>(Node)->getMemOperand();
@@ -2364,7 +2453,7 @@ SDNode *ARM64DAGToDAGISel::Select(SDNode *Node) {
   ResNode = SelectCode(Node);
 
   DEBUG(errs() << "=> ");
-  if (ResNode == NULL || ResNode == Node)
+  if (ResNode == nullptr || ResNode == Node)
     DEBUG(Node->dump(CurDAG));
   else
     DEBUG(ResNode->dump(CurDAG));

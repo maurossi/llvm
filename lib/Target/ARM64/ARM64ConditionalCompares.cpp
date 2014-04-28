@@ -17,7 +17,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "arm64-ccmp"
 #include "ARM64.h"
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/DepthFirstIterator.h"
@@ -42,6 +41,8 @@
 #include "llvm/Target/TargetSubtargetInfo.h"
 
 using namespace llvm;
+
+#define DEBUG_TYPE "arm64-ccmp"
 
 // Absolute maximum number of instructions allowed per speculated block.
 // This bypasses all other heuristics, so it should be set fairly high.
@@ -147,7 +148,7 @@ public:
   /// else.
   MachineBasicBlock *Head;
 
-  /// The block containing cmp+br.cond with a sucessor shared with Head.
+  /// The block containing cmp+br.cond with a successor shared with Head.
   MachineBasicBlock *CmpBB;
 
   /// The common successor for Head and CmpBB.
@@ -212,13 +213,14 @@ public:
 // Check that all PHIs in Tail are selecting the same value from Head and CmpBB.
 // This means that no if-conversion is required when merging CmpBB into Head.
 bool SSACCmpConv::trivialTailPHIs() {
-  for (MachineBasicBlock::iterator I = Tail->begin(), E = Tail->end();
-       I != E && I->isPHI(); ++I) {
+  for (auto &I : *Tail) {
+    if (!I.isPHI())
+      break;
     unsigned HeadReg = 0, CmpBBReg = 0;
     // PHI operands come in (VReg, MBB) pairs.
-    for (unsigned oi = 1, oe = I->getNumOperands(); oi != oe; oi += 2) {
-      MachineBasicBlock *MBB = I->getOperand(oi + 1).getMBB();
-      unsigned Reg = I->getOperand(oi).getReg();
+    for (unsigned oi = 1, oe = I.getNumOperands(); oi != oe; oi += 2) {
+      MachineBasicBlock *MBB = I.getOperand(oi + 1).getMBB();
+      unsigned Reg = I.getOperand(oi).getReg();
       if (MBB == Head) {
         assert((!HeadReg || HeadReg == Reg) && "Inconsistent PHI operands");
         HeadReg = Reg;
@@ -237,14 +239,15 @@ bool SSACCmpConv::trivialTailPHIs() {
 // Assuming that trivialTailPHIs() is true, update the Tail PHIs by simply
 // removing the CmpBB operands. The Head operands will be identical.
 void SSACCmpConv::updateTailPHIs() {
-  for (MachineBasicBlock::iterator I = Tail->begin(), E = Tail->end();
-       I != E && I->isPHI(); ++I) {
+  for (auto &I : *Tail) {
+    if (!I.isPHI())
+      break;
     // I is a PHI. It can have multiple entries for CmpBB.
-    for (unsigned oi = I->getNumOperands(); oi > 2; oi -= 2) {
+    for (unsigned oi = I.getNumOperands(); oi > 2; oi -= 2) {
       // PHI operands are (Reg, MBB) at (oi-2, oi-1).
-      if (I->getOperand(oi - 1).getMBB() == CmpBB) {
-        I->RemoveOperand(oi - 1);
-        I->RemoveOperand(oi - 2);
+      if (I.getOperand(oi - 1).getMBB() == CmpBB) {
+        I.RemoveOperand(oi - 1);
+        I.RemoveOperand(oi - 2);
       }
     }
   }
@@ -295,7 +298,7 @@ static bool parseCond(ArrayRef<MachineOperand> Cond, ARM64CC::CondCode &CC) {
 MachineInstr *SSACCmpConv::findConvertibleCompare(MachineBasicBlock *MBB) {
   MachineBasicBlock::iterator I = MBB->getFirstTerminator();
   if (I == MBB->end())
-    return 0;
+    return nullptr;
   // The terminator must be controlled by the flags.
   if (!I->readsRegister(ARM64::CPSR)) {
     switch (I->getOpcode()) {
@@ -308,7 +311,7 @@ MachineInstr *SSACCmpConv::findConvertibleCompare(MachineBasicBlock *MBB) {
     }
     ++NumCmpTermRejs;
     DEBUG(dbgs() << "Flags not used by terminator: " << *I);
-    return 0;
+    return nullptr;
   }
 
   // Now find the instruction controlling the terminator.
@@ -327,7 +330,7 @@ MachineInstr *SSACCmpConv::findConvertibleCompare(MachineBasicBlock *MBB) {
       if (I->getOperand(3).getImm() || !isUInt<5>(I->getOperand(2).getImm())) {
         DEBUG(dbgs() << "Immediate out of range for ccmp: " << *I);
         ++NumImmRangeRejs;
-        return 0;
+        return nullptr;
       }
     // Fall through.
     case ARM64::SUBSWrr:
@@ -338,7 +341,7 @@ MachineInstr *SSACCmpConv::findConvertibleCompare(MachineBasicBlock *MBB) {
         return I;
       DEBUG(dbgs() << "Can't convert compare with live destination: " << *I);
       ++NumLiveDstRejs;
-      return 0;
+      return nullptr;
     case ARM64::FCMPSrr:
     case ARM64::FCMPDrr:
     case ARM64::FCMPESrr:
@@ -356,17 +359,17 @@ MachineInstr *SSACCmpConv::findConvertibleCompare(MachineBasicBlock *MBB) {
       // besides the terminators.
       DEBUG(dbgs() << "Can't create ccmp with multiple uses: " << *I);
       ++NumMultCPSRUses;
-      return 0;
+      return nullptr;
     }
 
     if (PRI.Clobbers) {
       DEBUG(dbgs() << "Not convertible compare: " << *I);
       ++NumUnknCPSRDefs;
-      return 0;
+      return nullptr;
     }
   }
   DEBUG(dbgs() << "Flags not defined in BB#" << MBB->getNumber() << '\n');
-  return 0;
+  return nullptr;
 }
 
 /// Determine if all the instructions in MBB can safely
@@ -387,10 +390,8 @@ bool SSACCmpConv::canSpeculateInstrs(MachineBasicBlock *MBB,
 
   // Check all instructions, except the terminators. It is assumed that
   // terminators never have side effects or define any used register values.
-  for (MachineBasicBlock::iterator I = MBB->begin(),
-                                   E = MBB->getFirstTerminator();
-       I != E; ++I) {
-    if (I->isDebugValue())
+  for (auto &I : make_range(MBB->begin(), MBB->getFirstTerminator())) {
+    if (I.isDebugValue())
       continue;
 
     if (++InstrCount > BlockInstrLimit && !Stress) {
@@ -400,29 +401,29 @@ bool SSACCmpConv::canSpeculateInstrs(MachineBasicBlock *MBB,
     }
 
     // There shouldn't normally be any phis in a single-predecessor block.
-    if (I->isPHI()) {
-      DEBUG(dbgs() << "Can't hoist: " << *I);
+    if (I.isPHI()) {
+      DEBUG(dbgs() << "Can't hoist: " << I);
       return false;
     }
 
     // Don't speculate loads. Note that it may be possible and desirable to
     // speculate GOT or constant pool loads that are guaranteed not to trap,
     // but we don't support that for now.
-    if (I->mayLoad()) {
-      DEBUG(dbgs() << "Won't speculate load: " << *I);
+    if (I.mayLoad()) {
+      DEBUG(dbgs() << "Won't speculate load: " << I);
       return false;
     }
 
     // We never speculate stores, so an AA pointer isn't necessary.
     bool DontMoveAcrossStore = true;
-    if (!I->isSafeToMove(TII, 0, DontMoveAcrossStore)) {
-      DEBUG(dbgs() << "Can't speculate: " << *I);
+    if (!I.isSafeToMove(TII, nullptr, DontMoveAcrossStore)) {
+      DEBUG(dbgs() << "Can't speculate: " << I);
       return false;
     }
 
-    // Only CmpMI is alowed to clobber the flags.
-    if (&*I != CmpMI && I->modifiesRegister(ARM64::CPSR, TRI)) {
-      DEBUG(dbgs() << "Clobbers flags: " << *I);
+    // Only CmpMI is allowed to clobber the flags.
+    if (&I != CmpMI && I.modifiesRegister(ARM64::CPSR, TRI)) {
+      DEBUG(dbgs() << "Clobbers flags: " << I);
       return false;
     }
   }
@@ -434,7 +435,7 @@ bool SSACCmpConv::canSpeculateInstrs(MachineBasicBlock *MBB,
 ///
 bool SSACCmpConv::canConvert(MachineBasicBlock *MBB) {
   Head = MBB;
-  Tail = CmpBB = 0;
+  Tail = CmpBB = nullptr;
 
   if (Head->succ_size() != 2)
     return false;
@@ -494,7 +495,7 @@ bool SSACCmpConv::canConvert(MachineBasicBlock *MBB) {
 
   // The branch we're looking to eliminate must be analyzable.
   HeadCond.clear();
-  MachineBasicBlock *TBB = 0, *FBB = 0;
+  MachineBasicBlock *TBB = nullptr, *FBB = nullptr;
   if (TII->AnalyzeBranch(*Head, TBB, FBB, HeadCond)) {
     DEBUG(dbgs() << "Head branch not analyzable.\n");
     ++NumHeadBranchRejs;
@@ -522,7 +523,7 @@ bool SSACCmpConv::canConvert(MachineBasicBlock *MBB) {
   }
 
   CmpBBCond.clear();
-  TBB = FBB = 0;
+  TBB = FBB = nullptr;
   if (TII->AnalyzeBranch(*CmpBB, TBB, FBB, CmpBBCond)) {
     DEBUG(dbgs() << "CmpBB branch not analyzable.\n");
     ++NumCmpBranchRejs;
@@ -896,7 +897,7 @@ bool ARM64ConditionalCompares::runOnMachineFunction(MachineFunction &MF) {
   DomTree = &getAnalysis<MachineDominatorTree>();
   Loops = getAnalysisIfAvailable<MachineLoopInfo>();
   Traces = &getAnalysis<MachineTraceMetrics>();
-  MinInstr = 0;
+  MinInstr = nullptr;
   MinSize = MF.getFunction()->getAttributes().hasAttribute(
       AttributeSet::FunctionIndex, Attribute::MinSize);
 
@@ -906,11 +907,9 @@ bool ARM64ConditionalCompares::runOnMachineFunction(MachineFunction &MF) {
   // Visit blocks in dominator tree pre-order. The pre-order enables multiple
   // cmp-conversions from the same head block.
   // Note that updateDomTree() modifies the children of the DomTree node
-  // currently being visited. The df_iterator supports that, it doesn't look at
+  // currently being visited. The df_iterator supports that; it doesn't look at
   // child_begin() / child_end() until after a node has been visited.
-  for (df_iterator<MachineDominatorTree *> I = df_begin(DomTree),
-                                           E = df_end(DomTree);
-       I != E; ++I)
+  for (auto *I : depth_first(DomTree))
     if (tryConvert(I->getBlock()))
       Changed = true;
 

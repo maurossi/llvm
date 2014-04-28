@@ -225,7 +225,7 @@ unsigned ARM64FastISel::ARM64MaterializeFP(const ConstantFP *CFP, MVT VT) {
     Align = DL.getTypeAllocSize(CFP->getType());
 
   unsigned Idx = MCP.getConstantPoolIndex(cast<Constant>(CFP), Align);
-  unsigned ADRPReg = createResultReg(&ARM64::GPR64RegClass);
+  unsigned ADRPReg = createResultReg(&ARM64::GPR64commonRegClass);
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(ARM64::ADRP),
           ADRPReg).addConstantPoolIndex(Idx, 0, ARM64II::MO_PAGE);
 
@@ -253,25 +253,28 @@ unsigned ARM64FastISel::ARM64MaterializeGV(const GlobalValue *GV) {
   EVT DestEVT = TLI.getValueType(GV->getType(), true);
   if (!DestEVT.isSimple())
     return 0;
-  MVT DestVT = DestEVT.getSimpleVT();
 
-  unsigned ADRPReg = createResultReg(&ARM64::GPR64RegClass);
-  unsigned ResultReg = createResultReg(TLI.getRegClassFor(DestVT));
+  unsigned ADRPReg = createResultReg(&ARM64::GPR64commonRegClass);
+  unsigned ResultReg;
 
   if (OpFlags & ARM64II::MO_GOT) {
     // ADRP + LDRX
     BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(ARM64::ADRP),
             ADRPReg)
         .addGlobalAddress(GV, 0, ARM64II::MO_GOT | ARM64II::MO_PAGE);
+
+    ResultReg = createResultReg(&ARM64::GPR64RegClass);
     BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(ARM64::LDRXui),
             ResultReg)
         .addReg(ADRPReg)
         .addGlobalAddress(GV, 0, ARM64II::MO_GOT | ARM64II::MO_PAGEOFF |
-                                     ARM64II::MO_NC);
+                          ARM64II::MO_NC);
   } else {
     // ADRP + ADDX
     BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(ARM64::ADRP),
             ADRPReg).addGlobalAddress(GV, 0, ARM64II::MO_PAGE);
+
+    ResultReg = createResultReg(&ARM64::GPR64spRegClass);
     BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(ARM64::ADDXri),
             ResultReg)
         .addReg(ADRPReg)
@@ -300,7 +303,7 @@ unsigned ARM64FastISel::TargetMaterializeConstant(const Constant *C) {
 
 // Computes the address to get to an object.
 bool ARM64FastISel::ComputeAddress(const Value *Obj, Address &Addr) {
-  const User *U = NULL;
+  const User *U = nullptr;
   unsigned Opcode = Instruction::UserOp1;
   if (const Instruction *I = dyn_cast<Instruction>(Obj)) {
     // Don't walk into other basic blocks unless the object is an alloca from
@@ -1117,7 +1120,8 @@ bool ARM64FastISel::SelectFPToInt(const Instruction *I, bool Signed) {
     else
       Opc = (DestVT == MVT::i32) ? ARM64::FCVTZUUWSr : ARM64::FCVTZUUXSr;
   }
-  unsigned ResultReg = createResultReg(TLI.getRegClassFor(DestVT));
+  unsigned ResultReg = createResultReg(
+      DestVT == MVT::i32 ? &ARM64::GPR32RegClass : &ARM64::GPR64RegClass);
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(Opc), ResultReg)
       .addReg(SrcReg);
   UpdateValueMap(I, ResultReg);
@@ -1142,6 +1146,9 @@ bool ARM64FastISel::SelectIntToFP(const Instruction *I, bool Signed) {
     if (SrcReg == 0)
       return false;
   }
+
+  MRI.constrainRegClass(SrcReg, SrcVT == MVT::i64 ? &ARM64::GPR64RegClass
+                                                  : &ARM64::GPR32RegClass);
 
   unsigned Opc;
   if (SrcVT == MVT::i64) {
@@ -1274,7 +1281,7 @@ bool ARM64FastISel::FinishCall(MVT RetVT, SmallVectorImpl<unsigned> &UsedRegs,
 }
 
 bool ARM64FastISel::SelectCall(const Instruction *I,
-                               const char *IntrMemName = 0) {
+                               const char *IntrMemName = nullptr) {
   const CallInst *CI = cast<CallInst>(I);
   const Value *Callee = CI->getCalledValue();
 
@@ -1812,7 +1819,7 @@ bool ARM64FastISel::SelectRem(const Instruction *I, unsigned ISDOpcode) {
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(DivOpc), ResultReg)
       .addReg(Src0Reg)
       .addReg(Src1Reg);
-  // The remainder is computed as numerator – (quotient * denominator) using the
+  // The remainder is computed as numerator - (quotient * denominator) using the
   // MSUB instruction.
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(MSubOpc), ResultReg)
       .addReg(ResultReg)

@@ -26,7 +26,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "xfer"
 #include "Hexagon.h"
 #include "HexagonMachineFunctionInfo.h"
 #include "HexagonSubtarget.h"
@@ -48,6 +47,8 @@
 #include "llvm/Target/TargetRegisterInfo.h"
 
 using namespace llvm;
+
+#define DEBUG_TYPE "xfer"
 
 namespace llvm {
   void initializeHexagonSplitTFRCondSetsPass(PassRegistry&);
@@ -221,7 +222,8 @@ bool HexagonSplitTFRCondSets::runOnMachineFunction(MachineFunction &Fn) {
 static void initializePassOnce(PassRegistry &Registry) {
   const char *Name = "Hexagon Split TFRCondSets";
   PassInfo *PI = new PassInfo(Name, "hexagon-split-tfr",
-                              &HexagonSplitTFRCondSets::ID, 0, false, false);
+                              &HexagonSplitTFRCondSets::ID, nullptr, false,
+                              false);
   Registry.registerPass(*PI, true);
 }
 

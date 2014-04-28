@@ -387,9 +387,7 @@ static void ExpandUnalignedStore(StoreSDNode *ST, SelectionDAG &DAG,
                                        MinAlign(ST->getAlignment(), Offset),
                                        ST->getTBAAInfo()));
     // The order of the stores doesn't matter - say it with a TokenFactor.
-    SDValue Result =
-      DAG.getNode(ISD::TokenFactor, dl, MVT::Other, &Stores[0],
-                  Stores.size());
+    SDValue Result = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, Stores);
     DAGLegalize->ReplaceNode(SDValue(ST, 0), Result);
     return;
   }
@@ -506,8 +504,7 @@ ExpandUnalignedLoad(LoadSDNode *LD, SelectionDAG &DAG,
                                        false, false, 0));
 
     // The order of the stores doesn't matter - say it with a TokenFactor.
-    SDValue TF = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, &Stores[0],
-                             Stores.size());
+    SDValue TF = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, Stores);
 
     // Finally, perform the original load only redirected to the stack slot.
     Load = DAG.getExtLoad(LD->getExtensionType(), dl, VT, TF, StackBase,
@@ -705,7 +702,7 @@ SDValue SelectionDAGLegalize::OptimizeFloatStore(StoreSDNode* ST) {
       }
     }
   }
-  return SDValue(0, 0);
+  return SDValue(nullptr, 0);
 }
 
 void SelectionDAGLegalize::LegalizeStoreOps(SDNode *Node) {
@@ -1528,8 +1525,7 @@ SDValue SelectionDAGLegalize::ExpandVectorBuildThroughStack(SDNode* Node) {
 
   SDValue StoreChain;
   if (!Stores.empty())    // Not all undef elements?
-    StoreChain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other,
-                             &Stores[0], Stores.size());
+    StoreChain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, Stores);
   else
     StoreChain = DAG.getEntryNode();
 
@@ -2183,7 +2179,7 @@ static bool isDivRemLibcallAvailable(SDNode *Node, bool isSigned,
   case MVT::i128: LC= isSigned ? RTLIB::SDIVREM_I128:RTLIB::UDIVREM_I128; break;
   }
 
-  return TLI.getLibcallName(LC) != 0;
+  return TLI.getLibcallName(LC) != nullptr;
 }
 
 /// useDivRem - Only issue divrem libcall if both quotient and remainder are
@@ -2286,7 +2282,7 @@ static bool isSinCosLibcallAvailable(SDNode *Node, const TargetLowering &TLI) {
   case MVT::f128:    LC = RTLIB::SINCOS_F128; break;
   case MVT::ppcf128: LC = RTLIB::SINCOS_PPCF128; break;
   }
-  return TLI.getLibcallName(LC) != 0;
+  return TLI.getLibcallName(LC) != nullptr;
 }
 
 /// canCombineSinCosLibcall - Return true if sincos libcall is available and
@@ -3304,7 +3300,7 @@ void SelectionDAGLegalize::ExpandNode(SDNode *Node) {
                                                   TLI.getVectorIdxTy())));
     }
 
-    Tmp1 = DAG.getNode(ISD::BUILD_VECTOR, dl, VT, &Ops[0], Ops.size());
+    Tmp1 = DAG.getNode(ISD::BUILD_VECTOR, dl, VT, Ops);
     // We may have changed the BUILD_VECTOR type. Cast it back to the Node type.
     Tmp1 = DAG.getNode(ISD::BITCAST, dl, Node->getValueType(0), Tmp1);
     Results.push_back(Tmp1);
@@ -3625,6 +3621,23 @@ void SelectionDAGLegalize::ExpandNode(SDNode *Node) {
                                     Node->getOperand(1)));
       break;
     }
+
+    SDValue Lo, Hi;
+    EVT HalfType = VT.getHalfSizedIntegerVT(*DAG.getContext());
+    if (TLI.isOperationLegalOrCustom(ISD::ZERO_EXTEND, VT) &&
+        TLI.isOperationLegalOrCustom(ISD::ANY_EXTEND, VT) &&
+        TLI.isOperationLegalOrCustom(ISD::SHL, VT) &&
+        TLI.isOperationLegalOrCustom(ISD::OR, VT) &&
+        TLI.expandMUL(Node, Lo, Hi, HalfType, DAG)) {
+      Lo = DAG.getNode(ISD::ZERO_EXTEND, dl, VT, Lo);
+      Hi = DAG.getNode(ISD::ANY_EXTEND, dl, VT, Hi);
+      SDValue Shift = DAG.getConstant(HalfType.getSizeInBits(),
+                                      TLI.getShiftAmountTy(HalfType));
+      Hi = DAG.getNode(ISD::SHL, dl, VT, Hi, Shift);
+      Results.push_back(DAG.getNode(ISD::OR, dl, VT, Lo, Hi));
+      break;
+    }
+
     Tmp1 = ExpandIntLibCall(Node, false,
                             RTLIB::MUL_I8,
                             RTLIB::MUL_I16, RTLIB::MUL_I32,
@@ -3994,8 +4007,7 @@ void SelectionDAGLegalize::ExpandNode(SDNode *Node) {
                                     VT.getScalarType(), Ex, Sh));
     }
     SDValue Result =
-      DAG.getNode(ISD::BUILD_VECTOR, dl, Node->getValueType(0),
-                  &Scalars[0], Scalars.size());
+      DAG.getNode(ISD::BUILD_VECTOR, dl, Node->getValueType(0), Scalars);
     ReplaceNode(SDValue(Node, 0), Result);
     break;
   }

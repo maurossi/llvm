@@ -27,8 +27,15 @@ class AArch64Subtarget;
 struct AArch64RegisterInfo : public AArch64GenRegisterInfo {
   AArch64RegisterInfo();
 
-  const uint16_t *getCalleeSavedRegs(const MachineFunction *MF = 0) const;
+  const MCPhysReg *getCalleeSavedRegs(const MachineFunction *MF =nullptr) const;
   const uint32_t *getCallPreservedMask(CallingConv::ID) const;
+
+  unsigned getCSRFirstUseCost() const {
+    // The cost will be compared against BlockFrequency where entry has the
+    // value of 1 << 14. A value of 5 will choose to spill or split really
+    // cold path instead of using a callee-saved register.
+    return 5;
+  }
 
   const uint32_t *getTLSDescCallPreservedMask() const;
 
@@ -37,7 +44,7 @@ struct AArch64RegisterInfo : public AArch64GenRegisterInfo {
 
   void eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
                            unsigned FIOperandNum,
-                           RegScavenger *Rs = NULL) const;
+                           RegScavenger *Rs = nullptr) const;
 
   /// getCrossCopyRegClass - Returns a legal register class to copy a register
   /// in the specified class to or from. Returns original class if it is

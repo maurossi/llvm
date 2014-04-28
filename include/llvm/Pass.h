@@ -29,7 +29,9 @@
 #ifndef LLVM_PASS_H
 #define LLVM_PASS_H
 
+#include "llvm/Support/CBindingWrapping.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm-c/Core.h"
 #include <string>
 
 namespace llvm {
@@ -87,7 +89,8 @@ class Pass {
   Pass(const Pass &) LLVM_DELETED_FUNCTION;
 
 public:
-  explicit Pass(PassKind K, char &pid) : Resolver(0), PassID(&pid), Kind(K) { }
+  explicit Pass(PassKind K, char &pid)
+    : Resolver(nullptr), PassID(&pid), Kind(K) { }
   virtual ~Pass();
 
 
@@ -367,6 +370,9 @@ protected:
 /// then the value of this boolean will be true, otherwise false.
 /// @brief This is the storage for the -time-passes option.
 extern bool TimePassesIsEnabled;
+
+// Create wrappers for C Binding types (see CBindingWrapping.h).
+DEFINE_SIMPLE_CONVERSION_FUNCTIONS(Pass, LLVMPassRef)
 
 } // End llvm namespace
 

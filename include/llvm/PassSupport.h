@@ -31,6 +31,7 @@
 namespace llvm {
 
 class TargetMachine;
+class LLVMContext;
 //===---------------------------------------------------------------------------
 /// PassInfo class - An instance of this class exists for every pass known by
 /// the system, and can be obtained from a live Pass by calling its
@@ -59,7 +60,7 @@ public:
   /// through RegisterPass.
   PassInfo(const char *name, const char *arg, const void *pi,
            NormalCtor_t normal, bool isCFGOnly, bool is_analysis,
-           TargetMachineCtor_t machine = NULL)
+           TargetMachineCtor_t machine = nullptr)
     : PassName(name), PassArgument(arg), PassID(pi), 
       IsCFGOnlyPass(isCFGOnly), 
       IsAnalysis(is_analysis), IsAnalysisGroup(false), NormalCtor(normal),
@@ -70,8 +71,8 @@ public:
   PassInfo(const char *name, const void *pi)
     : PassName(name), PassArgument(""), PassID(pi), 
       IsCFGOnlyPass(false), 
-      IsAnalysis(false), IsAnalysisGroup(true), NormalCtor(0),
-      TargetMachineCtor(0) {}
+      IsAnalysis(false), IsAnalysisGroup(true), NormalCtor(nullptr),
+      TargetMachineCtor(nullptr) {}
 
   /// getPassName - Return the friendly name for the pass, never returns null
   ///
@@ -256,7 +257,7 @@ class RegisterAGBase : public PassInfo {
 public:
   RegisterAGBase(const char *Name,
                  const void *InterfaceID,
-                 const void *PassID = 0,
+                 const void *PassID = nullptr,
                  bool isDefault = false);
 };
 
@@ -353,6 +354,21 @@ struct PassRegistrationListener {
   /// enumeratePasses on this PassRegistrationListener object.
   ///
   virtual void passEnumerate(const PassInfo *) {}
+};
+
+//===---------------------------------------------------------------------------
+/// PassRunListener class - This class is meant to be derived from by
+/// clients that are interested in which and when passes are run at runtime.
+struct PassRunListener {
+  /// PassRunListener ctor - Add the current object to the list of
+  /// PassRunListeners...
+  PassRunListener(LLVMContext *);
+
+  virtual ~PassRunListener();
+
+  /// Callback function - This functions is invoked whenever a pass has run.
+  virtual void passRun(LLVMContext *, Pass *, Module *, Function *,
+                       BasicBlock *) {}
 };
 
 

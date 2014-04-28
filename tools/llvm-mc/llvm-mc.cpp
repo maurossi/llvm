@@ -25,6 +25,7 @@
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCTargetAsmParser.h"
+#include "llvm/MC/MCTargetOptionsCommandFlags.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Compression.h"
 #include "llvm/Support/FileUtilities.h"
@@ -197,7 +198,7 @@ static const Target *GetTarget(const char *ProgName) {
                                                          Error);
   if (!TheTarget) {
     errs() << ProgName << ": " << Error;
-    return 0;
+    return nullptr;
   }
 
   // Update the triple name and return the found target.
@@ -215,7 +216,7 @@ static tool_output_file *GetOutputStream() {
   if (!Err.empty()) {
     errs() << Err << '\n';
     delete Out;
-    return 0;
+    return nullptr;
   }
 
   return Out;
@@ -320,9 +321,11 @@ static int AsLexInput(SourceMgr &SrcMgr, MCAsmInfo &MAI, tool_output_file *Out) 
 static int AssembleInput(const char *ProgName, const Target *TheTarget,
                          SourceMgr &SrcMgr, MCContext &Ctx, MCStreamer &Str,
                          MCAsmInfo &MAI, MCSubtargetInfo &STI, MCInstrInfo &MCII) {
-  std::unique_ptr<MCAsmParser> Parser(createMCAsmParser(SrcMgr, Ctx, Str, MAI));
+  std::unique_ptr<MCAsmParser> Parser(
+      createMCAsmParser(SrcMgr, Ctx, Str, MAI));
   std::unique_ptr<MCTargetAsmParser> TAP(
-      TheTarget->createMCAsmParser(STI, *Parser, MCII));
+      TheTarget->createMCAsmParser(STI, *Parser, MCII,
+                                   InitMCTargetOptionsFromFlags()));
   if (!TAP) {
     errs() << ProgName
            << ": error: this target does not support assembly parsing.\n";
@@ -432,12 +435,12 @@ int main(int argc, char **argv) {
   std::unique_ptr<MCSubtargetInfo> STI(
       TheTarget->createMCSubtargetInfo(TripleName, MCPU, FeaturesStr));
 
-  MCInstPrinter *IP = NULL;
+  MCInstPrinter *IP = nullptr;
   if (FileType == OFT_AssemblyFile) {
     IP =
       TheTarget->createMCInstPrinter(OutputAsmVariant, *MAI, *MCII, *MRI, *STI);
-    MCCodeEmitter *CE = 0;
-    MCAsmBackend *MAB = 0;
+    MCCodeEmitter *CE = nullptr;
+    MCAsmBackend *MAB = nullptr;
     if (ShowEncoding) {
       CE = TheTarget->createMCCodeEmitter(*MCII, *MRI, *STI, Ctx);
       MAB = TheTarget->createMCAsmBackend(*MRI, TripleName, MCPU);

@@ -49,9 +49,9 @@ ARMBaseRegisterInfo::ARMBaseRegisterInfo(const ARMSubtarget &sti)
     BasePtr(ARM::R6) {
 }
 
-const uint16_t*
+const MCPhysReg*
 ARMBaseRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
-  const uint16_t *RegList = (STI.isTargetIOS() && !STI.isAAPCS_ABI())
+  const MCPhysReg *RegList = (STI.isTargetIOS() && !STI.isAAPCS_ABI())
                                 ? CSR_iOS_SaveList
                                 : CSR_AAPCS_SaveList;
 
@@ -107,7 +107,7 @@ ARMBaseRegisterInfo::getThisReturnPreservedMask(CallingConv::ID CC) const {
   // should return NULL
   if (CC == CallingConv::GHC)
     // This is academic becase all GHC calls are (supposed to be) tail calls
-    return NULL;
+    return nullptr;
   return (STI.isTargetIOS() && !STI.isAAPCS_ABI())
     ? CSR_iOS_ThisReturn_RegMask : CSR_AAPCS_ThisReturn_RegMask;
 }
@@ -173,7 +173,7 @@ ARMBaseRegisterInfo::getPointerRegClass(const MachineFunction &MF, unsigned Kind
 const TargetRegisterClass *
 ARMBaseRegisterInfo::getCrossCopyRegClass(const TargetRegisterClass *RC) const {
   if (RC == &ARM::CCRRegClass)
-    return 0;  // Can't copy CCR registers.
+    return nullptr;  // Can't copy CCR registers.
   return RC;
 }
 

@@ -39,16 +39,15 @@ int merge_main(int argc, const char *argv[]) {
   cl::opt<std::string> OutputFilename("output", cl::value_desc("output"),
                                       cl::init("-"),
                                       cl::desc("Output file"));
-  cl::alias OutputFilenameA("o", cl::desc("Alias for --output"),
-                                 cl::aliasopt(OutputFilename));
+  cl::alias OutputFilenameA("o", cl::desc("Alias for --output"), cl::Required,
+                            cl::aliasopt(OutputFilename));
 
   cl::ParseCommandLineOptions(argc, argv, "LLVM profile data merger\n");
 
-  if (OutputFilename.empty())
-    OutputFilename = "-";
+  if (OutputFilename.compare("-") == 0)
+    exitWithError("Cannot write indexed profdata format to stdout.");
 
   std::string ErrorInfo;
-  // FIXME: F_Text would be available if line_iterator could accept CRLF.
   raw_fd_ostream Output(OutputFilename.data(), ErrorInfo, sys::fs::F_None);
   if (!ErrorInfo.empty())
     exitWithError(ErrorInfo, OutputFilename);
@@ -112,6 +111,7 @@ int show_main(int argc, const char *argv[]) {
                  Func.Name.find(ShowFunction) != Func.Name.npos);
 
     ++TotalFunctions;
+    assert(Func.Counts.size() > 0 && "function missing entry counter");
     if (Func.Counts[0] > MaxFunctionCount)
       MaxFunctionCount = Func.Counts[0];
 
@@ -156,7 +156,7 @@ int main(int argc, const char *argv[]) {
 
   StringRef ProgName(sys::path::filename(argv[0]));
   if (argc > 1) {
-    int (*func)(int, const char *[]) = 0;
+    int (*func)(int, const char *[]) = nullptr;
 
     if (strcmp(argv[1], "merge") == 0)
       func = merge_main;

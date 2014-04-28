@@ -44,6 +44,8 @@ public:
   /// always be able to get register info as well (through this method).
   const ARM64RegisterInfo &getRegisterInfo() const { return RI; }
 
+  const ARM64Subtarget &getSubTarget() const { return Subtarget; }
+
   unsigned GetInstSizeInBytes(const MachineInstr *MI) const;
 
   bool isCoalescableExtInstr(const MachineInstr &MI, unsigned &SrcReg,
@@ -191,9 +193,9 @@ enum ARM64FrameOffsetStatus {
 /// (possibly with @p OutUnscaledOp if OutUseUnscaledOp is true) and that
 /// is a legal offset.
 int isARM64FrameOffsetLegal(const MachineInstr &MI, int &Offset,
-                            bool *OutUseUnscaledOp = NULL,
-                            unsigned *OutUnscaledOp = NULL,
-                            int *EmittableOffset = NULL);
+                            bool *OutUseUnscaledOp = nullptr,
+                            unsigned *OutUnscaledOp = nullptr,
+                            int *EmittableOffset = nullptr);
 
 static inline bool isUncondBranchOpcode(int Opc) { return Opc == ARM64::B; }
 

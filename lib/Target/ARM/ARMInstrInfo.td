@@ -991,6 +991,81 @@ def addrmode6oneL32 : Operand<i32>,
   let EncoderMethod = "getAddrMode6OneLane32AddressOpValue";
 }
 
+// Base class for addrmode6 with specific alignment restrictions.
+class AddrMode6Align : Operand<i32>,
+                ComplexPattern<i32, 2, "SelectAddrMode6", [], [SDNPWantParent]>{
+  let PrintMethod = "printAddrMode6Operand";
+  let MIOperandInfo = (ops GPR:$addr, i32imm:$align);
+  let EncoderMethod = "getAddrMode6AddressOpValue";
+  let DecoderMethod = "DecodeAddrMode6Operand";
+}
+
+// Special version of addrmode6 to handle no allowed alignment encoding for
+// VLD/VST instructions and checking the alignment is not specified.
+def AddrMode6AlignNoneAsmOperand : AsmOperandClass {
+  let Name = "AlignedMemoryNone";
+  let DiagnosticType = "AlignedMemoryRequiresNone";
+}
+def addrmode6alignNone : AddrMode6Align {
+  // The alignment specifier can only be omitted.
+  let ParserMatchClass = AddrMode6AlignNoneAsmOperand;
+}
+
+// Special version of addrmode6 to handle 16-bit alignment encoding for
+// VLD/VST instructions and checking the alignment value.
+def AddrMode6Align16AsmOperand : AsmOperandClass {
+  let Name = "AlignedMemory16";
+  let DiagnosticType = "AlignedMemoryRequires16";
+}
+def addrmode6align16 : AddrMode6Align {
+  // The alignment specifier can only be 16 or omitted.
+  let ParserMatchClass = AddrMode6Align16AsmOperand;
+}
+
+// Special version of addrmode6 to handle 32-bit alignment encoding for
+// VLD/VST instructions and checking the alignment value.
+def AddrMode6Align32AsmOperand : AsmOperandClass {
+  let Name = "AlignedMemory32";
+  let DiagnosticType = "AlignedMemoryRequires32";
+}
+def addrmode6align32 : AddrMode6Align {
+  // The alignment specifier can only be 32 or omitted.
+  let ParserMatchClass = AddrMode6Align32AsmOperand;
+}
+
+// Special version of addrmode6 to handle 64-bit alignment encoding for
+// VLD/VST instructions and checking the alignment value.
+def AddrMode6Align64AsmOperand : AsmOperandClass {
+  let Name = "AlignedMemory64";
+  let DiagnosticType = "AlignedMemoryRequires64";
+}
+def addrmode6align64 : AddrMode6Align {
+  // The alignment specifier can only be 64 or omitted.
+  let ParserMatchClass = AddrMode6Align64AsmOperand;
+}
+
+// Special version of addrmode6 to handle 64-bit or 128-bit alignment encoding
+// for VLD/VST instructions and checking the alignment value.
+def AddrMode6Align64or128AsmOperand : AsmOperandClass {
+  let Name = "AlignedMemory64or128";
+  let DiagnosticType = "AlignedMemoryRequires64or128";
+}
+def addrmode6align64or128 : AddrMode6Align {
+  // The alignment specifier can only be 64, 128 or omitted.
+  let ParserMatchClass = AddrMode6Align64or128AsmOperand;
+}
+
+// Special version of addrmode6 to handle 64-bit, 128-bit or 256-bit alignment
+// encoding for VLD/VST instructions and checking the alignment value.
+def AddrMode6Align64or128or256AsmOperand : AsmOperandClass {
+  let Name = "AlignedMemory64or128or256";
+  let DiagnosticType = "AlignedMemoryRequires64or128or256";
+}
+def addrmode6align64or128or256 : AddrMode6Align {
+  // The alignment specifier can only be 64, 128, 256 or omitted.
+  let ParserMatchClass = AddrMode6Align64or128or256AsmOperand;
+}
+
 // Special version of addrmode6 to handle alignment encoding for VLD-dup
 // instructions, specifically VLD4-dup.
 def addrmode6dup : Operand<i32>,
@@ -1001,6 +1076,69 @@ def addrmode6dup : Operand<i32>,
   // FIXME: This is close, but not quite right. The alignment specifier is
   // different.
   let ParserMatchClass = AddrMode6AsmOperand;
+}
+
+// Base class for addrmode6dup with specific alignment restrictions.
+class AddrMode6DupAlign : Operand<i32>,
+                ComplexPattern<i32, 2, "SelectAddrMode6", [], [SDNPWantParent]>{
+  let PrintMethod = "printAddrMode6Operand";
+  let MIOperandInfo = (ops GPR:$addr, i32imm);
+  let EncoderMethod = "getAddrMode6DupAddressOpValue";
+}
+
+// Special version of addrmode6 to handle no allowed alignment encoding for
+// VLD-dup instruction and checking the alignment is not specified.
+def AddrMode6dupAlignNoneAsmOperand : AsmOperandClass {
+  let Name = "DupAlignedMemoryNone";
+  let DiagnosticType = "DupAlignedMemoryRequiresNone";
+}
+def addrmode6dupalignNone : AddrMode6DupAlign {
+  // The alignment specifier can only be omitted.
+  let ParserMatchClass = AddrMode6dupAlignNoneAsmOperand;
+}
+
+// Special version of addrmode6 to handle 16-bit alignment encoding for VLD-dup
+// instruction and checking the alignment value.
+def AddrMode6dupAlign16AsmOperand : AsmOperandClass {
+  let Name = "DupAlignedMemory16";
+  let DiagnosticType = "DupAlignedMemoryRequires16";
+}
+def addrmode6dupalign16 : AddrMode6DupAlign {
+  // The alignment specifier can only be 16 or omitted.
+  let ParserMatchClass = AddrMode6dupAlign16AsmOperand;
+}
+
+// Special version of addrmode6 to handle 32-bit alignment encoding for VLD-dup
+// instruction and checking the alignment value.
+def AddrMode6dupAlign32AsmOperand : AsmOperandClass {
+  let Name = "DupAlignedMemory32";
+  let DiagnosticType = "DupAlignedMemoryRequires32";
+}
+def addrmode6dupalign32 : AddrMode6DupAlign {
+  // The alignment specifier can only be 32 or omitted.
+  let ParserMatchClass = AddrMode6dupAlign32AsmOperand;
+}
+
+// Special version of addrmode6 to handle 64-bit alignment encoding for VLD
+// instructions and checking the alignment value.
+def AddrMode6dupAlign64AsmOperand : AsmOperandClass {
+  let Name = "DupAlignedMemory64";
+  let DiagnosticType = "DupAlignedMemoryRequires64";
+}
+def addrmode6dupalign64 : AddrMode6DupAlign {
+  // The alignment specifier can only be 64 or omitted.
+  let ParserMatchClass = AddrMode6dupAlign64AsmOperand;
+}
+
+// Special version of addrmode6 to handle 64-bit or 128-bit alignment encoding
+// for VLD instructions and checking the alignment value.
+def AddrMode6dupAlign64or128AsmOperand : AsmOperandClass {
+  let Name = "DupAlignedMemory64or128";
+  let DiagnosticType = "DupAlignedMemoryRequires64or128";
+}
+def addrmode6dupalign64or128 : AddrMode6DupAlign {
+  // The alignment specifier can only be 64, 128 or omitted.
+  let ParserMatchClass = AddrMode6dupAlign64or128AsmOperand;
 }
 
 // addrmodepc := pc + reg
@@ -1689,7 +1827,8 @@ PseudoInst<(outs), (ins i32imm:$amt, pred:$p), NoItinerary,
 }
 
 def HINT : AI<(outs), (ins imm0_239:$imm), MiscFrm, NoItinerary,
-              "hint", "\t$imm", []>, Requires<[IsARM, HasV6]> {
+              "hint", "\t$imm", [(int_arm_hint imm0_239:$imm)]>,
+           Requires<[IsARM, HasV6]> {
   bits<8> imm;
   let Inst{27-8} = 0b00110010000011110000;
   let Inst{7-0} = imm;
@@ -1701,8 +1840,6 @@ def : InstAlias<"wfe$p", (HINT 2, pred:$p)>, Requires<[IsARM, HasV6T2]>;
 def : InstAlias<"wfi$p", (HINT 3, pred:$p)>, Requires<[IsARM, HasV6T2]>;
 def : InstAlias<"sev$p", (HINT 4, pred:$p)>, Requires<[IsARM, HasV6T2]>;
 def : InstAlias<"sevl$p", (HINT 5, pred:$p)>, Requires<[IsARM, HasV8]>;
-
-def : Pat<(int_arm_sevl), (HINT 5)>;
 
 def SEL : AI<(outs GPR:$Rd), (ins GPR:$Rn, GPR:$Rm), DPFrm, NoItinerary, "sel",
              "\t$Rd, $Rn, $Rm", []>, Requires<[IsARM, HasV6]> {
@@ -2282,12 +2419,6 @@ let mayLoad = 1, neverHasSideEffects = 1, hasExtraDefRegAllocReq = 1 in {
   def LDRD : AI3ld<0b1101, 0, (outs GPR:$Rt, GPR:$Rt2), (ins addrmode3:$addr),
                    LdMiscFrm, IIC_iLoad_d_r, "ldrd", "\t$Rt, $Rt2, $addr", []>,
              Requires<[IsARM, HasV5TE]>;
-
-  // GNU Assembler extension (compatibility)
-  let isAsmParserOnly = 1 in
-    def LDRD_PAIR : AI3ld<0b1101, 0, (outs GPRPairOp:$Rt), (ins addrmode3:$addr),
-                          LdMiscFrm, IIC_iLoad_d_r, "ldrd", "\t$Rt, $addr", []>,
-                    Requires<[IsARM, HasV5TE]>;
 }
 
 def LDA : AIldracq<0b00, (outs GPR:$Rt), (ins addr_offset_none:$addr),
@@ -2557,14 +2688,6 @@ let mayStore = 1, neverHasSideEffects = 1, hasExtraSrcRegAllocReq = 1 in {
              Requires<[IsARM, HasV5TE]> {
     let Inst{21} = 0;
   }
-
-  // GNU Assembler extension (compatibility)
-  let isAsmParserOnly = 1 in
-    def STRD_PAIR : AI3str<0b1111, (outs), (ins GPRPairOp:$Rt, addrmode3:$addr),
-                           StMiscFrm, IIC_iStore_d_r, "strd", "\t$Rt, $addr", []>,
-                    Requires<[IsARM, HasV5TE]> {
-      let Inst{21} = 0;
-    }
 }
 
 // Indexed stores

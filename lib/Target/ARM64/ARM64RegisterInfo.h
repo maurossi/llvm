@@ -36,8 +36,8 @@ public:
   bool isReservedReg(const MachineFunction &MF, unsigned Reg) const;
 
   /// Code Generation virtual methods...
-  const uint16_t *
-  getCalleeSavedRegs(const MachineFunction *MF = 0) const override;
+  const MCPhysReg *
+  getCalleeSavedRegs(const MachineFunction *MF = nullptr) const override;
   const uint32_t *getCallPreservedMask(CallingConv::ID) const override;
 
   unsigned getCSRFirstUseCost() const {
@@ -82,7 +82,7 @@ public:
                          int64_t Offset) const override;
   void eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
                            unsigned FIOperandNum,
-                           RegScavenger *RS = NULL) const override;
+                           RegScavenger *RS = nullptr) const override;
   bool cannotEliminateFrame(const MachineFunction &MF) const;
 
   bool requiresVirtualBaseRegisters(const MachineFunction &MF) const override;

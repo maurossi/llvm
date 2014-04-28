@@ -29,7 +29,7 @@
 // CHECK: ldr     x10, [x0, :gottprel_lo12:var] // encoding: [0x0a,0bAAAAAA00,0b01AAAAAA,0xf9]
 // CHECK-NEXT:                                 //   fixup A - offset: 0, value: :gottprel_lo12:var, kind: fixup_arm64_ldst_imm12_scale8
 // CHECK: ldr     x9, :gottprel:var       // encoding: [0bAAA01001,A,A,0x58]
-// CHECK-NEXT:                                 //   fixup A - offset: 0, value: :gottprel:var, kind: fixup_arm64_pcrel_imm19
+// CHECK-NEXT:                                 //   fixup A - offset: 0, value: :gottprel:var, kind: fixup_arm64_ldr_pcrel_imm19
 
 // CHECK-ELF-NEXT:     {{0x[0-9A-F]+}} R_AARCH64_TLSIE_ADR_GOTTPREL_PAGE21 [[VARSYM]]
 // CHECK-ELF-NEXT:     {{0x[0-9A-F]+}} R_AARCH64_TLSIE_LD64_GOTTPREL_LO12_NC [[VARSYM]]
@@ -119,9 +119,9 @@
 
         ldrb w29, [x30, #:tprel_lo12:var]
         ldrsb x29, [x28, #:tprel_lo12_nc:var]
-// CHECK: ldrb    w29, [lr, :tprel_lo12:var] // encoding: [0xdd,0bAAAAAA11,0b01AAAAAA,0x39]
+// CHECK: ldrb    w29, [x30, :tprel_lo12:var] // encoding: [0xdd,0bAAAAAA11,0b01AAAAAA,0x39]
 // CHECK-NEXT:                                 //   fixup A - offset: 0, value: :tprel_lo12:var, kind: fixup_arm64_ldst_imm12_scale1
-// CHECK: ldrsb   fp, [x28, :tprel_lo12_nc:var] // encoding: [0x9d,0bAAAAAA11,0b10AAAAAA,0x39]
+// CHECK: ldrsb   x29, [x28, :tprel_lo12_nc:var] // encoding: [0x9d,0bAAAAAA11,0b10AAAAAA,0x39]
 // CHECK-NEXT:                                 //   fixup A - offset: 0, value: :tprel_lo12_nc:var, kind: fixup_arm64_ldst_imm12_scale1
 
 // CHECK-ELF-NEXT:     {{0x[0-9A-F]+}} R_AARCH64_TLSLE_LDST8_TPREL_LO12 [[VARSYM]]
@@ -243,9 +243,9 @@
 
         ldrb w29, [x30, #:dtprel_lo12:var]
         ldrsb x29, [x28, #:dtprel_lo12_nc:var]
-// CHECK: ldrb    w29, [lr, :dtprel_lo12:var] // encoding: [0xdd,0bAAAAAA11,0b01AAAAAA,0x39]
+// CHECK: ldrb    w29, [x30, :dtprel_lo12:var] // encoding: [0xdd,0bAAAAAA11,0b01AAAAAA,0x39]
 // CHECK-NEXT:                                 //   fixup A - offset: 0, value: :dtprel_lo12:var, kind: fixup_arm64_ldst_imm12_scale1
-// CHECK: ldrsb   fp, [x28, :dtprel_lo12_nc:var] // encoding: [0x9d,0bAAAAAA11,0b10AAAAAA,0x39]
+// CHECK: ldrsb   x29, [x28, :dtprel_lo12_nc:var] // encoding: [0x9d,0bAAAAAA11,0b10AAAAAA,0x39]
 // CHECK-NEXT:                                 //   fixup A - offset: 0, value: :dtprel_lo12_nc:var, kind: fixup_arm64_ldst_imm12_scale1
 
 // CHECK-ELF-NEXT:     {{0x[0-9A-F]+}} R_AARCH64_TLSLD_LDST8_DTPREL_LO12 [[VARSYM]]

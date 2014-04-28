@@ -14,7 +14,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "aarch64tti"
 #include "AArch64.h"
 #include "AArch64TargetMachine.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
@@ -22,6 +21,8 @@
 #include "llvm/Target/CostTable.h"
 #include "llvm/Target/TargetLowering.h"
 using namespace llvm;
+
+#define DEBUG_TYPE "aarch64tti"
 
 // Declare the pass initialization routine locally as target-specific passes
 // don't have a target-wide initialization entry point, and so we rely on the
@@ -37,7 +38,7 @@ class AArch64TTI final : public ImmutablePass, public TargetTransformInfo {
   const AArch64TargetLowering *TLI;
 
 public:
-  AArch64TTI() : ImmutablePass(ID), ST(0), TLI(0) {
+  AArch64TTI() : ImmutablePass(ID), ST(nullptr), TLI(nullptr) {
     llvm_unreachable("This pass cannot be directly constructed");
   }
 
@@ -92,6 +93,7 @@ public:
     return 64;
   }
 
+  unsigned getMaximumUnrollFactor() const override { return 2; }
   /// @}
 };
 

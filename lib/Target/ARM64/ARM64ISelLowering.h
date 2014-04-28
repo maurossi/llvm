@@ -87,6 +87,10 @@ enum {
   BICi,
   ORRi,
 
+  // Vector bit select: similar to ISD::VSELECT but not all bits within an
+  // element must be identical.
+  BSL,
+
   // Vector arithmetic negation
   NEG,
 
@@ -186,7 +190,7 @@ public:
   /// allowsUnalignedMemoryAccesses - Returns true if the target allows
   /// unaligned memory accesses. of the specified type.
   bool allowsUnalignedMemoryAccesses(EVT VT, unsigned AddrSpace = 0,
-                                     bool *Fast = 0) const override {
+                                     bool *Fast = nullptr) const override {
     if (RequireStrictAlign)
       return false;
     // FIXME: True for Cyclone, but not necessary others.
@@ -233,19 +237,6 @@ public:
 
   SDValue ReconstructShuffle(SDValue Op, SelectionDAG &DAG) const;
 
-  MachineBasicBlock *EmitAtomicBinary(MachineInstr *MI, MachineBasicBlock *BB,
-                                      unsigned Size, unsigned BinOpcode) const;
-  MachineBasicBlock *EmitAtomicCmpSwap(MachineInstr *MI, MachineBasicBlock *BB,
-                                       unsigned Size) const;
-  MachineBasicBlock *EmitAtomicBinary128(MachineInstr *MI,
-                                         MachineBasicBlock *BB,
-                                         unsigned BinOpcodeLo,
-                                         unsigned BinOpcodeHi) const;
-  MachineBasicBlock *EmitAtomicCmpSwap128(MachineInstr *MI,
-                                          MachineBasicBlock *BB) const;
-  MachineBasicBlock *EmitAtomicMinMax128(MachineInstr *MI,
-                                         MachineBasicBlock *BB,
-                                         unsigned CondCode) const;
   MachineBasicBlock *EmitF128CSEL(MachineInstr *MI,
                                   MachineBasicBlock *BB) const;
 
@@ -291,10 +282,19 @@ public:
   /// expanded to fmul + fadd.
   bool isFMAFasterThanFMulAndFAdd(EVT VT) const override;
 
-  const uint16_t *getScratchRegisters(CallingConv::ID CC) const override;
+  const MCPhysReg *getScratchRegisters(CallingConv::ID CC) const override;
 
+  /// \brief Returns true if it is beneficial to convert a load of a constant
+  /// to just the constant itself.
   bool shouldConvertConstantLoadToIntImm(const APInt &Imm,
                                          Type *Ty) const override;
+
+  Value *emitLoadLinked(IRBuilder<> &Builder, Value *Addr,
+                        AtomicOrdering Ord) const override;
+  Value *emitStoreConditional(IRBuilder<> &Builder, Value *Val,
+                              Value *Addr, AtomicOrdering Ord) const override;
+
+  bool shouldExpandAtomicInIR(Instruction *Inst) const override;
 
 private:
   /// Subtarget - Keep a pointer to the ARM64Subtarget around so that we can

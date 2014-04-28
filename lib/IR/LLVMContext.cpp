@@ -15,6 +15,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "LLVMContextImpl.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/Instruction.h"
@@ -125,10 +126,20 @@ void LLVMContext::emitError(const Instruction *I, const Twine &ErrorStr) {
 
 void LLVMContext::diagnose(const DiagnosticInfo &DI) {
   // If there is a report handler, use it.
-  if (pImpl->DiagnosticHandler != 0) {
+  if (pImpl->DiagnosticHandler) {
     pImpl->DiagnosticHandler(DI, pImpl->DiagnosticContext);
     return;
   }
+
+  // Optimization remarks are selective. They need to check whether
+  // the regexp pattern, passed via -pass-remarks, matches the name
+  // of the pass that is emitting the diagnostic. If there is no match,
+  // ignore the diagnostic and return.
+  if (DI.getKind() == llvm::DK_OptimizationRemark &&
+      !pImpl->optimizationRemarksEnabledFor(
+          cast<DiagnosticInfoOptimizationRemark>(DI).getPassName()))
+    return;
+
   // Otherwise, print the message with a prefix based on the severity.
   std::string MsgStorage;
   raw_string_ostream Stream(MsgStorage);
@@ -153,6 +164,13 @@ void LLVMContext::diagnose(const DiagnosticInfo &DI) {
 
 void LLVMContext::emitError(unsigned LocCookie, const Twine &ErrorStr) {
   diagnose(DiagnosticInfoInlineAsm(LocCookie, ErrorStr));
+}
+
+void LLVMContext::emitOptimizationRemark(const char *PassName,
+                                         const Function &Fn,
+                                         const DebugLoc &DLoc,
+                                         const Twine &Msg) {
+  diagnose(DiagnosticInfoOptimizationRemark(PassName, Fn, DLoc, Msg));
 }
 
 //===----------------------------------------------------------------------===//
@@ -195,4 +213,24 @@ void LLVMContext::getMDKindNames(SmallVectorImpl<StringRef> &Names) const {
   for (StringMap<unsigned>::const_iterator I = pImpl->CustomMDKindNames.begin(),
        E = pImpl->CustomMDKindNames.end(); I != E; ++I)
     Names[I->second] = I->first();
+}
+
+//===----------------------------------------------------------------------===//
+// Pass Run Listeners
+//===----------------------------------------------------------------------===//
+/// Notify that we finished running a pass.
+void LLVMContext::notifyPassRun(Pass *P, Module *M, Function *F, BasicBlock *BB)
+{
+  pImpl->notifyPassRun(this, P, M, F, BB);
+}
+/// Register the given PassRunListener to receive notifyPassRun() callbacks
+/// whenever a pass ran. The context will take ownership of the listener and
+/// free it when the context is destroyed.
+void LLVMContext::addRunListener(PassRunListener *L) {
+  pImpl->addRunListener(L);
+}
+/// Unregister a PassRunListener so that it no longer receives notifyPassRun()
+/// callbacks. Remove and free the listener from the context.
+void LLVMContext::removeRunListener(PassRunListener *L) {
+  pImpl->removeRunListener(L);
 }

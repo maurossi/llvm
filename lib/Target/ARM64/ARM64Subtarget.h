@@ -27,6 +27,16 @@ class StringRef;
 
 class ARM64Subtarget : public ARM64GenSubtargetInfo {
 protected:
+  enum ARMProcFamilyEnum {Others, CortexA53, CortexA57, Cyclone};
+
+  /// ARMProcFamily - ARM processor family: Cortex-A53, Cortex-A57, and others.
+  ARMProcFamilyEnum ARMProcFamily;
+
+  bool HasFPARMv8;
+  bool HasNEON;
+  bool HasCrypto;
+  bool HasCRC;
+
   // HasZeroCycleRegMove - Has zero-cycle register mov instructions.
   bool HasZeroCycleRegMove;
 
@@ -39,17 +49,27 @@ protected:
   /// TargetTriple - What processor and OS we're targeting.
   Triple TargetTriple;
 
+  /// IsLittleEndian - Is the target little endian?
+  bool IsLittleEndian;
+
 public:
   /// This constructor initializes the data members to match that
   /// of the specified triple.
   ARM64Subtarget(const std::string &TT, const std::string &CPU,
-                 const std::string &FS);
+                 const std::string &FS, bool LittleEndian);
 
   bool enableMachineScheduler() const override { return true; }
 
   bool hasZeroCycleRegMove() const { return HasZeroCycleRegMove; }
 
   bool hasZeroCycleZeroing() const { return HasZeroCycleZeroing; }
+
+  bool hasFPARMv8() const { return HasFPARMv8; }
+  bool hasNEON() const { return HasNEON; }
+  bool hasCrypto() const { return HasCrypto; }
+  bool hasCRC() const { return HasCRC; }
+
+  bool isLittleEndian() const { return IsLittleEndian; }
 
   bool isTargetDarwin() const { return TargetTriple.isOSDarwin(); }
 

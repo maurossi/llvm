@@ -17,6 +17,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCAsmLayout.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCContext.h"
@@ -27,6 +28,7 @@
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCValue.h"
+#include "llvm/Support/Compression.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/ELF.h"
@@ -105,10 +107,9 @@ class ELFObjectWriter : public MCObjectWriter {
     static bool isFixupKindPCRel(const MCAssembler &Asm, unsigned Kind);
     static bool RelocNeedsGOT(MCSymbolRefExpr::VariantKind Variant);
     static uint64_t SymbolValue(MCSymbolData &Data, const MCAsmLayout &Layout);
-    static bool isInSymtab(const MCAssembler &Asm, const MCSymbolData &Data,
+    static bool isInSymtab(const MCAsmLayout &Layout, const MCSymbolData &Data,
                            bool Used, bool Renamed);
-    static bool isLocal(const MCSymbolData &Data, bool isSignature,
-                        bool isUsedInReloc);
+    static bool isLocal(const MCSymbolData &Data, bool isUsedInReloc);
     static bool IsELFMetaDataSection(const MCSectionData &SD);
     static uint64_t DataSectionSize(const MCSectionData &SD);
     static uint64_t GetSectionFileSize(const MCAsmLayout &Layout,
@@ -252,6 +253,8 @@ class ELFObjectWriter : public MCObjectWriter {
 
     void CreateRelocationSections(MCAssembler &Asm, MCAsmLayout &Layout,
                                   RelMapTy &RelMap);
+
+    void CompressDebugSections(MCAssembler &Asm, MCAsmLayout &Layout);
 
     void WriteRelocations(MCAssembler &Asm, MCAsmLayout &Layout,
                           const RelMapTy &RelMap);
@@ -488,7 +491,6 @@ uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
     return Data->getCommonAlignment();
 
   const MCSymbol *Symbol = &Data->getSymbol();
-  bool IsThumbFunc = OrigData.getFlags() & ELF_Other_ThumbFunc;
 
   uint64_t Res = 0;
   if (Symbol->isVariable()) {
@@ -505,12 +507,13 @@ uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
       Symbol = &A->getSymbol();
       Data = &Layout.getAssembler().getSymbolData(*Symbol);
     } else {
-      Symbol = 0;
-      Data = 0;
+      Symbol = nullptr;
+      Data = nullptr;
     }
   }
 
-  if (IsThumbFunc)
+  if ((Data && Data->getFlags() & ELF_Other_ThumbFunc) ||
+      OrigData.getFlags() & ELF_Other_ThumbFunc)
     Res |= 1;
 
   if (!Symbol || !Symbol->isInSection())
@@ -526,15 +529,17 @@ void ELFObjectWriter::ExecutePostLayoutBinding(MCAssembler &Asm,
   // The presence of symbol versions causes undefined symbols and
   // versions declared with @@@ to be renamed.
 
-  for (MCAssembler::symbol_iterator it = Asm.symbol_begin(),
-         ie = Asm.symbol_end(); it != ie; ++it) {
-    const MCSymbol &Alias = it->getSymbol();
-    const MCSymbol &Symbol = Alias.AliasedSymbol();
-    MCSymbolData &SD = Asm.getSymbolData(Symbol);
+  for (MCSymbolData &OriginalData : Asm.symbols()) {
+    const MCSymbol &Alias = OriginalData.getSymbol();
 
     // Not an alias.
-    if (&Symbol == &Alias)
+    if (!Alias.isVariable())
       continue;
+    auto *Ref = dyn_cast<MCSymbolRefExpr>(Alias.getVariableValue());
+    if (!Ref)
+      continue;
+    const MCSymbol &Symbol = Ref->getSymbol();
+    MCSymbolData &SD = Asm.getSymbolData(Symbol);
 
     StringRef AliasName = Alias.getName();
     size_t Pos = AliasName.find('@');
@@ -543,8 +548,8 @@ void ELFObjectWriter::ExecutePostLayoutBinding(MCAssembler &Asm,
 
     // Aliases defined with .symvar copy the binding from the symbol they alias.
     // This is the first place we are able to copy this information.
-    it->setExternal(SD.isExternal());
-    MCELF::SetBinding(*it, MCELF::GetBinding(SD));
+    OriginalData.setExternal(SD.isExternal());
+    MCELF::SetBinding(OriginalData, MCELF::GetBinding(SD));
 
     StringRef Rest = AliasName.substr(Pos);
     if (!Symbol.isUndefined() && !Rest.startswith("@@@"))
@@ -603,7 +608,12 @@ static const MCSymbol *getBaseSymbol(const MCAsmLayout &Layout,
   MCValue Value;
   if (!Expr->EvaluateAsRelocatable(Value, &Layout))
     llvm_unreachable("Invalid Expression");
-  assert(!Value.getSymB());
+  const MCSymbolRefExpr *RefB = Value.getSymB();
+  if (RefB) {
+    Layout.getAssembler().getContext().FatalError(
+        SMLoc(), Twine("symbol '") + RefB->getSymbol().getName() +
+                     "' could not be evaluated in a subtraction expression");
+  }
   const MCSymbolRefExpr *A = Value.getSymA();
   if (!A)
     return nullptr;
@@ -613,6 +623,10 @@ static const MCSymbol *getBaseSymbol(const MCAsmLayout &Layout,
 void ELFObjectWriter::WriteSymbol(SymbolTableWriter &Writer, ELFSymbolData &MSD,
                                   const MCAsmLayout &Layout) {
   MCSymbolData &OrigData = *MSD.SymbolData;
+  assert((!OrigData.getFragment() ||
+          (&OrigData.getFragment()->getParent()->getSection() ==
+           &OrigData.getSymbol().getSection())) &&
+         "The symbol's section doesn't match the fragment's symbol");
   const MCSymbol *Base = getBaseSymbol(Layout, OrigData.getSymbol());
 
   // This has to be in sync with when computeSymbolTable uses SHN_ABS or
@@ -638,8 +652,6 @@ void ELFObjectWriter::WriteSymbol(SymbolTableWriter &Writer, ELFSymbolData &MSD,
   Other |= Visibility;
 
   uint64_t Value = SymbolValue(OrigData, Layout);
-  if (OrigData.getFlags() & ELF_Other_ThumbFunc)
-    Value |= 1;
   uint64_t Size = 0;
 
   const MCExpr *ESize = OrigData.getSize();
@@ -809,6 +821,13 @@ bool ELFObjectWriter::shouldRelocateWithSymbol(const MCSymbolRefExpr *RefA,
   if (Flags & ELF::SHF_TLS)
     return true;
 
+  // If the symbol is a thumb function the final relocation must set the lowest
+  // bit. With a symbol that is done by just having the symbol have that bit
+  // set, so we would lose the bit if we relocated with the section.
+  // FIXME: We could use the section but add the bit to the relocation value.
+  if (SD->getFlags() & ELF_Other_ThumbFunc)
+    return true;
+
   if (TargetObjectWriter->needsRelocateWithSymbol(Type))
     return true;
   return false;
@@ -913,13 +932,13 @@ void ELFObjectWriter::RecordRelocation(const MCAssembler &Asm,
 uint64_t
 ELFObjectWriter::getSymbolIndexInSymbolTable(const MCAssembler &Asm,
                                              const MCSymbol *S) {
-  MCSymbolData &SD = Asm.getSymbolData(*S);
+  const MCSymbolData &SD = Asm.getSymbolData(*S);
   return SD.getIndex();
 }
 
-bool ELFObjectWriter::isInSymtab(const MCAssembler &Asm,
-                                 const MCSymbolData &Data,
-                                 bool Used, bool Renamed) {
+bool ELFObjectWriter::isInSymtab(const MCAsmLayout &Layout,
+                                 const MCSymbolData &Data, bool Used,
+                                 bool Renamed) {
   const MCSymbol &Symbol = Data.getSymbol();
   if (Symbol.isVariable()) {
     const MCExpr *Expr = Symbol.getVariableValue();
@@ -938,9 +957,11 @@ bool ELFObjectWriter::isInSymtab(const MCAssembler &Asm,
   if (Symbol.getName() == "_GLOBAL_OFFSET_TABLE_")
     return true;
 
-  const MCSymbol &A = Symbol.AliasedSymbol();
-  if (Symbol.isVariable() && !A.isVariable() && A.isUndefined())
-    return false;
+  if (Symbol.isVariable()) {
+    const MCSymbol *Base = getBaseSymbol(Layout, Symbol);
+    if (Base && Base->isUndefined())
+      return false;
+  }
 
   bool IsGlobal = MCELF::GetBinding(Data) == ELF::STB_GLOBAL;
   if (!Symbol.isVariable() && Symbol.isUndefined() && !IsGlobal)
@@ -952,20 +973,16 @@ bool ELFObjectWriter::isInSymtab(const MCAssembler &Asm,
   return true;
 }
 
-bool ELFObjectWriter::isLocal(const MCSymbolData &Data, bool isSignature,
-                              bool isUsedInReloc) {
+bool ELFObjectWriter::isLocal(const MCSymbolData &Data, bool isUsedInReloc) {
   if (Data.isExternal())
     return false;
 
   const MCSymbol &Symbol = Data.getSymbol();
-  const MCSymbol &RefSymbol = Symbol.AliasedSymbol();
+  if (Symbol.isDefined())
+    return true;
 
-  if (RefSymbol.isUndefined() && !RefSymbol.isVariable()) {
-    if (isSignature && !isUsedInReloc)
-      return true;
-
+  if (isUsedInReloc)
     return false;
-  }
 
   return true;
 }
@@ -1035,36 +1052,35 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
   }
 
   // Add the data for the symbols.
-  for (MCAssembler::symbol_iterator it = Asm.symbol_begin(),
-         ie = Asm.symbol_end(); it != ie; ++it) {
-    const MCSymbol &Symbol = it->getSymbol();
+  for (MCSymbolData &SD : Asm.symbols()) {
+    const MCSymbol &Symbol = SD.getSymbol();
 
     bool Used = UsedInReloc.count(&Symbol);
     bool WeakrefUsed = WeakrefUsedInReloc.count(&Symbol);
     bool isSignature = RevGroupMap.count(&Symbol);
 
-    if (!isInSymtab(Asm, *it,
+    if (!isInSymtab(Layout, SD,
                     Used || WeakrefUsed || isSignature,
                     Renames.count(&Symbol)))
       continue;
 
     ELFSymbolData MSD;
-    MSD.SymbolData = it;
+    MSD.SymbolData = &SD;
     const MCSymbol *BaseSymbol = getBaseSymbol(Layout, Symbol);
 
     // Undefined symbols are global, but this is the first place we
     // are able to set it.
-    bool Local = isLocal(*it, isSignature, Used);
-    if (!Local && MCELF::GetBinding(*it) == ELF::STB_LOCAL) {
+    bool Local = isLocal(SD, Used);
+    if (!Local && MCELF::GetBinding(SD) == ELF::STB_LOCAL) {
       assert(BaseSymbol);
-      MCSymbolData &SD = Asm.getSymbolData(*BaseSymbol);
-      MCELF::SetBinding(*it, ELF::STB_GLOBAL);
+      MCSymbolData &BaseData = Asm.getSymbolData(*BaseSymbol);
       MCELF::SetBinding(SD, ELF::STB_GLOBAL);
+      MCELF::SetBinding(BaseData, ELF::STB_GLOBAL);
     }
 
     if (!BaseSymbol) {
       MSD.SectionIndex = ELF::SHN_ABS;
-    } else if (it->isCommon()) {
+    } else if (SD.isCommon()) {
       assert(!Local);
       MSD.SectionIndex = ELF::SHN_COMMON;
     } else if (BaseSymbol->isUndefined()) {
@@ -1073,7 +1089,7 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
       else
         MSD.SectionIndex = ELF::SHN_UNDEF;
       if (!Used && WeakrefUsed)
-        MCELF::SetBinding(*it, ELF::STB_WEAK);
+        MCELF::SetBinding(SD, ELF::STB_WEAK);
     } else {
       const MCSectionELF &Section =
         static_cast<const MCSectionELF&>(BaseSymbol->getSection());
@@ -1165,6 +1181,151 @@ void ELFObjectWriter::CreateRelocationSections(MCAssembler &Asm,
                         EntrySize, Group);
     RelMap[&Section] = RelaSection;
     Asm.getOrCreateSectionData(*RelaSection);
+  }
+}
+
+static SmallVector<char, 128>
+getUncompressedData(MCAsmLayout &Layout,
+                    MCSectionData::FragmentListType &Fragments) {
+  SmallVector<char, 128> UncompressedData;
+  for (const MCFragment &F : Fragments) {
+    const SmallVectorImpl<char> *Contents;
+    switch (F.getKind()) {
+    case MCFragment::FT_Data:
+      Contents = &cast<MCDataFragment>(F).getContents();
+      break;
+    case MCFragment::FT_Dwarf:
+      Contents = &cast<MCDwarfLineAddrFragment>(F).getContents();
+      break;
+    case MCFragment::FT_DwarfFrame:
+      Contents = &cast<MCDwarfCallFrameFragment>(F).getContents();
+      break;
+    default:
+      llvm_unreachable(
+          "Not expecting any other fragment types in a debug_* section");
+    }
+    UncompressedData.append(Contents->begin(), Contents->end());
+  }
+  return UncompressedData;
+}
+
+// Include the debug info compression header:
+// "ZLIB" followed by 8 bytes representing the uncompressed size of the section,
+// useful for consumers to preallocate a buffer to decompress into.
+static bool
+prependCompressionHeader(uint64_t Size,
+                         SmallVectorImpl<char> &CompressedContents) {
+  static const StringRef Magic = "ZLIB";
+  if (Size <= Magic.size() + sizeof(Size) + CompressedContents.size())
+    return false;
+  if (sys::IsLittleEndianHost)
+    Size = sys::SwapByteOrder(Size);
+  CompressedContents.insert(CompressedContents.begin(),
+                            Magic.size() + sizeof(Size), 0);
+  std::copy(Magic.begin(), Magic.end(), CompressedContents.begin());
+  std::copy(reinterpret_cast<char *>(&Size),
+            reinterpret_cast<char *>(&Size + 1),
+            CompressedContents.begin() + Magic.size());
+  return true;
+}
+
+// Return a single fragment containing the compressed contents of the whole
+// section. Null if the section was not compressed for any reason.
+static std::unique_ptr<MCDataFragment>
+getCompressedFragment(MCAsmLayout &Layout,
+                      MCSectionData::FragmentListType &Fragments) {
+  std::unique_ptr<MCDataFragment> CompressedFragment(new MCDataFragment());
+
+  // Gather the uncompressed data from all the fragments, recording the
+  // alignment fragment, if seen, and any fixups.
+  SmallVector<char, 128> UncompressedData =
+      getUncompressedData(Layout, Fragments);
+
+  SmallVectorImpl<char> &CompressedContents = CompressedFragment->getContents();
+
+  zlib::Status Success = zlib::compress(
+      StringRef(UncompressedData.data(), UncompressedData.size()),
+      CompressedContents);
+  if (Success != zlib::StatusOK)
+    return nullptr;
+
+  if (!prependCompressionHeader(UncompressedData.size(), CompressedContents))
+    return nullptr;
+
+  return CompressedFragment;
+}
+
+typedef DenseMap<const MCSectionData *, std::vector<MCSymbolData *>>
+DefiningSymbolMap;
+
+static void UpdateSymbols(const MCAsmLayout &Layout,
+                          const std::vector<MCSymbolData *> &Symbols,
+                          MCFragment &NewFragment) {
+  for (MCSymbolData *Sym : Symbols) {
+    Sym->setOffset(Sym->getOffset() +
+                   Layout.getFragmentOffset(Sym->getFragment()));
+    Sym->setFragment(&NewFragment);
+  }
+}
+
+static void CompressDebugSection(MCAssembler &Asm, MCAsmLayout &Layout,
+                                 const DefiningSymbolMap &DefiningSymbols,
+                                 const MCSectionELF &Section,
+                                 MCSectionData &SD) {
+  StringRef SectionName = Section.getSectionName();
+  MCSectionData::FragmentListType &Fragments = SD.getFragmentList();
+
+  std::unique_ptr<MCDataFragment> CompressedFragment =
+      getCompressedFragment(Layout, Fragments);
+
+  // Leave the section as-is if the fragments could not be compressed.
+  if (!CompressedFragment)
+    return;
+
+  // Update the fragment+offsets of any symbols referring to fragments in this
+  // section to refer to the new fragment.
+  auto I = DefiningSymbols.find(&SD);
+  if (I != DefiningSymbols.end())
+    UpdateSymbols(Layout, I->second, *CompressedFragment);
+
+  // Invalidate the layout for the whole section since it will have new and
+  // different fragments now.
+  Layout.invalidateFragmentsFrom(&Fragments.front());
+  Fragments.clear();
+
+  // Complete the initialization of the new fragment
+  CompressedFragment->setParent(&SD);
+  CompressedFragment->setLayoutOrder(0);
+  Fragments.push_back(CompressedFragment.release());
+
+  // Rename from .debug_* to .zdebug_*
+  Asm.getContext().renameELFSection(&Section,
+                                    (".z" + SectionName.drop_front(1)).str());
+}
+
+void ELFObjectWriter::CompressDebugSections(MCAssembler &Asm,
+                                            MCAsmLayout &Layout) {
+  if (!Asm.getContext().getAsmInfo()->compressDebugSections())
+    return;
+
+  DefiningSymbolMap DefiningSymbols;
+
+  for (MCSymbolData &SD : Asm.symbols())
+    if (MCFragment *F = SD.getFragment())
+      DefiningSymbols[F->getParent()].push_back(&SD);
+
+  for (MCSectionData &SD : Asm) {
+    const MCSectionELF &Section =
+        static_cast<const MCSectionELF &>(SD.getSection());
+    StringRef SectionName = Section.getSectionName();
+
+    // Compressing debug_frame requires handling alignment fragments which is
+    // more work (possibly generalizing MCAssembler.cpp:writeFragment to allow
+    // for writing to arbitrary buffers) for little benefit.
+    if (!SectionName.startswith(".debug_") || SectionName == ".debug_frame")
+      continue;
+
+    CompressDebugSection(Asm, Layout, DefiningSymbols, Section, SD);
   }
 }
 
@@ -1651,6 +1812,8 @@ void ELFObjectWriter::WriteObject(MCAssembler &Asm,
   SectionIndexMapTy SectionIndexMap;
 
   unsigned NumUserSections = Asm.size();
+
+  CompressDebugSections(Asm, const_cast<MCAsmLayout &>(Layout));
 
   DenseMap<const MCSectionELF*, const MCSectionELF*> RelMap;
   CreateRelocationSections(Asm, const_cast<MCAsmLayout&>(Layout), RelMap);

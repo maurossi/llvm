@@ -10,7 +10,6 @@
 // Subclass of MipsTargetLowering specialized for mips32/64.
 //
 //===----------------------------------------------------------------------===//
-#define DEBUG_TYPE "mips-isel"
 #include "MipsSEISelLowering.h"
 #include "MipsRegisterInfo.h"
 #include "MipsTargetMachine.h"
@@ -23,6 +22,8 @@
 #include "llvm/Target/TargetInstrInfo.h"
 
 using namespace llvm;
+
+#define DEBUG_TYPE "mips-isel"
 
 static cl::opt<bool>
 EnableMipsTailCalls("enable-mips-tail-calls", cl::Hidden,
@@ -119,10 +120,10 @@ MipsSETargetLowering::MipsSETargetLowering(MipsTargetMachine &TM)
 
   if (Subtarget->hasCnMips())
     setOperationAction(ISD::MUL,              MVT::i64, Legal);
-  else if (hasMips64())
+  else if (isGP64bit())
     setOperationAction(ISD::MUL,              MVT::i64, Custom);
 
-  if (hasMips64()) {
+  if (isGP64bit()) {
     setOperationAction(ISD::MULHS,            MVT::i64, Custom);
     setOperationAction(ISD::MULHU,            MVT::i64, Custom);
   }
@@ -487,7 +488,8 @@ static SDValue performANDCombine(SDNode *N, SelectionDAG &DAG,
         Log2 == ExtendTySize) {
       SDValue Ops[] = { Op0->getOperand(0), Op0->getOperand(1), Op0Op2 };
       DAG.MorphNodeTo(Op0.getNode(), MipsISD::VEXTRACT_ZEXT_ELT,
-                      Op0->getVTList(), Ops, Op0->getNumOperands());
+                      Op0->getVTList(),
+                      ArrayRef<SDValue>(Ops, Op0->getNumOperands()));
       return Op0;
     }
   }
@@ -507,7 +509,7 @@ static SDValue performANDCombine(SDNode *N, SelectionDAG &DAG,
 static bool isVSplat(SDValue N, APInt &Imm, bool IsLittleEndian) {
   BuildVectorSDNode *Node = dyn_cast<BuildVectorSDNode>(N.getNode());
 
-  if (Node == NULL)
+  if (!Node)
     return false;
 
   APInt SplatValue, SplatUndef;
@@ -831,7 +833,8 @@ static SDValue performSRACombine(SDNode *N, SelectionDAG &DAG,
         SDValue Ops[] = { Op0Op0->getOperand(0), Op0Op0->getOperand(1),
                           Op0Op0->getOperand(2) };
         DAG.MorphNodeTo(Op0Op0.getNode(), MipsISD::VEXTRACT_SEXT_ELT,
-                        Op0Op0->getVTList(), Ops, Op0Op0->getNumOperands());
+                        Op0Op0->getVTList(),
+                        ArrayRef<SDValue>(Ops, Op0Op0->getNumOperands()));
         return Op0Op0;
       }
     }
@@ -1117,7 +1120,7 @@ SDValue MipsSETargetLowering::lowerLOAD(SDValue Op, SelectionDAG &DAG) const {
 
   SDValue BP = DAG.getNode(MipsISD::BuildPairF64, DL, MVT::f64, Lo, Hi);
   SDValue Ops[2] = {BP, Hi.getValue(1)};
-  return DAG.getMergeValues(Ops, 2, DL);
+  return DAG.getMergeValues(Ops, DL);
 }
 
 SDValue MipsSETargetLowering::lowerSTORE(SDValue Op, SelectionDAG &DAG) const {
@@ -1168,7 +1171,7 @@ SDValue MipsSETargetLowering::lowerMulDiv(SDValue Op, unsigned NewOpc,
     return HasLo ? Lo : Hi;
 
   SDValue Vals[] = { Lo, Hi };
-  return DAG.getMergeValues(Vals, 2, DL);
+  return DAG.getMergeValues(Vals, DL);
 }
 
 
@@ -1235,7 +1238,7 @@ static SDValue lowerDSPIntr(SDValue Op, SelectionDAG &DAG, unsigned Opc) {
     ResTys.push_back((*I == MVT::i64) ? MVT::Untyped : *I);
 
   // Create node.
-  SDValue Val = DAG.getNode(Opc, DL, ResTys, &Ops[0], Ops.size());
+  SDValue Val = DAG.getNode(Opc, DL, ResTys, Ops);
   SDValue Out = (ResTys[0] == MVT::Untyped) ? extractLOHI(Val, DL, DAG) : Val;
 
   if (!HasChainIn)
@@ -1243,7 +1246,7 @@ static SDValue lowerDSPIntr(SDValue Op, SelectionDAG &DAG, unsigned Opc) {
 
   assert(Val->getValueType(1) == MVT::Other);
   SDValue Vals[] = { Out, SDValue(Val.getNode(), 1) };
-  return DAG.getMergeValues(Vals, 2, DL);
+  return DAG.getMergeValues(Vals, DL);
 }
 
 // Lower an MSA copy intrinsic into the specified SelectionDAG node
@@ -1280,8 +1283,8 @@ static SDValue lowerMSASplatZExt(SDValue Op, unsigned OpNr, SelectionDAG &DAG) {
   SDValue Ops[16] = { LaneA, LaneB, LaneA, LaneB, LaneA, LaneB, LaneA, LaneB,
                       LaneA, LaneB, LaneA, LaneB, LaneA, LaneB, LaneA, LaneB };
 
-  SDValue Result = DAG.getNode(ISD::BUILD_VECTOR, DL, ViaVecTy, Ops,
-                               ViaVecTy.getVectorNumElements());
+  SDValue Result = DAG.getNode(ISD::BUILD_VECTOR, DL, ViaVecTy,
+                       ArrayRef<SDValue>(Ops, ViaVecTy.getVectorNumElements()));
 
   if (ViaVecTy != ResVecTy)
     Result = DAG.getNode(ISD::BITCAST, DL, ResVecTy, Result);
@@ -1320,8 +1323,8 @@ static SDValue getBuildVectorSplat(EVT VecTy, SDValue SplatValue,
                       SplatValueA, SplatValueB, SplatValueA, SplatValueB,
                       SplatValueA, SplatValueB, SplatValueA, SplatValueB };
 
-  SDValue Result = DAG.getNode(ISD::BUILD_VECTOR, DL, ViaVecTy, Ops,
-                               ViaVecTy.getVectorNumElements());
+  SDValue Result = DAG.getNode(ISD::BUILD_VECTOR, DL, ViaVecTy,
+                       ArrayRef<SDValue>(Ops, ViaVecTy.getVectorNumElements()));
 
   if (VecTy != ViaVecTy)
     Result = DAG.getNode(ISD::BITCAST, DL, VecTy, Result);
@@ -1355,7 +1358,7 @@ static SDValue lowerMSABinaryBitImmIntr(SDValue Op, SelectionDAG &DAG,
     }
   }
 
-  if (Exp2Imm.getNode() == NULL) {
+  if (!Exp2Imm.getNode()) {
     // We couldnt constant fold, do a vector shift instead
 
     // Extend i32 to i64 if necessary. Sign or zero extend doesn't matter since
@@ -1735,7 +1738,7 @@ SDValue MipsSETargetLowering::lowerINTRINSIC_WO_CHAIN(SDValue Op,
 
     // If ResTy is v2i64 then the type legalizer will break this node down into
     // an equivalent v4i32.
-    return DAG.getNode(ISD::BUILD_VECTOR, DL, ResTy, &Ops[0], Ops.size());
+    return DAG.getNode(ISD::BUILD_VECTOR, DL, ResTy, Ops);
   }
   case Intrinsic::mips_fexp2_w:
   case Intrinsic::mips_fexp2_d: {
@@ -2560,8 +2563,7 @@ static SDValue lowerVECTOR_SHUFFLE_VSHF(SDValue Op, EVT ResTy,
        ++I)
     Ops.push_back(DAG.getTargetConstant(*I, MaskEltTy));
 
-  SDValue MaskVec = DAG.getNode(ISD::BUILD_VECTOR, DL, MaskVecTy, &Ops[0],
-                                Ops.size());
+  SDValue MaskVec = DAG.getNode(ISD::BUILD_VECTOR, DL, MaskVecTy, Ops);
 
   if (Using1stVec && Using2ndVec) {
     Op0 = Op->getOperand(0);

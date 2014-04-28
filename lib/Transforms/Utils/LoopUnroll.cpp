@@ -16,7 +16,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "loop-unroll"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/InstructionSimplify.h"
@@ -33,6 +32,8 @@
 #include "llvm/Transforms/Utils/LoopUtils.h"
 #include "llvm/Transforms/Utils/SimplifyIndVar.h"
 using namespace llvm;
+
+#define DEBUG_TYPE "loop-unroll"
 
 // TODO: Should these be here or in LoopUnroll?
 STATISTIC(NumCompletelyUnrolled, "Number of loops completely unrolled");
@@ -68,10 +69,10 @@ static BasicBlock *FoldBlockIntoPredecessor(BasicBlock *BB, LoopInfo* LI,
   // pred, and if there is only one distinct successor of the predecessor, and
   // if there are no PHI nodes.
   BasicBlock *OnlyPred = BB->getSinglePredecessor();
-  if (!OnlyPred) return 0;
+  if (!OnlyPred) return nullptr;
 
   if (OnlyPred->getTerminator()->getNumSuccessors() != 1)
-    return 0;
+    return nullptr;
 
   DEBUG(dbgs() << "Merging: " << *BB << "into: " << *OnlyPred);
 
@@ -411,7 +412,7 @@ bool llvm::UnrollLoop(Loop *L, unsigned Count, unsigned TripCount,
     }
   }
 
-  DominatorTree *DT = 0;
+  DominatorTree *DT = nullptr;
   if (PP) {
     // FIXME: Reconstruct dom info, because it is not preserved properly.
     // Incrementally updating domtree after loop unrolling would be easy.
@@ -458,7 +459,7 @@ bool llvm::UnrollLoop(Loop *L, unsigned Count, unsigned TripCount,
 
   Loop *OuterL = L->getParentLoop();
   // Remove the loop from the LoopPassManager if it's completely removed.
-  if (CompletelyUnroll && LPM != NULL)
+  if (CompletelyUnroll && LPM != nullptr)
     LPM->deleteLoopFromQueue(L);
 
   // If we have a pass and a DominatorTree we should re-simplify impacted loops
@@ -470,7 +471,7 @@ bool llvm::UnrollLoop(Loop *L, unsigned Count, unsigned TripCount,
       OuterL = L;
     if (OuterL) {
       ScalarEvolution *SE = PP->getAnalysisIfAvailable<ScalarEvolution>();
-      simplifyLoop(OuterL, DT, LI, PP, /*AliasAnalysis*/ 0, SE);
+      simplifyLoop(OuterL, DT, LI, PP, /*AliasAnalysis*/ nullptr, SE);
       formLCSSARecursively(*OuterL, *DT, SE);
     }
   }
