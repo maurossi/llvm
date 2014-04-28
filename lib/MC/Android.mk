@@ -42,6 +42,7 @@ mc_SRC_FILES := \
   MCSubtargetInfo.cpp \
   MCSymbol.cpp \
   MCSymbolizer.cpp \
+  MCTargetOptions.cpp \
   MCValue.cpp \
   MCWin64EH.cpp \
   WinCOFFObjectWriter.cpp \

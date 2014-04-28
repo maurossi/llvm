@@ -8,6 +8,7 @@ codegen_asmprinter_SRC_FILES := \
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES :=	\
+	AddressPool.cpp \
 	AsmPrinter.cpp	\
 	AsmPrinterDwarf.cpp	\
 	AsmPrinterInlineAsm.cpp	\
@@ -18,7 +19,9 @@ LOCAL_SRC_FILES :=	\
 	DwarfCFIException.cpp \
 	DwarfDebug.cpp	\
 	DwarfException.cpp	\
-        DwarfUnit.cpp \
+	DwarfFile.cpp \
+	DwarfStringPool.cpp \
+	DwarfUnit.cpp \
 	ErlangGCPrinter.cpp \
 	OcamlGCPrinter.cpp \
 	Win64Exception.cpp \
@@ -38,6 +41,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES :=	\
+	AddressPool.cpp \
 	AsmPrinter.cpp \
 	AsmPrinterDwarf.cpp \
 	AsmPrinterInlineAsm.cpp \
@@ -48,7 +52,9 @@ LOCAL_SRC_FILES :=	\
 	DwarfCFIException.cpp \
 	DwarfDebug.cpp  \
 	DwarfException.cpp      \
-        DwarfUnit.cpp \
+	DwarfFile.cpp \
+	DwarfStringPool.cpp \
+	DwarfUnit.cpp \
 	ErlangGCPrinter.cpp \
 	OcamlGCPrinter.cpp \
 	Win64Exception.cpp \
