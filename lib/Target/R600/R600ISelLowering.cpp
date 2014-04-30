@@ -82,9 +82,7 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
   setOperationAction(ISD::SELECT, MVT::i32, Expand);
   setOperationAction(ISD::SELECT, MVT::f32, Expand);
   setOperationAction(ISD::SELECT, MVT::v2i32, Expand);
-  setOperationAction(ISD::SELECT, MVT::v2f32, Expand);
   setOperationAction(ISD::SELECT, MVT::v4i32, Expand);
-  setOperationAction(ISD::SELECT, MVT::v4f32, Expand);
 
   // Expand sign extension of vectors
   if (!Subtarget->hasBFE())
@@ -140,6 +138,11 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
   setTargetDAGCombine(ISD::EXTRACT_VECTOR_ELT);
   setTargetDAGCombine(ISD::SELECT_CC);
   setTargetDAGCombine(ISD::INSERT_VECTOR_ELT);
+
+  // These should be replaced by UDVIREM, but it does not happen automatically
+  // during Type Legalization
+  setOperationAction(ISD::UDIV, MVT::i64, Custom);
+  setOperationAction(ISD::UREM, MVT::i64, Custom);
 
   setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
 
@@ -1277,7 +1280,7 @@ SDValue R600TargetLowering::LowerLOAD(SDValue Op, SelectionDAG &DAG) const
         NumElements = VT.getVectorNumElements();
       }
       Result = DAG.getNode(ISD::BUILD_VECTOR, DL, NewVT,
-                           ArrayRef<SDValue>(Slots, NumElements));
+                           makeArrayRef(Slots, NumElements));
     } else {
       // non-constant ptr can't be folded, keeps it as a v4f32 load
       Result = DAG.getNode(AMDGPUISD::CONST_ADDRESS, DL, MVT::v4i32,

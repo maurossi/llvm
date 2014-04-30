@@ -147,8 +147,8 @@ private:
 
 public:
   // Backend specific FastISel code.
-  virtual unsigned TargetMaterializeAlloca(const AllocaInst *AI);
-  virtual unsigned TargetMaterializeConstant(const Constant *C);
+  unsigned TargetMaterializeAlloca(const AllocaInst *AI) override;
+  unsigned TargetMaterializeConstant(const Constant *C) override;
 
   explicit ARM64FastISel(FunctionLoweringInfo &funcInfo,
                          const TargetLibraryInfo *libInfo)
@@ -157,7 +157,7 @@ public:
     Context = &funcInfo.Fn->getContext();
   }
 
-  virtual bool TargetSelectInstruction(const Instruction *I);
+  bool TargetSelectInstruction(const Instruction *I) override;
 
 #include "ARM64GenFastISel.inc"
 };
@@ -197,6 +197,9 @@ unsigned ARM64FastISel::TargetMaterializeAlloca(const AllocaInst *AI) {
 }
 
 unsigned ARM64FastISel::ARM64MaterializeFP(const ConstantFP *CFP, MVT VT) {
+  if (VT != MVT::f32 && VT != MVT::f64)
+    return 0;
+
   const APFloat Val = CFP->getValueAPF();
   bool is64bit = (VT == MVT::f64);
 
@@ -418,7 +421,11 @@ bool ARM64FastISel::isTypeLegal(Type *Ty, MVT &VT) {
     return false;
   VT = evt.getSimpleVT();
 
-  // Handle all legal types, i.e. a register that will directly hold this
+  // This is a legal type, but it's not something we handle in fast-isel.
+  if (VT == MVT::f128)
+    return false;
+
+  // Handle all other legal types, i.e. a register that will directly hold this
   // value.
   return TLI.isTypeLegal(VT);
 }
@@ -737,9 +744,9 @@ static ARM64CC::CondCode getCompareCC(CmpInst::Predicate Pred) {
   case CmpInst::ICMP_NE:
     return ARM64CC::NE;
   case CmpInst::ICMP_UGE:
-    return ARM64CC::CS;
+    return ARM64CC::HS;
   case CmpInst::ICMP_ULT:
-    return ARM64CC::CC;
+    return ARM64CC::LO;
   }
 }
 
@@ -1107,6 +1114,8 @@ bool ARM64FastISel::SelectFPToInt(const Instruction *I, bool Signed) {
     return false;
 
   EVT SrcVT = TLI.getValueType(I->getOperand(0)->getType(), true);
+  if (SrcVT == MVT::f128)
+    return false;
 
   unsigned Opc;
   if (SrcVT == MVT::f64) {
@@ -1132,6 +1141,8 @@ bool ARM64FastISel::SelectIntToFP(const Instruction *I, bool Signed) {
   MVT DestVT;
   if (!isTypeLegal(I->getType(), DestVT) || DestVT.isVector())
     return false;
+  assert ((DestVT == MVT::f32 || DestVT == MVT::f64) &&
+          "Unexpected value type.");
 
   unsigned SrcReg = getRegForValue(I->getOperand(0));
   if (SrcReg == 0)
@@ -1578,6 +1589,8 @@ bool ARM64FastISel::SelectRet(const Instruction *I) {
     if (!RVEVT.isSimple())
       return false;
     MVT RVVT = RVEVT.getSimpleVT();
+    if (RVVT == MVT::f128)
+      return false;
     MVT DestVT = VA.getValVT();
     // Special handling for extended integers.
     if (RVVT != DestVT) {
@@ -1746,6 +1759,15 @@ unsigned ARM64FastISel::EmitIntExt(MVT SrcVT, unsigned SrcReg, MVT DestVT,
   // Handle i8 and i16 as i32.
   if (DestVT == MVT::i8 || DestVT == MVT::i16)
     DestVT = MVT::i32;
+  else if (DestVT == MVT::i64) {
+    unsigned Src64 = MRI.createVirtualRegister(&ARM64::GPR64RegClass);
+    BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc,
+            TII.get(ARM64::SUBREG_TO_REG), Src64)
+        .addImm(0)
+        .addReg(SrcReg)
+        .addImm(ARM64::sub_32);
+    SrcReg = Src64;
+  }
 
   unsigned ResultReg = createResultReg(TLI.getRegClassFor(DestVT));
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, TII.get(Opc), ResultReg)

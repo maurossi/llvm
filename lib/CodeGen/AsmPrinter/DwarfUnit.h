@@ -73,7 +73,7 @@ protected:
   DICompileUnit CUNode;
 
   /// Unit debug information entry.
-  const std::unique_ptr<DIE> UnitDie;
+  DIE UnitDie;
 
   /// Offset of the UnitDie from beginning of debug info section.
   unsigned DebugInfoOffset;
@@ -138,13 +138,10 @@ protected:
   /// The end of the unit within its section.
   MCSymbol *LabelEnd;
 
-  /// The label for the start of the range sets for the elements of this unit.
-  MCSymbol *LabelRange;
-
   /// Skeleton unit associated with this unit.
   DwarfUnit *Skeleton;
 
-  DwarfUnit(unsigned UID, DIE *D, DICompileUnit CU, AsmPrinter *A,
+  DwarfUnit(unsigned UID, dwarf::Tag, DICompileUnit CU, AsmPrinter *A,
             DwarfDebug *DW, DwarfFile *DWU);
 
 public:
@@ -167,7 +164,6 @@ public:
         Asm->GetTempSymbol(Section->getLabelBeginName(), getUniqueID());
     this->LabelEnd =
         Asm->GetTempSymbol(Section->getLabelEndName(), getUniqueID());
-    this->LabelRange = Asm->GetTempSymbol("gnu_ranges", getUniqueID());
   }
 
   const MCSection *getSection() const {
@@ -206,16 +202,11 @@ public:
     return LabelEnd;
   }
 
-  MCSymbol *getLabelRange() const {
-    assert(Section);
-    return LabelRange;
-  }
-
   // Accessors.
   unsigned getUniqueID() const { return UniqueID; }
   uint16_t getLanguage() const { return CUNode.getLanguage(); }
   DICompileUnit getCUNode() const { return CUNode; }
-  DIE &getUnitDie() const { return *UnitDie; }
+  DIE &getUnitDie() { return UnitDie; }
   const StringMap<const DIE *> &getGlobalNames() const { return GlobalNames; }
   const StringMap<const DIE *> &getGlobalTypes() const { return GlobalTypes; }
 
@@ -223,7 +214,7 @@ public:
   void setDebugInfoOffset(unsigned DbgInfoOff) { DebugInfoOffset = DbgInfoOff; }
 
   /// hasContent - Return true if this compile unit has something to write out.
-  bool hasContent() const { return !UnitDie->getChildren().empty(); }
+  bool hasContent() const { return !UnitDie.getChildren().empty(); }
 
   /// addRange - Add an address range to the list of ranges for this unit.
   void addRange(RangeSpan Range);
@@ -533,7 +524,7 @@ class DwarfCompileUnit : public DwarfUnit {
   unsigned stmtListIndex;
 
 public:
-  DwarfCompileUnit(unsigned UID, DIE *D, DICompileUnit Node, AsmPrinter *A,
+  DwarfCompileUnit(unsigned UID, DICompileUnit Node, AsmPrinter *A,
                    DwarfDebug *DW, DwarfFile *DWU);
 
   void initStmtList(MCSymbol *DwarfLineSectionSym);
@@ -567,7 +558,7 @@ private:
   MCDwarfDwoLineTable *SplitLineTable;
 
 public:
-  DwarfTypeUnit(unsigned UID, DIE *D, DwarfCompileUnit &CU, AsmPrinter *A,
+  DwarfTypeUnit(unsigned UID, DwarfCompileUnit &CU, AsmPrinter *A,
                 DwarfDebug *DW, DwarfFile *DWU,
                 MCDwarfDwoLineTable *SplitLineTable = nullptr);
 

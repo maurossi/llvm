@@ -28,6 +28,7 @@
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCValue.h"
+#include "llvm/Object/StringTableBuilder.h"
 #include "llvm/Support/Compression.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Endian.h"
@@ -132,11 +133,11 @@ class ELFObjectWriter : public MCObjectWriter {
       MCSymbolData *SymbolData;
       uint64_t StringIndex;
       uint32_t SectionIndex;
+      StringRef Name;
 
       // Support lexicographic sorting.
       bool operator<(const ELFSymbolData &RHS) const {
-        return SymbolData->getSymbol().getName() <
-               RHS.SymbolData->getSymbol().getName();
+        return Name < RHS.Name;
       }
     };
 
@@ -149,13 +150,13 @@ class ELFObjectWriter : public MCObjectWriter {
 
     llvm::DenseMap<const MCSectionData *, std::vector<ELFRelocationEntry>>
     Relocations;
-    DenseMap<const MCSection*, uint64_t> SectionStringTableIndex;
+    StringTableBuilder ShStrTabBuilder;
 
     /// @}
     /// @name Symbol Table Data
     /// @{
 
-    SmallString<256> StringTable;
+    StringTableBuilder StrTabBuilder;
     std::vector<uint64_t> FileSymbolData;
     std::vector<ELFSymbolData> LocalSymbolData;
     std::vector<ELFSymbolData> ExternalSymbolData;
@@ -215,7 +216,8 @@ class ELFObjectWriter : public MCObjectWriter {
                           const MCAsmLayout &Layout,
                           SectionIndexMapTy &SectionIndexMap);
 
-    bool shouldRelocateWithSymbol(const MCSymbolRefExpr *RefA,
+    bool shouldRelocateWithSymbol(const MCAssembler &Asm,
+                                  const MCSymbolRefExpr *RefA,
                                   const MCSymbolData *SD, uint64_t C,
                                   unsigned Type) const;
 
@@ -486,6 +488,7 @@ void ELFObjectWriter::WriteHeader(const MCAssembler &Asm,
 
 uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
                                       const MCAsmLayout &Layout) {
+  const MCSymbol &OrigSymbol = OrigData.getSymbol();
   MCSymbolData *Data = &OrigData;
   if (Data->isCommon() && Data->isExternal())
     return Data->getCommonAlignment();
@@ -496,7 +499,7 @@ uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
   if (Symbol->isVariable()) {
     const MCExpr *Expr = Symbol->getVariableValue();
     MCValue Value;
-    if (!Expr->EvaluateAsRelocatable(Value, &Layout))
+    if (!Expr->EvaluateAsValue(Value, &Layout))
       llvm_unreachable("Invalid expression");
 
     assert(!Value.getSymB());
@@ -512,8 +515,8 @@ uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
     }
   }
 
-  if ((Data && Data->getFlags() & ELF_Other_ThumbFunc) ||
-      OrigData.getFlags() & ELF_Other_ThumbFunc)
+  const MCAssembler &Asm = Layout.getAssembler();
+  if (Asm.isThumbFunc(&OrigSymbol))
     Res |= 1;
 
   if (!Symbol || !Symbol->isInSection())
@@ -606,7 +609,7 @@ static const MCSymbol *getBaseSymbol(const MCAsmLayout &Layout,
 
   const MCExpr *Expr = Symbol.getVariableValue();
   MCValue Value;
-  if (!Expr->EvaluateAsRelocatable(Value, &Layout))
+  if (!Expr->EvaluateAsValue(Value, &Layout))
     llvm_unreachable("Invalid Expression");
   const MCSymbolRefExpr *RefB = Value.getSymB();
   if (RefB) {
@@ -641,8 +644,6 @@ void ELFObjectWriter::WriteSymbol(SymbolTableWriter &Writer, ELFSymbolData &MSD,
     BaseSD = &Layout.getAssembler().getSymbolData(*Base);
     Type = mergeTypeForSet(Type, MCELF::GetType(*BaseSD));
   }
-  if (OrigData.getFlags() & ELF_Other_ThumbFunc)
-    Type = ELF::STT_FUNC;
   uint8_t Info = (Binding << ELF_STB_Shift) | (Type << ELF_STT_Shift);
 
   // Other and Visibility share the same byte with Visibility using the lower
@@ -676,7 +677,6 @@ void ELFObjectWriter::WriteSymbolTable(MCDataFragment *SymtabF,
                                        SectionIndexMapTy &SectionIndexMap) {
   // The string table must be emitted first because we need the index
   // into the string table for all the symbol names.
-  assert(StringTable.size() && "Missing string table");
 
   // FIXME: Make sure the start of the symbol table is aligned.
 
@@ -737,7 +737,8 @@ void ELFObjectWriter::WriteSymbolTable(MCDataFragment *SymtabF,
 // It is always valid to create a relocation with a symbol. It is preferable
 // to use a relocation with a section if that is possible. Using the section
 // allows us to omit some local symbols from the symbol table.
-bool ELFObjectWriter::shouldRelocateWithSymbol(const MCSymbolRefExpr *RefA,
+bool ELFObjectWriter::shouldRelocateWithSymbol(const MCAssembler &Asm,
+                                               const MCSymbolRefExpr *RefA,
                                                const MCSymbolData *SD,
                                                uint64_t C,
                                                unsigned Type) const {
@@ -825,7 +826,7 @@ bool ELFObjectWriter::shouldRelocateWithSymbol(const MCSymbolRefExpr *RefA,
   // bit. With a symbol that is done by just having the symbol have that bit
   // set, so we would lose the bit if we relocated with the section.
   // FIXME: We could use the section but add the bit to the relocation value.
-  if (SD->getFlags() & ELF_Other_ThumbFunc)
+  if (Asm.isThumbFunc(&Sym))
     return true;
 
   if (TargetObjectWriter->needsRelocateWithSymbol(Type))
@@ -887,7 +888,7 @@ void ELFObjectWriter::RecordRelocation(const MCAssembler &Asm,
   const MCSymbolData *SymAD = SymA ? &Asm.getSymbolData(*SymA) : nullptr;
 
   unsigned Type = GetRelocType(Target, Fixup, IsPCRel);
-  bool RelocateWithSymbol = shouldRelocateWithSymbol(RefA, SymAD, C, Type);
+  bool RelocateWithSymbol = shouldRelocateWithSymbol(Asm, RefA, SymAD, C, Type);
   if (!RelocateWithSymbol && SymA && !SymA->isUndefined())
     C += Layout.getSymbolOffset(SymAD);
 
@@ -1030,27 +1031,6 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
     MCELF::SetBinding(Data, ELF::STB_GLOBAL);
   }
 
-  // Index 0 is always the empty string.
-  StringMap<uint64_t> StringIndexMap;
-  StringTable += '\x00';
-
-  // FIXME: We could optimize suffixes in strtab in the same way we
-  // optimize them in shstrtab.
-
-  for (MCAssembler::const_file_name_iterator it = Asm.file_names_begin(),
-                                            ie = Asm.file_names_end();
-                                            it != ie;
-                                            ++it) {
-    StringRef Name = *it;
-    uint64_t &Entry = StringIndexMap[Name];
-    if (!Entry) {
-      Entry = StringTable.size();
-      StringTable += Name;
-      StringTable += '\x00';
-    }
-    FileSymbolData.push_back(Entry);
-  }
-
   // Add the data for the symbols.
   for (MCSymbolData &SD : Asm.symbols()) {
     const MCSymbol &Symbol = SD.getSymbol();
@@ -1101,7 +1081,6 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
     // @@ in defined ones.
     StringRef Name = Symbol.getName();
     SmallString<32> Buf;
-
     size_t Pos = Name.find("@@@");
     if (Pos != StringRef::npos) {
       Buf += Name.substr(0, Pos);
@@ -1109,14 +1088,8 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
       Buf += Name.substr(Pos + Skip);
       Name = Buf;
     }
+    MSD.Name = StrTabBuilder.add(Name);
 
-    uint64_t &Entry = StringIndexMap[Name];
-    if (!Entry) {
-      Entry = StringTable.size();
-      StringTable += Name;
-      StringTable += '\x00';
-    }
-    MSD.StringIndex = Entry;
     if (MSD.SectionIndex == ELF::SHN_UNDEF)
       UndefinedSymbolData.push_back(MSD);
     else if (Local)
@@ -1124,6 +1097,21 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
     else
       ExternalSymbolData.push_back(MSD);
   }
+
+  for (auto i = Asm.file_names_begin(), e = Asm.file_names_end(); i != e; ++i)
+    StrTabBuilder.add(*i);
+
+  StrTabBuilder.finalize();
+
+  for (auto i = Asm.file_names_begin(), e = Asm.file_names_end(); i != e; ++i)
+    FileSymbolData.push_back(StrTabBuilder.getOffset(*i));
+
+  for (ELFSymbolData& MSD : LocalSymbolData)
+    MSD.StringIndex = StrTabBuilder.getOffset(MSD.Name);
+  for (ELFSymbolData& MSD : ExternalSymbolData)
+    MSD.StringIndex = StrTabBuilder.getOffset(MSD.Name);
+  for (ELFSymbolData& MSD : UndefinedSymbolData)
+    MSD.StringIndex = StrTabBuilder.getOffset(MSD.Name);
 
   // Symbols are required to be in lexicographic order.
   array_pod_sort(LocalSymbolData.begin(), LocalSymbolData.end());
@@ -1435,23 +1423,6 @@ void ELFObjectWriter::WriteRelocationsFragment(const MCAssembler &Asm,
   }
 }
 
-static int compareBySuffix(const MCSectionELF *const *a,
-                           const MCSectionELF *const *b) {
-  const StringRef &NameA = (*a)->getSectionName();
-  const StringRef &NameB = (*b)->getSectionName();
-  const unsigned sizeA = NameA.size();
-  const unsigned sizeB = NameB.size();
-  const unsigned len = std::min(sizeA, sizeB);
-  for (unsigned int i = 0; i < len; ++i) {
-    char ca = NameA[sizeA - i - 1];
-    char cb = NameB[sizeB - i - 1];
-    if (ca != cb)
-      return cb - ca;
-  }
-
-  return sizeB - sizeA;
-}
-
 void ELFObjectWriter::CreateMetadataSections(MCAssembler &Asm,
                                              MCAsmLayout &Layout,
                                              SectionIndexMapTy &SectionIndexMap,
@@ -1492,45 +1463,20 @@ void ELFObjectWriter::CreateMetadataSections(MCAssembler &Asm,
   WriteSymbolTable(F, Asm, Layout, SectionIndexMap);
 
   F = new MCDataFragment(&StrtabSD);
-  F->getContents().append(StringTable.begin(), StringTable.end());
+  F->getContents().append(StrTabBuilder.data().begin(),
+                          StrTabBuilder.data().end());
 
   F = new MCDataFragment(&ShstrtabSD);
 
-  std::vector<const MCSectionELF*> Sections;
-  for (MCAssembler::const_iterator it = Asm.begin(),
-         ie = Asm.end(); it != ie; ++it) {
+  // Section header string table.
+  for (auto it = Asm.begin(), ie = Asm.end(); it != ie; ++it) {
     const MCSectionELF &Section =
       static_cast<const MCSectionELF&>(it->getSection());
-    Sections.push_back(&Section);
+    ShStrTabBuilder.add(Section.getSectionName());
   }
-  array_pod_sort(Sections.begin(), Sections.end(), compareBySuffix);
-
-  // Section header string table.
-  //
-  // The first entry of a string table holds a null character so skip
-  // section 0.
-  uint64_t Index = 1;
-  F->getContents().push_back('\x00');
-
-  for (unsigned int I = 0, E = Sections.size(); I != E; ++I) {
-    const MCSectionELF &Section = *Sections[I];
-
-    StringRef Name = Section.getSectionName();
-    if (I != 0) {
-      StringRef PreviousName = Sections[I - 1]->getSectionName();
-      if (PreviousName.endswith(Name)) {
-        SectionStringTableIndex[&Section] = Index - Name.size() - 1;
-        continue;
-      }
-    }
-    // Remember the index into the string table so we can write it
-    // into the sh_name field of the section header table.
-    SectionStringTableIndex[&Section] = Index;
-
-    Index += Name.size() + 1;
-    F->getContents().append(Name.begin(), Name.end());
-    F->getContents().push_back('\x00');
-  }
+  ShStrTabBuilder.finalize();
+  F->getContents().append(ShStrTabBuilder.data().begin(),
+                          ShStrTabBuilder.data().end());
 }
 
 void ELFObjectWriter::CreateIndexedSections(MCAssembler &Asm,
@@ -1598,7 +1544,7 @@ void ELFObjectWriter::WriteSection(MCAssembler &Asm,
 
   switch(Section.getType()) {
   case ELF::SHT_DYNAMIC:
-    sh_link = SectionStringTableIndex[&Section];
+    sh_link = ShStrTabBuilder.getOffset(Section.getSectionName());
     sh_info = 0;
     break;
 
@@ -1679,7 +1625,8 @@ void ELFObjectWriter::WriteSection(MCAssembler &Asm,
     }
   }
 
-  WriteSecHdrEntry(SectionStringTableIndex[&Section], Section.getType(),
+  WriteSecHdrEntry(ShStrTabBuilder.getOffset(Section.getSectionName()),
+                   Section.getType(),
                    Section.getFlags(), 0, Offset, Size, sh_link, sh_info,
                    Alignment, Section.getEntrySize());
 }

@@ -237,6 +237,20 @@ let isCodeGenOnly = 1, rs = 0, shamt = 0 in {
                     "sll\t$rd, $rt, 0", [], II_SLL>;
 }
 
+// We need the following two pseudo instructions to avoid offset calculation for
+// long branches.  See the comment in file MipsLongBranch.cpp for detailed
+// explanation.
+
+// Expands to: lui $dst, %highest($tgt - $baltgt)
+def LONG_BRANCH_LUi64 : PseudoSE<(outs GPR64Opnd:$dst),
+  (ins brtarget:$tgt, brtarget:$baltgt), []>;
+
+// Expands to: daddiu $dst, $src, %PART($tgt - $baltgt)
+// where %PART may be %higher, %hi or %lo, depending on the relocation kind
+// that $tgt is annotated with.
+def LONG_BRANCH_DADDiu : PseudoSE<(outs GPR64Opnd:$dst),
+  (ins GPR64Opnd:$src, brtarget:$tgt, brtarget:$baltgt), []>;
+
 // Cavium Octeon cmMIPS instructions
 let Predicates = [HasCnMips] in {
 
@@ -331,12 +345,10 @@ def VMULU : ArithLogicR<"vmulu", GPR64Opnd, 0, II_DMUL>,
 //===----------------------------------------------------------------------===//
 
 // extended loads
-let Predicates = [HasStdEnc] in {
-  def : MipsPat<(i64 (extloadi1  addr:$src)), (LB64 addr:$src)>;
-  def : MipsPat<(i64 (extloadi8  addr:$src)), (LB64 addr:$src)>;
-  def : MipsPat<(i64 (extloadi16 addr:$src)), (LH64 addr:$src)>;
-  def : MipsPat<(i64 (extloadi32 addr:$src)), (LW64 addr:$src)>;
-}
+def : MipsPat<(i64 (extloadi1  addr:$src)), (LB64 addr:$src)>;
+def : MipsPat<(i64 (extloadi8  addr:$src)), (LB64 addr:$src)>;
+def : MipsPat<(i64 (extloadi16 addr:$src)), (LH64 addr:$src)>;
+def : MipsPat<(i64 (extloadi32 addr:$src)), (LW64 addr:$src)>;
 
 // hi/lo relocs
 def : MipsPat<(MipsHi tglobaladdr:$in), (LUi64 tglobaladdr:$in)>;
@@ -428,6 +440,8 @@ def : InstAlias<"add $rs, $imm",
 def : InstAlias<"addu $rs, $imm",
                 (ADDiu GPR32Opnd:$rs, GPR32Opnd:$rs, simm16:$imm),
                 0>;
+def : InstAlias<"dsll $rd, $rt, $rs",
+                (DSLLV GPR64Opnd:$rd, GPR64Opnd:$rt, GPR32Opnd:$rs), 0>;
 def : InstAlias<"dsubu $rt, $rs, $imm",
                 (DADDiu GPR64Opnd:$rt, GPR64Opnd:$rs,
                 InvertedImOperand64: $imm),0>;
@@ -437,6 +451,8 @@ def : InstAlias<"dsub $rs, $imm",
 def : InstAlias<"dsubu $rs, $imm",
                 (DADDiu GPR64Opnd:$rs, GPR64Opnd:$rs, InvertedImOperand64:$imm),
                 0>;
+def : InstAlias<"dsrl $rd, $rt, $rs",
+                (DSRLV GPR64Opnd:$rd, GPR64Opnd:$rt, GPR32Opnd:$rs), 0>;
 
 /// Move between CPU and coprocessor registers
 let DecoderNamespace = "Mips64", Predicates = [HasMips64] in {

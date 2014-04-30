@@ -77,7 +77,8 @@ private:
   bool validateInstruction(MCInst &Inst, SmallVectorImpl<SMLoc> &Loc);
   bool MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                                OperandVector &Operands, MCStreamer &Out,
-                               unsigned &ErrorInfo, bool MatchingInlineAsm);
+                               unsigned &ErrorInfo,
+                               bool MatchingInlineAsm) override;
 /// @name Auto-generated Match Functions
 /// {
 
@@ -113,11 +114,12 @@ public:
     setAvailableFeatures(ComputeAvailableFeatures(STI.getFeatureBits()));
   }
 
-  virtual bool ParseInstruction(ParseInstructionInfo &Info, StringRef Name,
-                                SMLoc NameLoc, OperandVector &Operands);
-  virtual bool ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &EndLoc);
-  virtual bool ParseDirective(AsmToken DirectiveID);
-  unsigned validateTargetOperandClass(MCParsedAsmOperand *Op, unsigned Kind);
+  bool ParseInstruction(ParseInstructionInfo &Info, StringRef Name,
+                        SMLoc NameLoc, OperandVector &Operands) override;
+  bool ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &EndLoc) override;
+  bool ParseDirective(AsmToken DirectiveID) override;
+  unsigned validateTargetOperandClass(MCParsedAsmOperand *Op,
+                                      unsigned Kind) override;
 
   static bool classifySymbolRef(const MCExpr *Expr,
                                 ARM64MCExpr::VariantKind &ELFRefKind,
@@ -293,9 +295,9 @@ public:
   }
 
   /// getStartLoc - Get the location of the first token of this operand.
-  SMLoc getStartLoc() const { return StartLoc; }
+  SMLoc getStartLoc() const override { return StartLoc; }
   /// getEndLoc - Get the location of the last token of this operand.
-  SMLoc getEndLoc() const { return EndLoc; }
+  SMLoc getEndLoc() const override { return EndLoc; }
   /// getOffsetLoc - Get the location of the offset of this memory operand.
   SMLoc getOffsetLoc() const { return OffsetLoc; }
 
@@ -324,7 +326,7 @@ public:
     return Barrier.Val;
   }
 
-  unsigned getReg() const {
+  unsigned getReg() const override {
     assert(Kind == k_Register && "Invalid access!");
     return Reg.RegNum;
   }
@@ -369,7 +371,7 @@ public:
     return Extend.Val;
   }
 
-  bool isImm() const { return Kind == k_Immediate; }
+  bool isImm() const override { return Kind == k_Immediate; }
   bool isSImm9() const {
     if (!isImm())
       return false;
@@ -678,7 +680,7 @@ public:
 
     return IsKnownRegister;
   }
-  bool isSystemCPSRField() const {
+  bool isSystemPStateField() const {
     if (!isSysReg()) return false;
 
     bool IsKnownRegister;
@@ -686,7 +688,7 @@ public:
 
     return IsKnownRegister;
   }
-  bool isReg() const { return Kind == k_Register && !Reg.isVector; }
+  bool isReg() const override { return Kind == k_Register && !Reg.isVector; }
   bool isVectorReg() const { return Kind == k_Register && Reg.isVector; }
   bool isVectorRegLo() const {
     return Kind == k_Register && Reg.isVector &&
@@ -723,11 +725,11 @@ public:
   bool isVectorIndexD() const {
     return Kind == k_VectorIndex && VectorIndex.Val < 2;
   }
-  bool isToken() const { return Kind == k_Token; }
+  bool isToken() const override { return Kind == k_Token; }
   bool isTokenEqual(StringRef Str) const {
     return Kind == k_Token && getToken() == Str;
   }
-  bool isMem() const { return Kind == k_Memory; }
+  bool isMem() const override { return Kind == k_Memory; }
   bool isSysCR() const { return Kind == k_SysCR; }
   bool isPrefetch() const { return Kind == k_Prefetch; }
   bool isShifter() const { return Kind == k_Shifter; }
@@ -1344,7 +1346,7 @@ public:
     Inst.addOperand(MCOperand::CreateImm(Bits));
   }
 
-  void addSystemCPSRFieldOperands(MCInst &Inst, unsigned N) const {
+  void addSystemPStateFieldOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
 
     bool Valid;
@@ -1594,7 +1596,7 @@ public:
     addMemoryWritebackIndexedOperands(Inst, N, 16);
   }
 
-  virtual void print(raw_ostream &OS) const;
+  void print(raw_ostream &OS) const override;
 
   static ARM64Operand *CreateToken(StringRef Str, bool IsSuffix, SMLoc S,
                                    MCContext &Ctx) {
@@ -2219,10 +2221,10 @@ unsigned ARM64AsmParser::parseCondCodeString(StringRef Cond) {
   unsigned CC = StringSwitch<unsigned>(Cond.lower())
                     .Case("eq", ARM64CC::EQ)
                     .Case("ne", ARM64CC::NE)
-                    .Case("cs", ARM64CC::CS)
-                    .Case("hs", ARM64CC::CS)
-                    .Case("cc", ARM64CC::CC)
-                    .Case("lo", ARM64CC::CC)
+                    .Case("cs", ARM64CC::HS)
+                    .Case("hs", ARM64CC::HS)
+                    .Case("cc", ARM64CC::LO)
+                    .Case("lo", ARM64CC::LO)
                     .Case("mi", ARM64CC::MI)
                     .Case("pl", ARM64CC::PL)
                     .Case("vs", ARM64CC::VS)
@@ -2913,6 +2915,7 @@ bool ARM64AsmParser::parseMemory(OperandVector &Operands) {
 
       // Immediate expressions.
     } else if (Parser.getTok().is(AsmToken::Hash) ||
+               Parser.getTok().is(AsmToken::Colon) ||
                Parser.getTok().is(AsmToken::Integer)) {
       if (Parser.getTok().is(AsmToken::Hash))
         Parser.Lex(); // Eat hash token.
@@ -3014,6 +3017,7 @@ bool ARM64AsmParser::parseSymbolicImmVal(const MCExpr *&ImmVal) {
                   .Case("dtprel_g1_nc", ARM64MCExpr::VK_DTPREL_G1_NC)
                   .Case("dtprel_g0", ARM64MCExpr::VK_DTPREL_G0)
                   .Case("dtprel_g0_nc", ARM64MCExpr::VK_DTPREL_G0_NC)
+                  .Case("dtprel_hi12", ARM64MCExpr::VK_DTPREL_HI12)
                   .Case("dtprel_lo12", ARM64MCExpr::VK_DTPREL_LO12)
                   .Case("dtprel_lo12_nc", ARM64MCExpr::VK_DTPREL_LO12_NC)
                   .Case("tprel_g2", ARM64MCExpr::VK_TPREL_G2)
@@ -3021,6 +3025,7 @@ bool ARM64AsmParser::parseSymbolicImmVal(const MCExpr *&ImmVal) {
                   .Case("tprel_g1_nc", ARM64MCExpr::VK_TPREL_G1_NC)
                   .Case("tprel_g0", ARM64MCExpr::VK_TPREL_G0)
                   .Case("tprel_g0_nc", ARM64MCExpr::VK_TPREL_G0_NC)
+                  .Case("tprel_hi12", ARM64MCExpr::VK_TPREL_HI12)
                   .Case("tprel_lo12", ARM64MCExpr::VK_TPREL_LO12)
                   .Case("tprel_lo12_nc", ARM64MCExpr::VK_TPREL_LO12_NC)
                   .Case("tlsdesc_lo12", ARM64MCExpr::VK_TLSDESC_LO12)
@@ -3227,7 +3232,10 @@ bool ARM64AsmParser::parseOperand(OperandVector &Operands, bool isCondCode,
     if (Tok.is(AsmToken::Real)) {
       APFloat RealVal(APFloat::IEEEdouble, Tok.getString());
       uint64_t IntVal = RealVal.bitcastToAPInt().getZExtValue();
-      if (IntVal != 0 || (Mnemonic != "fcmp" && Mnemonic != "fcmpe"))
+      if (IntVal != 0 ||
+          (Mnemonic != "fcmp" && Mnemonic != "fcmpe" && Mnemonic != "fcmeq" &&
+           Mnemonic != "fcmge" && Mnemonic != "fcmgt" && Mnemonic != "fcmle" &&
+           Mnemonic != "fcmlt"))
         return TokError("unexpected floating point literal");
       Parser.Lex(); // Eat the token.
 
@@ -3254,6 +3262,27 @@ bool ARM64AsmParser::parseOperand(OperandVector &Operands, bool isCondCode,
 bool ARM64AsmParser::ParseInstruction(ParseInstructionInfo &Info,
                                       StringRef Name, SMLoc NameLoc,
                                       OperandVector &Operands) {
+  Name = StringSwitch<StringRef>(Name.lower())
+             .Case("beq", "b.eq")
+             .Case("bne", "b.ne")
+             .Case("bhs", "b.hs")
+             .Case("bcs", "b.cs")
+             .Case("blo", "b.lo")
+             .Case("bcc", "b.cc")
+             .Case("bmi", "b.mi")
+             .Case("bpl", "b.pl")
+             .Case("bvs", "b.vs")
+             .Case("bvc", "b.vc")
+             .Case("bhi", "b.hi")
+             .Case("bls", "b.ls")
+             .Case("bge", "b.ge")
+             .Case("blt", "b.lt")
+             .Case("bgt", "b.gt")
+             .Case("ble", "b.le")
+             .Case("bal", "b.al")
+             .Case("bnv", "b.nv")
+             .Default(Name);
+
   // Create the leading tokens for the mnemonic, split by '.' characters.
   size_t Start = 0, Next = Name.find('.');
   StringRef Head = Name.slice(Start, Next);
@@ -3495,7 +3524,9 @@ bool ARM64AsmParser::validateInstruction(MCInst &Inst,
     // and resolve the value and validate the result at fixup time, but
     // that's hard as we have long since lost any source information we
     // need to generate good diagnostics by that point.
-    if (Inst.getOpcode() == ARM64::ADDXri && Inst.getOperand(2).isExpr()) {
+    if ((Inst.getOpcode() == ARM64::ADDXri ||
+         Inst.getOpcode() == ARM64::ADDWri) &&
+        Inst.getOperand(2).isExpr()) {
       const MCExpr *Expr = Inst.getOperand(2).getExpr();
       ARM64MCExpr::VariantKind ELFRefKind;
       MCSymbolRefExpr::VariantKind DarwinRefKind;
@@ -3504,18 +3535,22 @@ bool ARM64AsmParser::validateInstruction(MCInst &Inst,
         return Error(Loc[2], "invalid immediate expression");
       }
 
-      if (DarwinRefKind == MCSymbolRefExpr::VK_PAGEOFF ||
-          DarwinRefKind == MCSymbolRefExpr::VK_TLVPPAGEOFF ||
-          ELFRefKind == ARM64MCExpr::VK_LO12 ||
+      // Note that we don't range-check the addend. It's adjusted modulo page
+      // size when converted, so there is no "out of range" condition when using
+      // @pageoff. Any validity checking for the value was done in the is*()
+      // predicate function.
+      if ((DarwinRefKind == MCSymbolRefExpr::VK_PAGEOFF ||
+           DarwinRefKind == MCSymbolRefExpr::VK_TLVPPAGEOFF) &&
+          Inst.getOpcode() == ARM64::ADDXri)
+        return false;
+      if (ELFRefKind == ARM64MCExpr::VK_LO12 ||
+          ELFRefKind == ARM64MCExpr::VK_DTPREL_HI12 ||
           ELFRefKind == ARM64MCExpr::VK_DTPREL_LO12 ||
           ELFRefKind == ARM64MCExpr::VK_DTPREL_LO12_NC ||
+          ELFRefKind == ARM64MCExpr::VK_TPREL_HI12 ||
           ELFRefKind == ARM64MCExpr::VK_TPREL_LO12 ||
           ELFRefKind == ARM64MCExpr::VK_TPREL_LO12_NC ||
           ELFRefKind == ARM64MCExpr::VK_TLSDESC_LO12) {
-        // Note that we don't range-check the addend. It's adjusted
-        // modulo page size when converted, so there is no "out of range"
-        // condition when using @pageoff. Any validity checking for the value
-        // was done in the is*() predicate function.
         return false;
       } else if (DarwinRefKind == MCSymbolRefExpr::VK_GOTPAGEOFF) {
         // @gotpageoff can only be used directly, not with an addend.
@@ -3830,6 +3865,10 @@ bool ARM64AsmParser::showMatchError(SMLoc Loc, unsigned ErrCode) {
     return Error(Loc, "immediate must be an integer in range [1,64].");
   case Match_InvalidLabel:
     return Error(Loc, "expected label or encodable integer pc offset");
+  case Match_MRS:
+    return Error(Loc, "expected readable system register");
+  case Match_MSR:
+    return Error(Loc, "expected writable system register or pstate");
   case Match_MnemonicFail:
     return Error(Loc, "unrecognized instruction mnemonic");
   default:
@@ -4172,9 +4211,8 @@ bool ARM64AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
       delete Op;
     }
   }
-  // FIXME: Likewise for [su]xt[bh] with a Xd dst operand
-  else if (NumOperands == 3 &&
-           (Tok == "sxtb" || Tok == "uxtb" || Tok == "sxth" || Tok == "uxth")) {
+  // FIXME: Likewise for sxt[bh] with a Xd dst operand
+  else if (NumOperands == 3 && (Tok == "sxtb" || Tok == "sxth")) {
     ARM64Operand *Op = static_cast<ARM64Operand *>(Operands[1]);
     if (Op->isReg() &&
         ARM64MCRegisterClasses[ARM64::GPR64allRegClassID].contains(
@@ -4185,6 +4223,23 @@ bool ARM64AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
       if (Op->isReg()) {
         unsigned Reg = getXRegFromWReg(Op->getReg());
         Operands[2] = ARM64Operand::CreateReg(Reg, false, Op->getStartLoc(),
+                                              Op->getEndLoc(), getContext());
+        delete Op;
+      }
+    }
+  }
+  // FIXME: Likewise for uxt[bh] with a Xd dst operand
+  else if (NumOperands == 3 && (Tok == "uxtb" || Tok == "uxth")) {
+    ARM64Operand *Op = static_cast<ARM64Operand *>(Operands[1]);
+    if (Op->isReg() &&
+        ARM64MCRegisterClasses[ARM64::GPR64allRegClassID].contains(
+            Op->getReg())) {
+      // The source register can be Wn here, but the matcher expects a
+      // GPR32. Twiddle it here if necessary.
+      ARM64Operand *Op = static_cast<ARM64Operand *>(Operands[1]);
+      if (Op->isReg()) {
+        unsigned Reg = getWRegFromXReg(Op->getReg());
+        Operands[1] = ARM64Operand::CreateReg(Reg, false, Op->getStartLoc(),
                                               Op->getEndLoc(), getContext());
         delete Op;
       }
@@ -4351,7 +4406,9 @@ bool ARM64AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
   case Match_InvalidImm1_16:
   case Match_InvalidImm1_32:
   case Match_InvalidImm1_64:
-  case Match_InvalidLabel: {
+  case Match_InvalidLabel:
+  case Match_MSR:
+  case Match_MRS: {
     // Any time we get here, there's nothing fancy to do. Just get the
     // operand SMLoc and display the diagnostic.
     SMLoc ErrorLoc = ((ARM64Operand *)Operands[ErrorInfo])->getStartLoc();

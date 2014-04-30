@@ -76,11 +76,16 @@ LazyCallGraph::Node::Node(LazyCallGraph &G, Function &F)
 }
 
 void LazyCallGraph::Node::insertEdgeInternal(Function &Callee) {
-  CalleeIndexMap.insert(std::make_pair(&Callee, Callees.size()));
   if (Node *N = G->lookup(Callee))
-    Callees.push_back(N);
-  else
-    Callees.push_back(&Callee);
+    return insertEdgeInternal(*N);
+
+  CalleeIndexMap.insert(std::make_pair(&Callee, Callees.size()));
+  Callees.push_back(&Callee);
+}
+
+void LazyCallGraph::Node::insertEdgeInternal(Node &CalleeN) {
+  CalleeIndexMap.insert(std::make_pair(&CalleeN.getFunction(), Callees.size()));
+  Callees.push_back(&CalleeN);
 }
 
 void LazyCallGraph::Node::removeEdgeInternal(Function &Callee) {
@@ -88,7 +93,7 @@ void LazyCallGraph::Node::removeEdgeInternal(Function &Callee) {
   assert(IndexMapI != CalleeIndexMap.end() &&
          "Callee not in the callee set for this caller?");
 
-  Callees.erase(Callees.begin() + IndexMapI->second);
+  Callees[IndexMapI->second] = nullptr;
   CalleeIndexMap.erase(IndexMapI);
 }
 
@@ -115,11 +120,14 @@ LazyCallGraph::LazyCallGraph(Module &M) : NextDFSNumber(0) {
                   "entry set.\n");
   findCallees(Worklist, Visited, EntryNodes, EntryIndexMap);
 
-  for (auto &Entry : EntryNodes)
+  for (auto &Entry : EntryNodes) {
+    assert(!Entry.isNull() &&
+           "We can't have removed edges before we finish the constructor!");
     if (Function *F = Entry.dyn_cast<Function *>())
       SCCEntryNodes.push_back(F);
     else
       SCCEntryNodes.push_back(&Entry.get<Node *>()->getFunction());
+  }
 }
 
 LazyCallGraph::LazyCallGraph(LazyCallGraph &&G)
@@ -152,6 +160,16 @@ void LazyCallGraph::SCC::insert(Node &N) {
   N.DFSNumber = N.LowLink = -1;
   Nodes.push_back(&N);
   G->SCCMap[&N] = this;
+}
+
+void LazyCallGraph::SCC::insertIntraSCCEdge(Node &CallerN, Node &CalleeN) {
+  // First insert it into the caller.
+  CallerN.insertEdgeInternal(CalleeN);
+
+  assert(G->SCCMap.lookup(&CallerN) == this && "Caller must be in this SCC.");
+  assert(G->SCCMap.lookup(&CalleeN) == this && "Callee must be in this SCC.");
+
+  // Nothing changes about this SCC or any other.
 }
 
 void LazyCallGraph::SCC::removeInterSCCEdge(Node &CallerN, Node &CalleeN) {
@@ -391,8 +409,9 @@ void LazyCallGraph::updateGraphPtrs() {
       Node *N = Worklist.pop_back_val();
       N->G = this;
       for (auto &Callee : N->Callees)
-        if (Node *CalleeN = Callee.dyn_cast<Node *>())
-          Worklist.push_back(CalleeN);
+        if (!Callee.isNull())
+          if (Node *CalleeN = Callee.dyn_cast<Node *>())
+            Worklist.push_back(CalleeN);
     }
   }
 

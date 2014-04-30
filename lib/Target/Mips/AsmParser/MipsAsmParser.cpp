@@ -75,10 +75,10 @@ class MipsAsmParser : public MCTargetAsmParser {
   bool MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                                SmallVectorImpl<MCParsedAsmOperand *> &Operands,
                                MCStreamer &Out, unsigned &ErrorInfo,
-                               bool MatchingInlineAsm);
+                               bool MatchingInlineAsm) override;
 
   /// Parse a register as used in CFI directives
-  bool ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &EndLoc);
+  bool ParseRegister(unsigned &RegNo, SMLoc &StartLoc, SMLoc &EndLoc) override;
 
   bool ParseParenSuffix(StringRef Name,
                         SmallVectorImpl<MCParsedAsmOperand *> &Operands);
@@ -86,11 +86,11 @@ class MipsAsmParser : public MCTargetAsmParser {
   bool ParseBracketSuffix(StringRef Name,
                           SmallVectorImpl<MCParsedAsmOperand *> &Operands);
 
-  bool ParseInstruction(ParseInstructionInfo &Info, StringRef Name,
-                        SMLoc NameLoc,
-                        SmallVectorImpl<MCParsedAsmOperand *> &Operands);
+  bool
+  ParseInstruction(ParseInstructionInfo &Info, StringRef Name, SMLoc NameLoc,
+                   SmallVectorImpl<MCParsedAsmOperand *> &Operands) override;
 
-  bool ParseDirective(AsmToken DirectiveID);
+  bool ParseDirective(AsmToken DirectiveID) override;
 
   MipsAsmParser::OperandMatchResultTy
   parseMemOperand(SmallVectorImpl<MCParsedAsmOperand *> &Operands);
@@ -137,6 +137,7 @@ class MipsAsmParser : public MCTargetAsmParser {
                      SmallVectorImpl<MCInst> &Instructions, bool isLoad,
                      bool isImmOpnd);
   bool reportParseError(StringRef ErrorMsg);
+  bool reportParseError(SMLoc Loc, StringRef ErrorMsg);
 
   bool parseMemOffset(const MCExpr *&Res, bool isParenExpr);
   bool parseRelocOperand(const MCExpr *&Res);
@@ -145,6 +146,7 @@ class MipsAsmParser : public MCTargetAsmParser {
 
   bool isEvaluated(const MCExpr *Expr);
   bool parseSetFeature(uint64_t Feature);
+  bool parseDirectiveCPLoad(SMLoc Loc);
   bool parseDirectiveCPSetup();
   bool parseDirectiveNaN();
   bool parseDirectiveSet();
@@ -577,7 +579,7 @@ public:
     addExpr(Inst, Expr);
   }
 
-  bool isReg() const {
+  bool isReg() const override {
     // As a special case until we sort out the definition of div/divu, pretend
     // that $0/$zero are k_PhysRegister so that MCK_ZERO works correctly.
     if (isGPRAsmReg() && RegIdx.Index == 0)
@@ -586,16 +588,16 @@ public:
     return Kind == k_PhysRegister;
   }
   bool isRegIdx() const { return Kind == k_RegisterIndex; }
-  bool isImm() const { return Kind == k_Immediate; }
+  bool isImm() const override { return Kind == k_Immediate; }
   bool isConstantImm() const {
     return isImm() && dyn_cast<MCConstantExpr>(getImm());
   }
-  bool isToken() const {
+  bool isToken() const override {
     // Note: It's not possible to pretend that other operand kinds are tokens.
     // The matcher emitter checks tokens first.
     return Kind == k_Token;
   }
-  bool isMem() const { return Kind == k_Memory; }
+  bool isMem() const override { return Kind == k_Memory; }
   bool isInvNum() const { return Kind == k_Immediate; }
   bool isLSAImm() const {
     if (!isConstantImm())
@@ -609,7 +611,7 @@ public:
     return StringRef(Tok.Data, Tok.Length);
   }
 
-  unsigned getReg() const {
+  unsigned getReg() const override {
     // As a special case until we sort out the definition of div/divu, pretend
     // that $0/$zero are k_PhysRegister so that MCK_ZERO works correctly.
     if (Kind == k_RegisterIndex && RegIdx.Index == 0 &&
@@ -756,9 +758,9 @@ public:
   }
 
   /// getStartLoc - Get the location of the first token of this operand.
-  SMLoc getStartLoc() const { return StartLoc; }
+  SMLoc getStartLoc() const override { return StartLoc; }
   /// getEndLoc - Get the location of the last token of this operand.
-  SMLoc getEndLoc() const { return EndLoc; }
+  SMLoc getEndLoc() const override { return EndLoc; }
 
   virtual ~MipsOperand() {
     switch (Kind) {
@@ -774,7 +776,7 @@ public:
     }
   }
 
-  virtual void print(raw_ostream &OS) const {
+  void print(raw_ostream &OS) const override {
     switch (Kind) {
     case k_Immediate:
       OS << "Imm<";
@@ -2083,6 +2085,10 @@ bool MipsAsmParser::reportParseError(StringRef ErrorMsg) {
   return Error(Loc, ErrorMsg);
 }
 
+bool MipsAsmParser::reportParseError(SMLoc Loc, StringRef ErrorMsg) {
+  return Error(Loc, ErrorMsg);
+}
+
 bool MipsAsmParser::parseSetNoAtDirective() {
   // Line should look like: ".set noat".
   // set at reg to 0.
@@ -2299,6 +2305,30 @@ bool MipsAsmParser::eatComma(StringRef ErrorStr) {
 
   Parser.Lex(); // Eat the comma.
   return true;
+}
+
+bool MipsAsmParser::parseDirectiveCPLoad(SMLoc Loc) {
+  if (Options.isReorder())
+    Warning(Loc, ".cpload in reorder section");
+
+  // FIXME: Warn if cpload is used in Mips16 mode.
+
+  SmallVector<MCParsedAsmOperand *, 1> Reg;
+  OperandMatchResultTy ResTy = ParseAnyRegister(Reg);
+  if (ResTy == MatchOperand_NoMatch || ResTy == MatchOperand_ParseFail) {
+    reportParseError("expected register containing function address");
+    return false;
+  }
+
+  MipsOperand *RegOpnd = static_cast<MipsOperand *>(Reg[0]);
+  if (!RegOpnd->isGPRAsmReg()) {
+    reportParseError(RegOpnd->getStartLoc(), "invalid register");
+    return false;
+  }
+
+  getTargetStreamer().emitDirectiveCpload(RegOpnd->getGPR32Reg());
+  delete RegOpnd;
+  return false;
 }
 
 bool MipsAsmParser::parseDirectiveCPSetup() {
@@ -2550,6 +2580,8 @@ bool MipsAsmParser::parseDirectiveOption() {
 bool MipsAsmParser::ParseDirective(AsmToken DirectiveID) {
   StringRef IDVal = DirectiveID.getString();
 
+  if (IDVal == ".cpload")
+    return parseDirectiveCPLoad(DirectiveID.getLoc());
   if (IDVal == ".dword") {
     parseDataDirective(8, DirectiveID.getLoc());
     return false;

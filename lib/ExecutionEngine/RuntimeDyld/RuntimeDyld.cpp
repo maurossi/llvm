@@ -516,7 +516,8 @@ void RuntimeDyldImpl::addRelocationForSymbol(const RelocationEntry &RE,
 }
 
 uint8_t *RuntimeDyldImpl::createStubFunction(uint8_t *Addr) {
-  if (Arch == Triple::aarch64 || Arch == Triple::aarch64_be) {
+  if (Arch == Triple::aarch64 || Arch == Triple::aarch64_be ||
+      Arch == Triple::arm64 || Arch == Triple::arm64_be) {
     // This stub has to be able to access the full address space,
     // since symbol lookup won't necessarily find a handy, in-range,
     // PLT stub for functions which could be anywhere.
@@ -698,21 +699,23 @@ createRuntimeDyldMachO(RTDyldMemoryManager *MM, bool ProcessAllSections) {
   return Dyld;
 }
 
-ObjectImage *RuntimeDyld::loadObject(ObjectFile *InputObject) {
+ObjectImage *RuntimeDyld::loadObject(std::unique_ptr<ObjectFile> InputObject) {
   std::unique_ptr<ObjectImage> InputImage;
 
+  ObjectFile &Obj = *InputObject;
+
   if (InputObject->isELF()) {
-    InputImage.reset(RuntimeDyldELF::createObjectImageFromFile(InputObject));
+    InputImage.reset(RuntimeDyldELF::createObjectImageFromFile(std::move(InputObject)));
     if (!Dyld)
       Dyld = createRuntimeDyldELF(MM, ProcessAllSections).release();
   } else if (InputObject->isMachO()) {
-    InputImage.reset(RuntimeDyldMachO::createObjectImageFromFile(InputObject));
+    InputImage.reset(RuntimeDyldMachO::createObjectImageFromFile(std::move(InputObject)));
     if (!Dyld)
       Dyld = createRuntimeDyldMachO(MM, ProcessAllSections).release();
   } else
     report_fatal_error("Incompatible object format!");
 
-  if (!Dyld->isCompatibleFile(InputObject))
+  if (!Dyld->isCompatibleFile(&Obj))
     report_fatal_error("Incompatible object format!");
 
   Dyld->loadObject(InputImage.get());

@@ -92,6 +92,7 @@
 #include "llvm/Transforms/Utils/VectorUtils.h"
 #include <algorithm>
 #include <map>
+#include <tuple>
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
@@ -819,7 +820,8 @@ public:
   /// then this vectorization factor will be selected if vectorization is
   /// possible.
   VectorizationFactor selectVectorizationFactor(bool OptForSize,
-                                                unsigned UserVF);
+                                                unsigned UserVF,
+                                                bool ForceVectorization);
 
   /// \return The size (in bits) of the widest type in the code that
   /// needs to be vectorized. We ignore values that remain scalar such as
@@ -891,13 +893,17 @@ struct LoopVectorizeHints {
   unsigned Width;
   /// Vectorization unroll factor.
   unsigned Unroll;
-  /// Vectorization forced (-1 not selected, 0 force disabled, 1 force enabled)
-  int Force;
+  /// Vectorization forced
+  enum ForceKind {
+    FK_Undefined = -1, ///< Not selected.
+    FK_Disabled = 0,   ///< Forcing disabled.
+    FK_Enabled = 1,    ///< Forcing enabled.
+  } Force;
 
   LoopVectorizeHints(const Loop *L, bool DisableUnrolling)
   : Width(VectorizationFactor)
   , Unroll(DisableUnrolling ? 1 : VectorizationUnroll)
-  , Force(-1)
+  , Force(FK_Undefined)
   , LoopID(L->getLoopID()) {
     getHints(L);
     // The command line options override any loop metadata except for when
@@ -1010,7 +1016,8 @@ private:
         DEBUG(dbgs() << "LV: ignoring invalid unroll hint metadata\n");
     } else if (Hint == "enable") {
       if (C->getBitWidth() == 1)
-        Force = Val;
+        Force = Val == 1 ? LoopVectorizeHints::FK_Enabled
+                         : LoopVectorizeHints::FK_Disabled;
       else
         DEBUG(dbgs() << "LV: ignoring invalid enable hint metadata\n");
     } else {
@@ -1106,18 +1113,20 @@ struct LoopVectorize : public FunctionPass {
     LoopVectorizeHints Hints(L, DisableUnrolling);
 
     DEBUG(dbgs() << "LV: Loop hints:"
-                 << " force=" << (Hints.Force == 0
-                                      ? "disabled"
-                                      : (Hints.Force == 1 ? "enabled" : "?"))
-                 << " width=" << Hints.Width << " unroll=" << Hints.Unroll
-                 << "\n");
+                 << " force="
+                 << (Hints.Force == LoopVectorizeHints::FK_Disabled
+                         ? "disabled"
+                         : (Hints.Force == LoopVectorizeHints::FK_Enabled
+                                ? "enabled"
+                                : "?")) << " width=" << Hints.Width
+                 << " unroll=" << Hints.Unroll << "\n");
 
-    if (Hints.Force == 0) {
+    if (Hints.Force == LoopVectorizeHints::FK_Disabled) {
       DEBUG(dbgs() << "LV: Not vectorizing: #pragma vectorize disable.\n");
       return false;
     }
 
-    if (!AlwaysVectorize && Hints.Force != 1) {
+    if (!AlwaysVectorize && Hints.Force != LoopVectorizeHints::FK_Enabled) {
       DEBUG(dbgs() << "LV: Not vectorizing: No #pragma vectorize enable.\n");
       return false;
     }
@@ -1125,6 +1134,21 @@ struct LoopVectorize : public FunctionPass {
     if (Hints.Width == 1 && Hints.Unroll == 1) {
       DEBUG(dbgs() << "LV: Not vectorizing: Disabled/already vectorized.\n");
       return false;
+    }
+
+    // Check the loop for a trip count threshold:
+    // do not vectorize loops with a tiny trip count.
+    BasicBlock *Latch = L->getLoopLatch();
+    const unsigned TC = SE->getSmallConstantTripCount(L, Latch);
+    if (TC > 0u && TC < TinyTripCountVectorThreshold) {
+      DEBUG(dbgs() << "LV: Found a loop with a very small trip count. "
+                   << "This loop is not worth vectorizing.");
+      if (Hints.Force == LoopVectorizeHints::FK_Enabled)
+        DEBUG(dbgs() << " But vectorizing was explicitly forced.\n");
+      else {
+        DEBUG(dbgs() << "\n");
+        return false;
+      }
     }
 
     // Check if it is legal to vectorize the loop.
@@ -1140,8 +1164,8 @@ struct LoopVectorize : public FunctionPass {
     // Check the function attributes to find out if this function should be
     // optimized for size.
     Function *F = L->getHeader()->getParent();
-    bool OptForSize =
-        Hints.Force != 1 && F->hasFnAttribute(Attribute::OptimizeForSize);
+    bool OptForSize = Hints.Force != LoopVectorizeHints::FK_Enabled &&
+                      F->hasFnAttribute(Attribute::OptimizeForSize);
 
     // Compute the weighted frequency of this loop being executed and see if it
     // is less than 20% of the function entry baseline frequency. Note that we
@@ -1150,7 +1174,8 @@ struct LoopVectorize : public FunctionPass {
     // exactly what block frequency models.
     if (LoopVectorizeWithBlockFrequency) {
       BlockFrequency LoopEntryFreq = BFI->getBlockFreq(L->getLoopPreheader());
-      if (Hints.Force != 1 && LoopEntryFreq < ColdEntryFreq)
+      if (Hints.Force != LoopVectorizeHints::FK_Enabled &&
+          LoopEntryFreq < ColdEntryFreq)
         OptForSize = true;
     }
 
@@ -1166,7 +1191,10 @@ struct LoopVectorize : public FunctionPass {
 
     // Select the optimal vectorization factor.
     const LoopVectorizationCostModel::VectorizationFactor VF =
-                          CM.selectVectorizationFactor(OptForSize, Hints.Width);
+        CM.selectVectorizationFactor(OptForSize, Hints.Width,
+                                     Hints.Force ==
+                                         LoopVectorizeHints::FK_Enabled);
+
     // Select the unroll factor.
     const unsigned UF = CM.selectUnrollFactor(OptForSize, Hints.Unroll, VF.Width,
                                         VF.Cost);
@@ -1182,6 +1210,13 @@ struct LoopVectorize : public FunctionPass {
       if (UF == 1)
         return false;
       DEBUG(dbgs() << "LV: Trying to at least unroll the loops.\n");
+
+      // Report the unrolling decision.
+      F->getContext().emitOptimizationRemark(
+          DEBUG_TYPE, *F, L->getStartLoc(),
+          Twine("unrolled with interleaving factor " + Twine(UF) +
+                " (vectorization not beneficial)"));
+
       // We decided not to vectorize, but we may want to unroll.
       InnerLoopUnroller Unroller(L, SE, LI, DT, DL, TLI, UF);
       Unroller.vectorize(&LVL);
@@ -1190,6 +1225,12 @@ struct LoopVectorize : public FunctionPass {
       InnerLoopVectorizer LB(L, SE, LI, DT, DL, TLI, VF.Width, UF);
       LB.vectorize(&LVL);
       ++LoopsVectorized;
+
+      // Report the vectorization decision.
+      F->getContext().emitOptimizationRemark(
+          DEBUG_TYPE, *F, L->getStartLoc(),
+          Twine("vectorized loop (vectorization factor: ") + Twine(VF.Width) +
+              ", unrolling interleave factor: " + Twine(UF) + ")");
     }
 
     // Mark the loop as already vectorized to avoid vectorizing again.
@@ -3300,15 +3341,6 @@ bool LoopVectorizationLegality::canVectorize() {
     return false;
   }
 
-  // Do not loop-vectorize loops with a tiny trip count.
-  BasicBlock *Latch = TheLoop->getLoopLatch();
-  unsigned TC = SE->getSmallConstantTripCount(TheLoop, Latch);
-  if (TC > 0u && TC < TinyTripCountVectorThreshold) {
-    DEBUG(dbgs() << "LV: Found a loop with a very small trip count. " <<
-          "This loop is not worth vectorizing.\n");
-    return false;
-  }
-
   // Check if we can vectorize the instructions and CFG in this loop.
   if (!canVectorizeInstrs()) {
     DEBUG(dbgs() << "LV: Can't vectorize the instructions or CFG\n");
@@ -5007,7 +5039,8 @@ bool LoopVectorizationLegality::blockCanBePredicated(BasicBlock *BB,
 
 LoopVectorizationCostModel::VectorizationFactor
 LoopVectorizationCostModel::selectVectorizationFactor(bool OptForSize,
-                                                      unsigned UserVF) {
+                                                      unsigned UserVF,
+                                                      bool ForceVectorization) {
   // Width 1 means no vectorize
   VectorizationFactor Factor = { 1U, 0U };
   if (OptForSize && Legal->getRuntimePointerCheck()->Need) {
@@ -5077,8 +5110,18 @@ LoopVectorizationCostModel::selectVectorizationFactor(bool OptForSize,
   }
 
   float Cost = expectedCost(1);
+#ifndef NDEBUG
+  const float ScalarCost = Cost;
+#endif /* NDEBUG */
   unsigned Width = 1;
-  DEBUG(dbgs() << "LV: Scalar loop costs: " << (int)Cost << ".\n");
+  DEBUG(dbgs() << "LV: Scalar loop costs: " << (int)ScalarCost << ".\n");
+
+  // Ignore scalar width, because the user explicitly wants vectorization.
+  if (ForceVectorization && VF > 1) {
+    Width = 2;
+    Cost = expectedCost(Width) / (float)Width;
+  }
+
   for (unsigned i=2; i <= VF; i*=2) {
     // Notice that the vector loop needs to be executed less times, so
     // we need to divide the cost of the vector loops by the width of
@@ -5092,6 +5135,9 @@ LoopVectorizationCostModel::selectVectorizationFactor(bool OptForSize,
     }
   }
 
+  DEBUG(if (ForceVectorization && Width > 1 && Cost >= ScalarCost) dbgs()
+        << "LV: Vectorization seems to be not beneficial, "
+        << "but was forced by a user.\n");
   DEBUG(dbgs() << "LV: Selecting VF: "<< Width << ".\n");
   Factor.Width = Width;
   Factor.Cost = Width * Cost;

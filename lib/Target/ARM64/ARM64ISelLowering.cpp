@@ -213,7 +213,7 @@ ARM64TargetLowering::ARM64TargetLowering(ARM64TargetMachine &TM)
   // BlockAddress
   setOperationAction(ISD::BlockAddress, MVT::i64, Custom);
 
-  // Add/Sub overflow ops with MVT::Glues are lowered to CPSR dependences.
+  // Add/Sub overflow ops with MVT::Glues are lowered to NZCV dependences.
   setOperationAction(ISD::ADDC, MVT::i32, Custom);
   setOperationAction(ISD::ADDE, MVT::i32, Custom);
   setOperationAction(ISD::SUBC, MVT::i32, Custom);
@@ -738,7 +738,7 @@ ARM64TargetLowering::EmitF128CSEL(MachineInstr *MI,
   unsigned IfTrueReg = MI->getOperand(1).getReg();
   unsigned IfFalseReg = MI->getOperand(2).getReg();
   unsigned CondCode = MI->getOperand(3).getImm();
-  bool CPSRKilled = MI->getOperand(4).isKill();
+  bool NZCVKilled = MI->getOperand(4).isKill();
 
   MachineBasicBlock *TrueBB = MF->CreateMachineBasicBlock(LLVM_BB);
   MachineBasicBlock *EndBB = MF->CreateMachineBasicBlock(LLVM_BB);
@@ -758,9 +758,9 @@ ARM64TargetLowering::EmitF128CSEL(MachineInstr *MI,
   // TrueBB falls through to the end.
   TrueBB->addSuccessor(EndBB);
 
-  if (!CPSRKilled) {
-    TrueBB->addLiveIn(ARM64::CPSR);
-    EndBB->addLiveIn(ARM64::CPSR);
+  if (!NZCVKilled) {
+    TrueBB->addLiveIn(ARM64::NZCV);
+    EndBB->addLiveIn(ARM64::NZCV);
   }
 
   BuildMI(*EndBB, EndBB->begin(), DL, TII->get(ARM64::PHI), DestReg)
@@ -822,9 +822,9 @@ static ARM64CC::CondCode changeIntCCToARM64CC(ISD::CondCode CC) {
   case ISD::SETUGT:
     return ARM64CC::HI;
   case ISD::SETUGE:
-    return ARM64CC::CS;
+    return ARM64CC::HS;
   case ISD::SETULT:
-    return ARM64CC::CC;
+    return ARM64CC::LO;
   case ISD::SETULE:
     return ARM64CC::LS;
   }
@@ -1052,7 +1052,7 @@ getARM64XALUOOp(ARM64CC::CondCode &CC, SDValue Op, SelectionDAG &DAG) {
     break;
   case ISD::UADDO:
     Opc = ARM64ISD::ADDS;
-    CC = ARM64CC::CS;
+    CC = ARM64CC::HS;
     break;
   case ISD::SSUBO:
     Opc = ARM64ISD::SUBS;
@@ -1060,7 +1060,7 @@ getARM64XALUOOp(ARM64CC::CondCode &CC, SDValue Op, SelectionDAG &DAG) {
     break;
   case ISD::USUBO:
     Opc = ARM64ISD::SUBS;
-    CC = ARM64CC::CC;
+    CC = ARM64CC::LO;
     break;
   // Multiply needs a little bit extra work.
   case ISD::SMULO:
@@ -1678,13 +1678,9 @@ SDValue ARM64TargetLowering::LowerFormalArguments(
         RC = &ARM64::GPR64RegClass;
       else if (RegVT == MVT::f32)
         RC = &ARM64::FPR32RegClass;
-      else if (RegVT == MVT::f64 || RegVT == MVT::v1i64 ||
-               RegVT == MVT::v1f64 || RegVT == MVT::v2i32 ||
-               RegVT == MVT::v4i16 || RegVT == MVT::v8i8)
+      else if (RegVT == MVT::f64 || RegVT.is64BitVector())
         RC = &ARM64::FPR64RegClass;
-      else if (RegVT == MVT::f128 ||RegVT == MVT::v2i64 ||
-               RegVT == MVT::v4i32||RegVT == MVT::v8i16 ||
-               RegVT == MVT::v16i8)
+      else if (RegVT == MVT::f128 || RegVT.is128BitVector())
         RC = &ARM64::FPR128RegClass;
       else
         llvm_unreachable("RegVT not supported by FORMAL_ARGUMENTS Lowering");
@@ -2354,7 +2350,7 @@ ARM64TargetLowering::LowerDarwinGlobalTLSAddress(SDValue Op,
   MFI->setAdjustsStack(true);
 
   // TLS calls preserve all registers except those that absolutely must be
-  // trashed: X0 (it takes an argument), LR (it's a call) and CPSR (let's not be
+  // trashed: X0 (it takes an argument), LR (it's a call) and NZCV (let's not be
   // silly).
   const TargetRegisterInfo *TRI = getTargetMachine().getRegisterInfo();
   const ARM64RegisterInfo *ARI = static_cast<const ARM64RegisterInfo *>(TRI);
@@ -2375,7 +2371,7 @@ ARM64TargetLowering::LowerDarwinGlobalTLSAddress(SDValue Op,
 /// have a descriptor, accessible via a PC-relative ADRP, and whose first entry
 /// is a function pointer to carry out the resolution. This function takes the
 /// address of the descriptor in X0 and returns the TPIDR_EL0 offset in X0. All
-/// other registers (except LR, CPSR) are preserved.
+/// other registers (except LR, NZCV) are preserved.
 ///
 /// Thus, the ideal call sequence on AArch64 is:
 ///
@@ -2402,7 +2398,7 @@ SDValue ARM64TargetLowering::LowerELFTLSDescCall(SDValue SymAddr,
   SDValue Func = DAG.getNode(ARM64ISD::LOADgot, DL, PtrVT, SymAddr);
 
   // TLS calls preserve all registers except those that absolutely must be
-  // trashed: X0 (it takes an argument), LR (it's a call) and CPSR (let's not be
+  // trashed: X0 (it takes an argument), LR (it's a call) and NZCV (let's not be
   // silly).
   const TargetRegisterInfo *TRI = getTargetMachine().getRegisterInfo();
   const ARM64RegisterInfo *ARI = static_cast<const ARM64RegisterInfo *>(TRI);
@@ -3606,7 +3602,7 @@ ARM64TargetLowering::getRegForInlineAsmConstraint(const std::string &Constraint,
     }
   }
   if (StringRef("{cc}").equals_lower(Constraint))
-    return std::make_pair(unsigned(ARM64::CPSR), &ARM64::CCRRegClass);
+    return std::make_pair(unsigned(ARM64::NZCV), &ARM64::CCRRegClass);
 
   // Use the default implementation in TargetLowering to convert the register
   // constraint into a member of a register class.
@@ -3981,39 +3977,40 @@ static bool isSingletonEXTMask(ArrayRef<int> M, EVT VT, unsigned &Imm) {
 // vector sources of the shuffle are different.
 static bool isEXTMask(ArrayRef<int> M, EVT VT, bool &ReverseEXT,
                       unsigned &Imm) {
+  // Look for the first non-undef element.
+  const int *FirstRealElt = std::find_if(M.begin(), M.end(),
+      [](int Elt) {return Elt >= 0;});
+
+  // Benefit form APInt to handle overflow when calculating expected element.
   unsigned NumElts = VT.getVectorNumElements();
-  ReverseEXT = false;
+  unsigned MaskBits = APInt(32, NumElts * 2).logBase2();
+  APInt ExpectedElt = APInt(MaskBits, *FirstRealElt + 1);
+  // The following shuffle indices must be the successive elements after the
+  // first real element.
+  const int *FirstWrongElt = std::find_if(FirstRealElt + 1, M.end(),
+      [&](int Elt) {return Elt != ExpectedElt++ && Elt != -1;});
+  if (FirstWrongElt != M.end())
+    return false;
 
-  // Look for the first non-undef choice and count backwards from
-  // that. E.g. <-1, -1, 3, ...> means that an EXT must start at 3 - 2 = 1. This
-  // guarantees that at least one index is correct.
-  const int *FirstRealElt =
-      std::find_if(M.begin(), M.end(), [](int Elt) { return Elt >= 0; });
-  assert(FirstRealElt != M.end() && "Completely UNDEF shuffle? Why bother?");
-  Imm = *FirstRealElt - (FirstRealElt - M.begin());
+  // The index of an EXT is the first element if it is not UNDEF.
+  // Watch out for the beginning UNDEFs. The EXT index should be the expected
+  // value of the first element.
+  // E.g. <-1, -1, 3, ...> is treated as <1, 2, 3, ...>.
+  //      <-1, -1, 0, 1, ...> is treated as <IDX, IDX+1, 0, 1, ...>. IDX is
+  // equal to the ExpectedElt.
+  Imm = (M[0] >= 0) ? static_cast<unsigned>(M[0]) : ExpectedElt.getZExtValue();
 
-  // If this is a VEXT shuffle, the immediate value is the index of the first
-  // element.  The other shuffle indices must be the successive elements after
-  // the first one.
-  unsigned ExpectedElt = Imm;
-  for (unsigned i = 1; i < NumElts; ++i) {
-    // Increment the expected index.  If it wraps around, it may still be
-    // a VEXT but the source vectors must be swapped.
-    ExpectedElt += 1;
-    if (ExpectedElt == NumElts * 2) {
-      ExpectedElt = 0;
-      ReverseEXT = true;
-    }
-
-    if (M[i] < 0)
-      continue; // ignore UNDEF indices
-    if (ExpectedElt != static_cast<unsigned>(M[i]))
-      return false;
-  }
-
-  // Adjust the index value if the source operands will be swapped.
-  if (ReverseEXT)
+  // If no beginning UNDEFs, do swap when M[0] >= NumElts.
+  if (M[0] >= 0 && Imm >= NumElts) {
+    ReverseEXT = true;
     Imm -= NumElts;
+  } else if (M[0] < 0) {
+    // Only do swap when beginning UNDEFs more than the first real element,
+    if (*FirstRealElt < FirstRealElt - M.begin())
+      ReverseEXT = true;
+    if (Imm >= NumElts)
+      Imm -= NumElts;
+  }
 
   return true;
 }
@@ -4357,7 +4354,7 @@ static SDValue GenerateTBL(SDValue Op, ArrayRef<int> ShuffleMask,
         ISD::INTRINSIC_WO_CHAIN, DL, IndexVT,
         DAG.getConstant(Intrinsic::arm64_neon_tbl1, MVT::i32), V1Cst,
         DAG.getNode(ISD::BUILD_VECTOR, DL, IndexVT,
-                    ArrayRef<SDValue>(TBLMask.data(), IndexLen)));
+                    makeArrayRef(TBLMask.data(), IndexLen)));
   } else {
     if (IndexLen == 8) {
       V1Cst = DAG.getNode(ISD::CONCAT_VECTORS, DL, MVT::v16i8, V1Cst, V2Cst);
@@ -4365,7 +4362,7 @@ static SDValue GenerateTBL(SDValue Op, ArrayRef<int> ShuffleMask,
           ISD::INTRINSIC_WO_CHAIN, DL, IndexVT,
           DAG.getConstant(Intrinsic::arm64_neon_tbl1, MVT::i32), V1Cst,
           DAG.getNode(ISD::BUILD_VECTOR, DL, IndexVT,
-                      ArrayRef<SDValue>(TBLMask.data(), IndexLen)));
+                      makeArrayRef(TBLMask.data(), IndexLen)));
     } else {
       // FIXME: We cannot, for the moment, emit a TBL2 instruction because we
       // cannot currently represent the register constraints on the input
@@ -4377,7 +4374,7 @@ static SDValue GenerateTBL(SDValue Op, ArrayRef<int> ShuffleMask,
           ISD::INTRINSIC_WO_CHAIN, DL, IndexVT,
           DAG.getConstant(Intrinsic::arm64_neon_tbl2, MVT::i32), V1Cst, V2Cst,
           DAG.getNode(ISD::BUILD_VECTOR, DL, IndexVT,
-                      ArrayRef<SDValue>(TBLMask.data(), IndexLen)));
+                      makeArrayRef(TBLMask.data(), IndexLen)));
     }
   }
   return DAG.getNode(ISD::BITCAST, DL, Op.getValueType(), Shuffle);
@@ -5556,7 +5553,7 @@ static SDValue EmitVectorComparison(SDValue LHS, SDValue RHS,
     return DAG.getNode(ARM64ISD::CMGE, dl, VT, RHS, LHS);
   case ARM64CC::LS:
     return DAG.getNode(ARM64ISD::CMHS, dl, VT, RHS, LHS);
-  case ARM64CC::CC:
+  case ARM64CC::LO:
     return DAG.getNode(ARM64ISD::CMHI, dl, VT, RHS, LHS);
   case ARM64CC::LT:
     if (IsZero)
@@ -5564,7 +5561,7 @@ static SDValue EmitVectorComparison(SDValue LHS, SDValue RHS,
     return DAG.getNode(ARM64ISD::CMGT, dl, VT, RHS, LHS);
   case ARM64CC::HI:
     return DAG.getNode(ARM64ISD::CMHI, dl, VT, LHS, RHS);
-  case ARM64CC::CS:
+  case ARM64CC::HS:
     return DAG.getNode(ARM64ISD::CMHS, dl, VT, LHS, RHS);
   }
 }

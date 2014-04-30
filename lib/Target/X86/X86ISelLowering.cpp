@@ -85,8 +85,8 @@ static SDValue ExtractSubVector(SDValue Vec, unsigned IdxVal,
   // If the input is a buildvector just emit a smaller one.
   if (Vec.getOpcode() == ISD::BUILD_VECTOR)
     return DAG.getNode(ISD::BUILD_VECTOR, dl, ResultVT,
-                       ArrayRef<SDUse>(Vec->op_begin()+NormalizedIdxVal,
-                                       ElemsPerChunk));
+                       makeArrayRef(Vec->op_begin()+NormalizedIdxVal,
+                                    ElemsPerChunk));
 
   SDValue VecIdx = DAG.getIntPtrConstant(NormalizedIdxVal);
   SDValue Result = DAG.getNode(ISD::EXTRACT_SUBVECTOR, dl, ResultVT, Vec,
@@ -2498,10 +2498,10 @@ X86TargetLowering::EmitTailCallLoadRetAddr(SelectionDAG &DAG,
 
 /// EmitTailCallStoreRetAddr - Emit a store of the return address if tail call
 /// optimization is performed and it is required (FPDiff!=0).
-static SDValue
-EmitTailCallStoreRetAddr(SelectionDAG & DAG, MachineFunction &MF,
-                         SDValue Chain, SDValue RetAddrFrIdx, EVT PtrVT,
-                         unsigned SlotSize, int FPDiff, SDLoc dl) {
+static SDValue EmitTailCallStoreRetAddr(SelectionDAG &DAG, MachineFunction &MF,
+                                        SDValue Chain, SDValue RetAddrFrIdx,
+                                        EVT PtrVT, unsigned SlotSize,
+                                        int FPDiff, SDLoc dl) {
   // Store the return address to the appropriate stack slot.
   if (!FPDiff) return Chain;
   // Calculate the new stack slot for the return address.
@@ -2538,16 +2538,18 @@ X86TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   if (MF.getTarget().Options.DisableTailCalls)
     isTailCall = false;
 
-  if (isTailCall) {
+  bool IsMustTail = CLI.CS && CLI.CS->isMustTailCall();
+  if (IsMustTail) {
+    // Force this to be a tail call.  The verifier rules are enough to ensure
+    // that we can lower this successfully without moving the return address
+    // around.
+    isTailCall = true;
+  } else if (isTailCall) {
     // Check if it's really possible to do a tail call.
     isTailCall = IsEligibleForTailCallOptimization(Callee, CallConv,
                     isVarArg, SR != NotStructReturn,
                     MF.getFunction()->hasStructRetAttr(), CLI.RetTy,
                     Outs, OutVals, Ins, DAG);
-
-    if (!isTailCall && CLI.CS && CLI.CS->isMustTailCall())
-      report_fatal_error("failed to perform tail call elimination on a call "
-                         "site marked musttail");
 
     // Sibcalls are automatically detected tailcalls which do not require
     // ABI changes.
@@ -2583,7 +2585,7 @@ X86TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     NumBytes = GetAlignedArgumentStackSize(NumBytes, DAG);
 
   int FPDiff = 0;
-  if (isTailCall && !IsSibcall) {
+  if (isTailCall && !IsSibcall && !IsMustTail) {
     // Lower arguments at fp - stackoffset + fpdiff.
     X86MachineFunctionInfo *X86Info = MF.getInfo<X86MachineFunctionInfo>();
     unsigned NumBytesCallerPushed = X86Info->getBytesToPopOnReturn();
@@ -2746,8 +2748,10 @@ X86TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                         DAG.getConstant(NumXMMRegs, MVT::i8)));
   }
 
-  // For tail calls lower the arguments to the 'real' stack slot.
-  if (isTailCall) {
+  // For tail calls lower the arguments to the 'real' stack slots.  Sibcalls
+  // don't need this because the eligibility check rejects calls that require
+  // shuffling arguments passed in memory.
+  if (!IsSibcall && isTailCall) {
     // Force all the incoming stack arguments to be loaded from the stack
     // before any new outgoing arguments are stored to the stack, because the
     // outgoing stack slots may alias the incoming argument stack slots, and
@@ -2759,39 +2763,40 @@ X86TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     SmallVector<SDValue, 8> MemOpChains2;
     SDValue FIN;
     int FI = 0;
-    if (getTargetMachine().Options.GuaranteedTailCallOpt) {
-      for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
-        CCValAssign &VA = ArgLocs[i];
-        if (VA.isRegLoc())
-          continue;
-        assert(VA.isMemLoc());
-        SDValue Arg = OutVals[i];
-        ISD::ArgFlagsTy Flags = Outs[i].Flags;
-        // Create frame index.
-        int32_t Offset = VA.getLocMemOffset()+FPDiff;
-        uint32_t OpSize = (VA.getLocVT().getSizeInBits()+7)/8;
-        FI = MF.getFrameInfo()->CreateFixedObject(OpSize, Offset, true);
-        FIN = DAG.getFrameIndex(FI, getPointerTy());
+    for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
+      CCValAssign &VA = ArgLocs[i];
+      if (VA.isRegLoc())
+        continue;
+      assert(VA.isMemLoc());
+      SDValue Arg = OutVals[i];
+      ISD::ArgFlagsTy Flags = Outs[i].Flags;
+      // Skip inalloca arguments.  They don't require any work.
+      if (Flags.isInAlloca())
+        continue;
+      // Create frame index.
+      int32_t Offset = VA.getLocMemOffset()+FPDiff;
+      uint32_t OpSize = (VA.getLocVT().getSizeInBits()+7)/8;
+      FI = MF.getFrameInfo()->CreateFixedObject(OpSize, Offset, true);
+      FIN = DAG.getFrameIndex(FI, getPointerTy());
 
-        if (Flags.isByVal()) {
-          // Copy relative to framepointer.
-          SDValue Source = DAG.getIntPtrConstant(VA.getLocMemOffset());
-          if (!StackPtr.getNode())
-            StackPtr = DAG.getCopyFromReg(Chain, dl,
-                                          RegInfo->getStackRegister(),
-                                          getPointerTy());
-          Source = DAG.getNode(ISD::ADD, dl, getPointerTy(), StackPtr, Source);
+      if (Flags.isByVal()) {
+        // Copy relative to framepointer.
+        SDValue Source = DAG.getIntPtrConstant(VA.getLocMemOffset());
+        if (!StackPtr.getNode())
+          StackPtr = DAG.getCopyFromReg(Chain, dl,
+                                        RegInfo->getStackRegister(),
+                                        getPointerTy());
+        Source = DAG.getNode(ISD::ADD, dl, getPointerTy(), StackPtr, Source);
 
-          MemOpChains2.push_back(CreateCopyOfByValArgument(Source, FIN,
-                                                           ArgChain,
-                                                           Flags, DAG, dl));
-        } else {
-          // Store relative to framepointer.
-          MemOpChains2.push_back(
-            DAG.getStore(ArgChain, dl, Arg, FIN,
-                         MachinePointerInfo::getFixedStack(FI),
-                         false, false, 0));
-        }
+        MemOpChains2.push_back(CreateCopyOfByValArgument(Source, FIN,
+                                                         ArgChain,
+                                                         Flags, DAG, dl));
+      } else {
+        // Store relative to framepointer.
+        MemOpChains2.push_back(
+          DAG.getStore(ArgChain, dl, Arg, FIN,
+                       MachinePointerInfo::getFixedStack(FI),
+                       false, false, 0));
       }
     }
 
@@ -4170,6 +4175,29 @@ static bool isUNPCKH_v_undef_Mask(ArrayRef<int> Mask, MVT VT, bool HasInt256) {
     }
   }
   return true;
+}
+
+// Match for INSERTI64x4 INSERTF64x4 instructions (src0[0], src1[0]) or
+// (src1[0], src0[1]), manipulation with 256-bit sub-vectors
+static bool isINSERT64x4Mask(ArrayRef<int> Mask, MVT VT, unsigned int *Imm) {
+  if (!VT.is512BitVector())
+    return false;
+
+  unsigned NumElts = VT.getVectorNumElements();
+  unsigned HalfSize = NumElts/2;
+  if (isSequentialOrUndefInRange(Mask, 0, HalfSize, 0)) {
+    if (isSequentialOrUndefInRange(Mask, HalfSize, HalfSize, NumElts)) {
+      *Imm = 1;
+      return true;
+    }
+  }
+  if (isSequentialOrUndefInRange(Mask, 0, HalfSize, NumElts)) {
+    if (isSequentialOrUndefInRange(Mask, HalfSize, HalfSize, HalfSize)) {
+      *Imm = 0;
+      return true;
+    }
+  }
+  return false;
 }
 
 /// isMOVLMask - Return true if the specified VECTOR_SHUFFLE operand
@@ -6112,10 +6140,9 @@ X86TargetLowering::LowerBUILD_VECTOR(SDValue Op, SelectionDAG &DAG) const {
 
     // Build both the lower and upper subvector.
     SDValue Lower = DAG.getNode(ISD::BUILD_VECTOR, dl, HVT,
-                                ArrayRef<SDValue>(&V[0], NumElems/2));
+                                makeArrayRef(&V[0], NumElems/2));
     SDValue Upper = DAG.getNode(ISD::BUILD_VECTOR, dl, HVT,
-                                ArrayRef<SDValue>(&V[NumElems / 2],
-                                                  NumElems/2));
+                                makeArrayRef(&V[NumElems / 2], NumElems/2));
 
     // Recreate the wider vector with the lower and upper part.
     if (VT.is256BitVector())
@@ -7754,6 +7781,11 @@ X86TargetLowering::LowerVECTOR_SHUFFLE(SDValue Op, SelectionDAG &DAG) const {
     return getTargetShuffleNode(X86ISD::VPERMILP, dl, VT, V1,
                                 getShuffleSHUFImmediate(SVOp), DAG);
   }
+
+  unsigned Idx;
+  if (VT.is512BitVector() && isINSERT64x4Mask(M, VT, &Idx))
+    return Insert256BitVector(V1, Extract256BitVector(V2, 0, DAG, dl),
+                              Idx*(NumElems/2), DAG, dl);
 
   // Handle VPERM2F128/VPERM2I128 permutations
   if (isVPERM2X128Mask(M, VT, HasFp256))
@@ -20833,8 +20865,22 @@ int X86TargetLowering::getScalingFactorCost(const AddrMode &AM,
                                             Type *Ty) const {
   // Scaling factors are not free at all.
   // An indexed folded instruction, i.e., inst (reg1, reg2, scale),
-  // will take 2 allocations instead of 1 for plain addressing mode,
-  // i.e. inst (reg1).
+  // will take 2 allocations in the out of order engine instead of 1
+  // for plain addressing mode, i.e. inst (reg1).
+  // E.g.,
+  // vaddps (%rsi,%drx), %ymm0, %ymm1
+  // Requires two allocations (one for the load, one for the computation)
+  // whereas:
+  // vaddps (%rsi), %ymm0, %ymm1
+  // Requires just 1 allocation, i.e., freeing allocations for other operations
+  // and having less micro operations to execute.
+  //
+  // For some X86 architectures, this is even worse because for instance for
+  // stores, the complex addressing mode forces the instruction to use the
+  // "load" ports instead of the dedicated "store" port.
+  // E.g., on Haswell:
+  // vmovaps %ymm1, (%r8, %rdi) can use port 2 or 3.
+  // vmovaps %ymm1, (%r8) can use port 2, 3, or 7.   
   if (isLegalAddressingMode(AM, Ty))
     // Scale represents reg2 * scale, thus account for 1
     // as soon as we use a second register.

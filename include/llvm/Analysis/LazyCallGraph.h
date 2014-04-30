@@ -113,8 +113,9 @@ public:
   /// be scanned for "calls" or uses of functions and its child information
   /// will be constructed. All of these results are accumulated and cached in
   /// the graph.
-  class iterator : public iterator_adaptor_base<
-                       iterator, NodeVectorImplT::iterator, Node> {
+  class iterator
+      : public iterator_adaptor_base<iterator, NodeVectorImplT::iterator,
+                                     std::bidirectional_iterator_tag, Node> {
     friend class LazyCallGraph;
     friend class LazyCallGraph::Node;
 
@@ -123,10 +124,29 @@ public:
 
     // Build the iterator for a specific position in a node list.
     iterator(LazyCallGraph &G, NodeVectorImplT::iterator NI)
-        : iterator_adaptor_base(NI), G(&G) {}
+        : iterator_adaptor_base(NI), G(&G) {
+      while (I->isNull())
+        ++I;
+    }
 
   public:
     iterator() {}
+
+    using iterator_adaptor_base::operator++;
+    iterator &operator++() {
+      do {
+        ++I;
+      } while (I->isNull());
+      return *this;
+    }
+
+    using iterator_adaptor_base::operator--;
+    iterator &operator--() {
+      do {
+        --I;
+      } while (I->isNull());
+      return *this;
+    }
 
     reference operator*() const {
       if (I->is<Node *>())
@@ -165,6 +185,9 @@ public:
 
     /// \brief Internal helper to insert a callee.
     void insertEdgeInternal(Function &Callee);
+
+    /// \brief Internal helper to insert a callee.
+    void insertEdgeInternal(Node &CalleeN);
 
     /// \brief Internal helper to remove a callee from this node.
     void removeEdgeInternal(Function &Callee);
@@ -228,6 +251,12 @@ public:
     ///
     /// Note that these methods sometimes have complex runtimes, so be careful
     /// how you call them.
+
+    /// \brief Insert an edge from one node in this SCC to another in this SCC.
+    ///
+    /// By the definition of an SCC, this does not change the nature or make-up
+    /// of any SCCs.
+    void insertIntraSCCEdge(Node &CallerN, Node &CalleeN);
 
     /// \brief Remove an edge whose source is in this SCC and target is *not*.
     ///

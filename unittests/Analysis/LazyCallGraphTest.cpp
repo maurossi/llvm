@@ -41,17 +41,17 @@ std::unique_ptr<Module> parseAssembly(const char *Assembly) {
 
 // IR forming a call graph with a diamond of triangle-shaped SCCs:
 //
-//         d1
-//        /  \
-//       d3--d2
-//      /     \
-//     b1     c1
-//   /  \    /  \
-//  b3--b2  c3--c2
-//       \  /
-//        a1
-//       /  \
-//      a3--a2
+//         d1       |
+//        /  \      |
+//       d3--d2     |
+//      /     \     |
+//     b1     c1    |
+//   /  \    /  \   |
+//  b3--b2  c3--c2  |
+//       \  /       |
+//        a1        |
+//       /  \       |
+//      a3--a2      |
 //
 // All call edges go up between SCCs, and clockwise around the SCC.
 static const char DiamondOfTriangles[] =
@@ -290,7 +290,17 @@ TEST(LazyCallGraphTest, BasicGraphMutation) {
   CG.insertEdge(C, C.getFunction());
   EXPECT_EQ(2, std::distance(C.begin(), C.end()));
   EXPECT_EQ(&B, &*C.begin());
-  EXPECT_EQ(&C, &*(C.begin() + 1));
+  EXPECT_EQ(&C, &*std::next(C.begin()));
+
+  CG.removeEdge(C, B.getFunction());
+  EXPECT_EQ(1, std::distance(C.begin(), C.end()));
+  EXPECT_EQ(&C, &*C.begin());
+
+  CG.removeEdge(C, C.getFunction());
+  EXPECT_EQ(0, std::distance(C.begin(), C.end()));
+
+  CG.removeEdge(B, C.getFunction());
+  EXPECT_EQ(0, std::distance(B.begin(), B.end()));
 }
 
 TEST(LazyCallGraphTest, MultiArmSCC) {
@@ -374,6 +384,52 @@ TEST(LazyCallGraphTest, InterSCCEdgeRemoval) {
   EXPECT_EQ(A.end(), A.begin());
   EXPECT_EQ(B.end(), B.begin());
   EXPECT_EQ(BC.parent_end(), BC.parent_begin());
+}
+
+TEST(LazyCallGraphTest, IntraSCCEdgeInsertion) {
+  std::unique_ptr<Module> M1 = parseAssembly(
+      "define void @a() {\n"
+      "entry:\n"
+      "  call void @b()\n"
+      "  ret void\n"
+      "}\n"
+      "define void @b() {\n"
+      "entry:\n"
+      "  call void @c()\n"
+      "  ret void\n"
+      "}\n"
+      "define void @c() {\n"
+      "entry:\n"
+      "  call void @a()\n"
+      "  ret void\n"
+      "}\n");
+  LazyCallGraph CG1(*M1);
+
+  // Force the graph to be fully expanded.
+  auto SCCI = CG1.postorder_scc_begin();
+  LazyCallGraph::SCC &SCC = *SCCI++;
+  EXPECT_EQ(CG1.postorder_scc_end(), SCCI);
+
+  LazyCallGraph::Node &A = *CG1.lookup(lookupFunction(*M1, "a"));
+  LazyCallGraph::Node &B = *CG1.lookup(lookupFunction(*M1, "b"));
+  LazyCallGraph::Node &C = *CG1.lookup(lookupFunction(*M1, "c"));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(A));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(B));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(C));
+
+  // Insert an edge from 'a' to 'c'. Nothing changes about the SCCs.
+  SCC.insertIntraSCCEdge(A, C);
+  EXPECT_EQ(2, std::distance(A.begin(), A.end()));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(A));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(B));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(C));
+
+  // Insert a self edge from 'a' back to 'a'.
+  SCC.insertIntraSCCEdge(A, A);
+  EXPECT_EQ(3, std::distance(A.begin(), A.end()));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(A));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(B));
+  EXPECT_EQ(&SCC, CG1.lookupSCC(C));
 }
 
 TEST(LazyCallGraphTest, IntraSCCEdgeRemoval) {
