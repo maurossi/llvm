@@ -32,6 +32,7 @@ transforms_scalar_SRC_FILES := \
   Scalar.cpp \
   Scalarizer.cpp \
   ScalarReplAggregates.cpp \
+  SeparateConstOffsetFromGEP.cpp \
   SimplifyCFGPass.cpp \
   Sink.cpp \
   StructurizeCFG.cpp \

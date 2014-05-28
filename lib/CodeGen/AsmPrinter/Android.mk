@@ -13,6 +13,7 @@ LOCAL_SRC_FILES :=	\
 	AsmPrinterDwarf.cpp	\
 	AsmPrinterInlineAsm.cpp	\
 	ARMException.cpp	\
+	DbgValueHistoryCalculator.cpp \
 	DIE.cpp	\
 	DIEHash.cpp \
 	DwarfAccelTable.cpp \
@@ -46,6 +47,7 @@ LOCAL_SRC_FILES :=	\
 	AsmPrinterDwarf.cpp \
 	AsmPrinterInlineAsm.cpp \
 	ARMException.cpp        \
+	DbgValueHistoryCalculator.cpp \
 	DIE.cpp \
 	DIEHash.cpp \
 	DwarfAccelTable.cpp \
