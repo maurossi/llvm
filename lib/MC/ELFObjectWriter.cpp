@@ -486,43 +486,17 @@ void ELFObjectWriter::WriteHeader(const MCAssembler &Asm,
     Write16(ShstrtabIndex);
 }
 
-uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &OrigData,
+uint64_t ELFObjectWriter::SymbolValue(MCSymbolData &Data,
                                       const MCAsmLayout &Layout) {
-  const MCSymbol &OrigSymbol = OrigData.getSymbol();
-  MCSymbolData *Data = &OrigData;
-  if (Data->isCommon() && Data->isExternal())
-    return Data->getCommonAlignment();
+  if (Data.isCommon() && Data.isExternal())
+    return Data.getCommonAlignment();
 
-  const MCSymbol *Symbol = &Data->getSymbol();
+  uint64_t Res;
+  if (!Layout.getSymbolOffset(&Data, Res))
+    return 0;
 
-  uint64_t Res = 0;
-  if (Symbol->isVariable()) {
-    const MCExpr *Expr = Symbol->getVariableValue();
-    MCValue Value;
-    if (!Expr->EvaluateAsValue(Value, &Layout))
-      llvm_unreachable("Invalid expression");
-
-    assert(!Value.getSymB());
-
-    Res = Value.getConstant();
-
-    if (const MCSymbolRefExpr *A = Value.getSymA()) {
-      Symbol = &A->getSymbol();
-      Data = &Layout.getAssembler().getSymbolData(*Symbol);
-    } else {
-      Symbol = nullptr;
-      Data = nullptr;
-    }
-  }
-
-  const MCAssembler &Asm = Layout.getAssembler();
-  if (Asm.isThumbFunc(&OrigSymbol))
+  if (Layout.getAssembler().isThumbFunc(&Data.getSymbol()))
     Res |= 1;
-
-  if (!Symbol || !Symbol->isInSection())
-    return Res;
-
-  Res += Layout.getSymbolOffset(Data);
 
   return Res;
 }
@@ -602,27 +576,6 @@ static uint8_t mergeTypeForSet(uint8_t origType, uint8_t newType) {
   return Type;
 }
 
-static const MCSymbol *getBaseSymbol(const MCAsmLayout &Layout,
-                                     const MCSymbol &Symbol) {
-  if (!Symbol.isVariable())
-    return &Symbol;
-
-  const MCExpr *Expr = Symbol.getVariableValue();
-  MCValue Value;
-  if (!Expr->EvaluateAsValue(Value, &Layout))
-    llvm_unreachable("Invalid Expression");
-  const MCSymbolRefExpr *RefB = Value.getSymB();
-  if (RefB) {
-    Layout.getAssembler().getContext().FatalError(
-        SMLoc(), Twine("symbol '") + RefB->getSymbol().getName() +
-                     "' could not be evaluated in a subtraction expression");
-  }
-  const MCSymbolRefExpr *A = Value.getSymA();
-  if (!A)
-    return nullptr;
-  return getBaseSymbol(Layout, A->getSymbol());
-}
-
 void ELFObjectWriter::WriteSymbol(SymbolTableWriter &Writer, ELFSymbolData &MSD,
                                   const MCAsmLayout &Layout) {
   MCSymbolData &OrigData = *MSD.SymbolData;
@@ -630,7 +583,7 @@ void ELFObjectWriter::WriteSymbol(SymbolTableWriter &Writer, ELFSymbolData &MSD,
           (&OrigData.getFragment()->getParent()->getSection() ==
            &OrigData.getSymbol().getSection())) &&
          "The symbol's section doesn't match the fragment's symbol");
-  const MCSymbol *Base = getBaseSymbol(Layout, OrigData.getSymbol());
+  const MCSymbol *Base = Layout.getBaseSymbol(OrigData.getSymbol());
 
   // This has to be in sync with when computeSymbolTable uses SHN_ABS or
   // SHN_COMMON.
@@ -834,6 +787,25 @@ bool ELFObjectWriter::shouldRelocateWithSymbol(const MCAssembler &Asm,
   return false;
 }
 
+static const MCSymbol *getWeakRef(const MCSymbolRefExpr &Ref) {
+  const MCSymbol &Sym = Ref.getSymbol();
+
+  if (Ref.getKind() == MCSymbolRefExpr::VK_WEAKREF)
+    return &Sym;
+
+  if (!Sym.isVariable())
+    return nullptr;
+
+  const MCExpr *Expr = Sym.getVariableValue();
+  const auto *Inner = dyn_cast<MCSymbolRefExpr>(Expr);
+  if (!Inner)
+    return nullptr;
+
+  if (Inner->getKind() == MCSymbolRefExpr::VK_WEAKREF)
+    return &Inner->getSymbol();
+  return nullptr;
+}
+
 void ELFObjectWriter::RecordRelocation(const MCAssembler &Asm,
                                        const MCAsmLayout &Layout,
                                        const MCFragment *Fragment,
@@ -919,8 +891,8 @@ void ELFObjectWriter::RecordRelocation(const MCAssembler &Asm,
     if (const MCSymbol *R = Renames.lookup(SymA))
       SymA = R;
 
-    if (RefA->getKind() == MCSymbolRefExpr::VK_WEAKREF)
-      WeakrefUsedInReloc.insert(SymA);
+    if (const MCSymbol *WeakRef = getWeakRef(*RefA))
+      WeakrefUsedInReloc.insert(WeakRef);
     else
       UsedInReloc.insert(SymA);
   }
@@ -959,7 +931,7 @@ bool ELFObjectWriter::isInSymtab(const MCAsmLayout &Layout,
     return true;
 
   if (Symbol.isVariable()) {
-    const MCSymbol *Base = getBaseSymbol(Layout, Symbol);
+    const MCSymbol *Base = Layout.getBaseSymbol(Symbol);
     if (Base && Base->isUndefined())
       return false;
   }
@@ -1046,7 +1018,7 @@ ELFObjectWriter::computeSymbolTable(MCAssembler &Asm, const MCAsmLayout &Layout,
 
     ELFSymbolData MSD;
     MSD.SymbolData = &SD;
-    const MCSymbol *BaseSymbol = getBaseSymbol(Layout, Symbol);
+    const MCSymbol *BaseSymbol = Layout.getBaseSymbol(Symbol);
 
     // Undefined symbols are global, but this is the first place we
     // are able to set it.

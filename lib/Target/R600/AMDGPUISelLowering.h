@@ -107,7 +107,7 @@ public:
 
   SDValue LowerIntrinsicIABS(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerIntrinsicLRP(SDValue Op, SelectionDAG &DAG) const;
-  SDValue LowerMinMax(SDValue Op, SelectionDAG &DAG) const;
+  SDValue CombineMinMax(SDNode *N, SelectionDAG &DAG) const;
   const char* getTargetNodeName(unsigned Opcode) const override;
 
   virtual SDNode *PostISelFolding(MachineSDNode *N,
@@ -118,11 +118,16 @@ public:
   /// \brief Determine which of the bits specified in \p Mask are known to be
   /// either zero or one and return them in the \p KnownZero and \p KnownOne
   /// bitsets.
-  void computeMaskedBitsForTargetNode(const SDValue Op,
-                                      APInt &KnownZero,
-                                      APInt &KnownOne,
-                                      const SelectionDAG &DAG,
-                                      unsigned Depth = 0) const override;
+  void computeKnownBitsForTargetNode(const SDValue Op,
+                                     APInt &KnownZero,
+                                     APInt &KnownOne,
+                                     const SelectionDAG &DAG,
+                                     unsigned Depth = 0) const override;
+
+  virtual unsigned ComputeNumSignBitsForTargetNode(
+    SDValue Op,
+    const SelectionDAG &DAG,
+    unsigned Depth = 0) const override;
 
 // Functions defined in AMDILISelLowering.cpp
 public:
@@ -155,7 +160,6 @@ private:
   SDValue LowerSIGN_EXTEND_INREG(SDValue Op, SelectionDAG &DAG) const;
   EVT genIntType(uint32_t size = 32, uint32_t numEle = 1) const;
   SDValue LowerBRCOND(SDValue Op, SelectionDAG &DAG) const;
-  SDValue LowerFP_ROUND(SDValue Op, SelectionDAG &DAG) const;
 };
 
 namespace AMDGPUISD {
@@ -187,6 +191,8 @@ enum {
   BFM, // Insert a range of bits into a 32-bit word.
   MUL_U24,
   MUL_I24,
+  MAD_U24,
+  MAD_I24,
   TEXTURE_FETCH,
   EXPORT,
   CONST_ADDRESS,

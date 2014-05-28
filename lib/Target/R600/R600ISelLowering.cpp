@@ -986,13 +986,6 @@ SDValue R600TargetLowering::LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const 
     return DAG.getNode(ISD::BITCAST, DL, VT, SelectNode);
   }
 
-
-  // Possible Min/Max pattern
-  SDValue MinMax = LowerMinMax(Op, DAG);
-  if (MinMax.getNode()) {
-    return MinMax;
-  }
-
   // If we make it this for it means we have no native instructions to handle
   // this SELECT_CC, so we must lower it.
   SDValue HWTrue, HWFalse;
@@ -1672,6 +1665,11 @@ SDValue R600TargetLowering::PerformDAGCombine(SDNode *N,
   }
 
   case ISD::SELECT_CC: {
+    // Try common optimizations
+    SDValue Ret = AMDGPUTargetLowering::PerformDAGCombine(N, DCI);
+    if (Ret.getNode())
+      return Ret;
+
     // fold selectcc (selectcc x, y, a, b, cc), b, a, b, seteq ->
     //      selectcc x, y, a, b, inv(cc)
     //
@@ -1764,7 +1762,8 @@ SDValue R600TargetLowering::PerformDAGCombine(SDNode *N,
         NewArgs);
   }
   }
-  return SDValue();
+
+  return AMDGPUTargetLowering::PerformDAGCombine(N, DCI);
 }
 
 static bool
@@ -1813,8 +1812,7 @@ FoldOperand(SDNode *ParentNode, unsigned SrcIdx, SDValue &Src, SDValue &Neg,
       TII->getOperandIdx(Opcode, AMDGPU::OpName::src1_W)
     };
     std::vector<unsigned> Consts;
-    for (unsigned i = 0; i < sizeof(SrcIndices) / sizeof(int); i++) {
-      int OtherSrcIdx = SrcIndices[i];
+    for (int OtherSrcIdx : SrcIndices) {
       int OtherSelIdx = TII->getSelIdx(Opcode, OtherSrcIdx);
       if (OtherSrcIdx < 0 || OtherSelIdx < 0)
         continue;
@@ -1825,14 +1823,14 @@ FoldOperand(SDNode *ParentNode, unsigned SrcIdx, SDValue &Src, SDValue &Neg,
       if (RegisterSDNode *Reg =
           dyn_cast<RegisterSDNode>(ParentNode->getOperand(OtherSrcIdx))) {
         if (Reg->getReg() == AMDGPU::ALU_CONST) {
-          ConstantSDNode *Cst = dyn_cast<ConstantSDNode>(
-              ParentNode->getOperand(OtherSelIdx));
+          ConstantSDNode *Cst
+            = cast<ConstantSDNode>(ParentNode->getOperand(OtherSelIdx));
           Consts.push_back(Cst->getZExtValue());
         }
       }
     }
 
-    ConstantSDNode *Cst = dyn_cast<ConstantSDNode>(CstOffset);
+    ConstantSDNode *Cst = cast<ConstantSDNode>(CstOffset);
     Consts.push_back(Cst->getZExtValue());
     if (!TII->fitsConstReadLimitations(Consts)) {
       return false;

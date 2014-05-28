@@ -154,9 +154,6 @@ class MCStreamer {
   MCStreamer(const MCStreamer &) LLVM_DELETED_FUNCTION;
   MCStreamer &operator=(const MCStreamer &) LLVM_DELETED_FUNCTION;
 
-  bool EmitEHFrame;
-  bool EmitDebugFrame;
-
   std::vector<MCDwarfFrameInfo> FrameInfos;
   MCDwarfFrameInfo *getCurrentFrameInfo();
   MCSymbol *EmitCFICommon();
@@ -189,7 +186,6 @@ protected:
   virtual void EmitCFIStartProcImpl(MCDwarfFrameInfo &Frame);
   void RecordProcEnd(MCDwarfFrameInfo &Frame);
   virtual void EmitCFIEndProcImpl(MCDwarfFrameInfo &CurFrame);
-  void EmitFrames(MCAsmBackend *MAB, bool usingCFI);
 
   MCWin64EHUnwindInfo *getCurrentW64UnwindInfo() {
     return CurrentW64UnwindInfo;
@@ -654,14 +650,6 @@ public:
                                      unsigned Isa, unsigned Discriminator,
                                      StringRef FileName);
 
-  virtual void EmitDwarfAdvanceLineAddr(int64_t LineDelta,
-                                        const MCSymbol *LastLabel,
-                                        const MCSymbol *Label,
-                                        unsigned PointerSize) = 0;
-
-  virtual void EmitDwarfAdvanceFrameAddr(const MCSymbol *LastLabel,
-                                         const MCSymbol *Label) {}
-
   virtual MCSymbol *getDwarfLineTableSymbol(unsigned CUID);
 
   void EmitDwarfSetLineAddr(int64_t LineDelta, const MCSymbol *Label,
@@ -758,10 +746,9 @@ MCStreamer *createNullStreamer(MCContext &Ctx);
 /// \param ShowInst - Whether to show the MCInst representation inline with
 /// the assembly.
 MCStreamer *createAsmStreamer(MCContext &Ctx, formatted_raw_ostream &OS,
-                              bool isVerboseAsm, bool useCFI,
-                              bool useDwarfDirectory, MCInstPrinter *InstPrint,
-                              MCCodeEmitter *CE, MCAsmBackend *TAB,
-                              bool ShowInst);
+                              bool isVerboseAsm, bool useDwarfDirectory,
+                              MCInstPrinter *InstPrint, MCCodeEmitter *CE,
+                              MCAsmBackend *TAB, bool ShowInst);
 
 /// createMachOStreamer - Create a machine code streamer which will generate
 /// Mach-O format object files.

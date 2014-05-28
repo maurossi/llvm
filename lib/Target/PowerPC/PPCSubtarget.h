@@ -99,6 +99,9 @@ protected:
   /// TargetTriple - What processor and OS we're targeting.
   Triple TargetTriple;
 
+  /// OptLevel - What default optimization level we're emitting code for.
+  CodeGenOpt::Level OptLevel;
+
 public:
   /// This constructor initializes the data members to match that
   /// of the specified triple.
@@ -201,6 +204,8 @@ public:
   bool enablePostRAScheduler(CodeGenOpt::Level OptLevel,
                              TargetSubtargetInfo::AntiDepBreakMode& Mode,
                              RegClassVector& CriticalPathRCs) const override;
+
+  bool enableEarlyIfConversion() const override { return hasISEL(); }
 
   // Scheduling customization.
   bool enableMachineScheduler() const override;

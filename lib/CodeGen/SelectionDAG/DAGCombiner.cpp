@@ -167,6 +167,7 @@ namespace {
 
     bool CombineToPreIndexedLoadStore(SDNode *N);
     bool CombineToPostIndexedLoadStore(SDNode *N);
+    SDValue SplitIndexingFromLoad(LoadSDNode *LD);
     bool SliceUpLoad(SDNode *N);
 
     void ReplaceLoadWithPromotedLoad(SDNode *Load, SDNode *ExtLoad);
@@ -761,10 +762,14 @@ CommitTargetLoweringOpt(const TargetLowering::TargetLoweringOpt &TLO) {
 
     // If the operands of this node are only used by the node, they will now
     // be dead.  Make sure to visit them first to delete dead nodes early.
-    for (unsigned i = 0, e = TLO.Old.getNode()->getNumOperands(); i != e; ++i)
-      if (TLO.Old.getNode()->getOperand(i).getNode()->hasOneUse())
-        AddToWorkList(TLO.Old.getNode()->getOperand(i).getNode());
-
+    for (unsigned i = 0, e = TLO.Old.getNode()->getNumOperands(); i != e; ++i) {
+      SDNode *Op = TLO.Old.getNode()->getOperand(i).getNode();
+      // For an operand generating multiple values, one of the values may
+      // become dead allowing further simplification (e.g. split index
+      // arithmetic from an indexed load).
+      if (Op->hasOneUse() || Op->getNumValues() > 1)
+        AddToWorkList(Op);
+    }
     DAG.DeleteNode(TLO.Old.getNode());
   }
 }
@@ -1559,10 +1564,10 @@ SDValue DAGCombiner::visitADD(SDNode *N) {
   if (VT.isInteger() && !VT.isVector()) {
     APInt LHSZero, LHSOne;
     APInt RHSZero, RHSOne;
-    DAG.ComputeMaskedBits(N0, LHSZero, LHSOne);
+    DAG.computeKnownBits(N0, LHSZero, LHSOne);
 
     if (LHSZero.getBoolValue()) {
-      DAG.ComputeMaskedBits(N1, RHSZero, RHSOne);
+      DAG.computeKnownBits(N1, RHSZero, RHSOne);
 
       // If all possibly-set bits on the LHS are clear on the RHS, return an OR.
       // If all possibly-set bits on the RHS are clear on the LHS, return an OR.
@@ -1654,10 +1659,10 @@ SDValue DAGCombiner::visitADDC(SDNode *N) {
   // fold (addc a, b) -> (or a, b), CARRY_FALSE iff a and b share no bits.
   APInt LHSZero, LHSOne;
   APInt RHSZero, RHSOne;
-  DAG.ComputeMaskedBits(N0, LHSZero, LHSOne);
+  DAG.computeKnownBits(N0, LHSZero, LHSOne);
 
   if (LHSZero.getBoolValue()) {
-    DAG.ComputeMaskedBits(N1, RHSZero, RHSOne);
+    DAG.computeKnownBits(N1, RHSZero, RHSOne);
 
     // If all possibly-set bits on the LHS are clear on the RHS, return an OR.
     // If all possibly-set bits on the RHS are clear on the LHS, return an OR.
@@ -3867,6 +3872,9 @@ SDValue DAGCombiner::visitShiftByConstant(SDNode *N, ConstantSDNode *Amt) {
       return SDValue();
   }
 
+  if (!TLI.isDesirableToCommuteWithShift(LHS))
+    return SDValue();
+
   // Fold the constants, shifting the binop RHS by the shift amount.
   SDValue NewRHS = DAG.getNode(N->getOpcode(), SDLoc(LHS->getOperand(1)),
                                N->getValueType(0),
@@ -4340,7 +4348,7 @@ SDValue DAGCombiner::visitSRL(SDNode *N) {
   if (N1C && N0.getOpcode() == ISD::CTLZ &&
       N1C->getAPIntValue() == Log2_32(OpSizeInBits)) {
     APInt KnownZero, KnownOne;
-    DAG.ComputeMaskedBits(N0.getOperand(0), KnownZero, KnownOne);
+    DAG.computeKnownBits(N0.getOperand(0), KnownZero, KnownOne);
 
     // If any of the input bits are KnownOne, then the input couldn't be all
     // zeros, thus the result of the srl will always be zero.
@@ -5066,13 +5074,13 @@ SDValue DAGCombiner::visitSIGN_EXTEND(SDNode *N) {
 // isTruncateOf - If N is a truncate of some other value, return true, record
 // the value being truncated in Op and which of Op's bits are zero in KnownZero.
 // This function computes KnownZero to avoid a duplicated call to
-// ComputeMaskedBits in the caller.
+// computeKnownBits in the caller.
 static bool isTruncateOf(SelectionDAG &DAG, SDValue N, SDValue &Op,
                          APInt &KnownZero) {
   APInt KnownOne;
   if (N->getOpcode() == ISD::TRUNCATE) {
     Op = N->getOperand(0);
-    DAG.ComputeMaskedBits(Op, KnownZero, KnownOne);
+    DAG.computeKnownBits(Op, KnownZero, KnownOne);
     return true;
   }
 
@@ -5093,7 +5101,7 @@ static bool isTruncateOf(SelectionDAG &DAG, SDValue N, SDValue &Op,
   else
     return false;
 
-  DAG.ComputeMaskedBits(Op, KnownZero, KnownOne);
+  DAG.computeKnownBits(Op, KnownZero, KnownOne);
 
   if (!(KnownZero | APInt(Op.getValueSizeInBits(), 1)).isAllOnesValue())
     return false;
@@ -7178,11 +7186,16 @@ SDValue DAGCombiner::visitFNEG(SDNode *N) {
   // (fneg (fmul c, x)) -> (fmul -c, x)
   if (N0.getOpcode() == ISD::FMUL) {
     ConstantFPSDNode *CFP1 = dyn_cast<ConstantFPSDNode>(N0.getOperand(1));
-    if (CFP1)
-      return DAG.getNode(ISD::FMUL, SDLoc(N), VT,
-                         N0.getOperand(0),
-                         DAG.getNode(ISD::FNEG, SDLoc(N), VT,
-                                     N0.getOperand(1)));
+    if (CFP1) {
+      APFloat CVal = CFP1->getValueAPF();
+      CVal.changeSign();
+      if (Level >= AfterLegalizeDAG &&
+          (TLI.isFPImmLegal(CVal, N->getValueType(0)) ||
+           TLI.isOperationLegal(ISD::ConstantFP, N->getValueType(0))))
+        return DAG.getNode(
+            ISD::FMUL, SDLoc(N), VT, N0.getOperand(0),
+            DAG.getNode(ISD::FNEG, SDLoc(N), VT, N0.getOperand(1)));
+    }
   }
 
   return SDValue();
@@ -7836,6 +7849,17 @@ bool DAGCombiner::CombineToPostIndexedLoadStore(SDNode *N) {
   return false;
 }
 
+/// \brief Return the base-pointer arithmetic from an indexed \p LD.
+SDValue DAGCombiner::SplitIndexingFromLoad(LoadSDNode *LD) {
+  ISD::MemIndexedMode AM = LD->getAddressingMode();
+  assert(AM != ISD::UNINDEXED);
+  SDValue BP = LD->getOperand(1);
+  SDValue Inc = LD->getOperand(2);
+  unsigned Opc =
+      (AM == ISD::PRE_INC || AM == ISD::POST_INC ? ISD::ADD : ISD::SUB);
+  return DAG.getNode(Opc, SDLoc(LD), BP.getSimpleValueType(), BP, Inc);
+}
+
 SDValue DAGCombiner::visitLOAD(SDNode *N) {
   LoadSDNode *LD  = cast<LoadSDNode>(N);
   SDValue Chain = LD->getChain();
@@ -7872,8 +7896,16 @@ SDValue DAGCombiner::visitLOAD(SDNode *N) {
     } else {
       // Indexed loads.
       assert(N->getValueType(2) == MVT::Other && "Malformed indexed loads?");
-      if (!N->hasAnyUseOfValue(0) && !N->hasAnyUseOfValue(1)) {
+      if (!N->hasAnyUseOfValue(0)) {
         SDValue Undef = DAG.getUNDEF(N->getValueType(0));
+        SDValue Index;
+        if (N->hasAnyUseOfValue(1)) {
+          Index = SplitIndexingFromLoad(LD);
+          // Try to fold the base pointer arithmetic into subsequent loads and
+          // stores.
+          AddUsersToWorkList(N);
+        } else
+          Index = DAG.getUNDEF(N->getValueType(1));
         DEBUG(dbgs() << "\nReplacing.7 ";
               N->dump(&DAG);
               dbgs() << "\nWith: ";
@@ -7881,8 +7913,7 @@ SDValue DAGCombiner::visitLOAD(SDNode *N) {
               dbgs() << " and 2 other values\n");
         WorkListRemover DeadNodes(*this);
         DAG.ReplaceAllUsesOfValueWith(SDValue(N, 0), Undef);
-        DAG.ReplaceAllUsesOfValueWith(SDValue(N, 1),
-                                      DAG.getUNDEF(N->getValueType(1)));
+        DAG.ReplaceAllUsesOfValueWith(SDValue(N, 1), Index);
         DAG.ReplaceAllUsesOfValueWith(SDValue(N, 2), Chain);
         removeFromWorkList(N);
         DAG.DeleteNode(N);

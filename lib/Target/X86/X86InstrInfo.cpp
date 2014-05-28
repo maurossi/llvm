@@ -1513,12 +1513,14 @@ X86InstrInfo::isCoalescableExtInstr(const MachineInstr &MI,
 /// operand and follow operands form a reference to the stack frame.
 bool X86InstrInfo::isFrameOperand(const MachineInstr *MI, unsigned int Op,
                                   int &FrameIndex) const {
-  if (MI->getOperand(Op).isFI() && MI->getOperand(Op+1).isImm() &&
-      MI->getOperand(Op+2).isReg() && MI->getOperand(Op+3).isImm() &&
-      MI->getOperand(Op+1).getImm() == 1 &&
-      MI->getOperand(Op+2).getReg() == 0 &&
-      MI->getOperand(Op+3).getImm() == 0) {
-    FrameIndex = MI->getOperand(Op).getIndex();
+  if (MI->getOperand(Op+X86::AddrBaseReg).isFI() &&
+      MI->getOperand(Op+X86::AddrScaleAmt).isImm() &&
+      MI->getOperand(Op+X86::AddrIndexReg).isReg() &&
+      MI->getOperand(Op+X86::AddrDisp).isImm() &&
+      MI->getOperand(Op+X86::AddrScaleAmt).getImm() == 1 &&
+      MI->getOperand(Op+X86::AddrIndexReg).getReg() == 0 &&
+      MI->getOperand(Op+X86::AddrDisp).getImm() == 0) {
+    FrameIndex = MI->getOperand(Op+X86::AddrBaseReg).getIndex();
     return true;
   }
   return false;
@@ -1682,15 +1684,16 @@ X86InstrInfo::isReallyTriviallyReMaterializable(const MachineInstr *MI,
   case X86::FsMOVAPSrm:
   case X86::FsMOVAPDrm: {
     // Loads from constant pools are trivially rematerializable.
-    if (MI->getOperand(1).isReg() &&
-        MI->getOperand(2).isImm() &&
-        MI->getOperand(3).isReg() && MI->getOperand(3).getReg() == 0 &&
+    if (MI->getOperand(1+X86::AddrBaseReg).isReg() &&
+        MI->getOperand(1+X86::AddrScaleAmt).isImm() &&
+        MI->getOperand(1+X86::AddrIndexReg).isReg() &&
+        MI->getOperand(1+X86::AddrIndexReg).getReg() == 0 &&
         MI->isInvariantLoad(AA)) {
-      unsigned BaseReg = MI->getOperand(1).getReg();
+      unsigned BaseReg = MI->getOperand(1+X86::AddrBaseReg).getReg();
       if (BaseReg == 0 || BaseReg == X86::RIP)
         return true;
       // Allow re-materialization of PIC load.
-      if (!ReMatPICStubLoad && MI->getOperand(4).isGlobal())
+      if (!ReMatPICStubLoad && MI->getOperand(1+X86::AddrDisp).isGlobal())
         return false;
       const MachineFunction &MF = *MI->getParent()->getParent();
       const MachineRegisterInfo &MRI = MF.getRegInfo();
@@ -1701,13 +1704,14 @@ X86InstrInfo::isReallyTriviallyReMaterializable(const MachineInstr *MI,
 
   case X86::LEA32r:
   case X86::LEA64r: {
-    if (MI->getOperand(2).isImm() &&
-        MI->getOperand(3).isReg() && MI->getOperand(3).getReg() == 0 &&
-        !MI->getOperand(4).isReg()) {
+    if (MI->getOperand(1+X86::AddrScaleAmt).isImm() &&
+        MI->getOperand(1+X86::AddrIndexReg).isReg() &&
+        MI->getOperand(1+X86::AddrIndexReg).getReg() == 0 &&
+        !MI->getOperand(1+X86::AddrDisp).isReg()) {
       // lea fi#, lea GV, etc. are all rematerializable.
-      if (!MI->getOperand(1).isReg())
+      if (!MI->getOperand(1+X86::AddrBaseReg).isReg())
         return true;
-      unsigned BaseReg = MI->getOperand(1).getReg();
+      unsigned BaseReg = MI->getOperand(1+X86::AddrBaseReg).getReg();
       if (BaseReg == 0)
         return true;
       // Allow re-materialization of lea PICBase + x.
@@ -1724,12 +1728,8 @@ X86InstrInfo::isReallyTriviallyReMaterializable(const MachineInstr *MI,
   return true;
 }
 
-/// isSafeToClobberEFLAGS - Return true if it's safe insert an instruction that
-/// would clobber the EFLAGS condition register. Note the result may be
-/// conservative. If it cannot definitely determine the safety after visiting
-/// a few instructions in each direction it assumes it's not safe.
-static bool isSafeToClobberEFLAGS(MachineBasicBlock &MBB,
-                                  MachineBasicBlock::iterator I) {
+bool X86InstrInfo::isSafeToClobberEFLAGS(MachineBasicBlock &MBB,
+                                         MachineBasicBlock::iterator I) const {
   MachineBasicBlock::iterator E = MBB.end();
 
   // For compile time consideration, if we are not able to determine the
@@ -3555,6 +3555,26 @@ inline static bool isDefConvertible(MachineInstr *MI) {
   }
 }
 
+/// isUseDefConvertible - check whether the use can be converted
+/// to remove a comparison against zero.
+static X86::CondCode isUseDefConvertible(MachineInstr *MI) {
+  switch (MI->getOpcode()) {
+  default: return X86::COND_INVALID;
+  case X86::LZCNT16rr: case X86::LZCNT16rm:
+  case X86::LZCNT32rr: case X86::LZCNT32rm:
+  case X86::LZCNT64rr: case X86::LZCNT64rm:
+    return X86::COND_B;
+  case X86::POPCNT16rr:case X86::POPCNT16rm:
+  case X86::POPCNT32rr:case X86::POPCNT32rm:
+  case X86::POPCNT64rr:case X86::POPCNT64rm:
+    return X86::COND_E;
+  case X86::TZCNT16rr: case X86::TZCNT16rm:
+  case X86::TZCNT32rr: case X86::TZCNT32rm:
+  case X86::TZCNT64rr: case X86::TZCNT64rm:
+    return X86::COND_B;
+  }
+}
+
 /// optimizeCompareInstr - Check if there exists an earlier instruction that
 /// operates on the same source operands and sets flags in the same way as
 /// Compare; remove Compare if possible.
@@ -3621,9 +3641,34 @@ optimizeCompareInstr(MachineInstr *CmpInstr, unsigned SrcReg, unsigned SrcReg2,
   // If we are comparing against zero, check whether we can use MI to update
   // EFLAGS. If MI is not in the same BB as CmpInstr, do not optimize.
   bool IsCmpZero = (SrcReg2 == 0 && CmpValue == 0);
-  if (IsCmpZero && (MI->getParent() != CmpInstr->getParent() ||
-      !isDefConvertible(MI)))
+  if (IsCmpZero && MI->getParent() != CmpInstr->getParent())
     return false;
+
+  // If we have a use of the source register between the def and our compare
+  // instruction we can eliminate the compare iff the use sets EFLAGS in the
+  // right way.
+  bool ShouldUpdateCC = false;
+  X86::CondCode NewCC = X86::COND_INVALID;
+  if (IsCmpZero && !isDefConvertible(MI)) {
+    // Scan forward from the use until we hit the use we're looking for or the
+    // compare instruction.
+    for (MachineBasicBlock::iterator J = MI;; ++J) {
+      // Do we have a convertible instruction?
+      NewCC = isUseDefConvertible(J);
+      if (NewCC != X86::COND_INVALID && J->getOperand(1).isReg() &&
+          J->getOperand(1).getReg() == SrcReg) {
+        assert(J->definesRegister(X86::EFLAGS) && "Must be an EFLAGS def!");
+        ShouldUpdateCC = true; // Update CC later on.
+        // This is not a def of SrcReg, but still a def of EFLAGS. Keep going
+        // with the new def.
+        MI = Def = J;
+        break;
+      }
+
+      if (J == I)
+        return false;
+    }
+  }
 
   // We are searching for an earlier instruction that can make CmpInstr
   // redundant and that instruction will be saved in Sub.
@@ -3722,13 +3767,28 @@ optimizeCompareInstr(MachineInstr *CmpInstr, unsigned SrcReg, unsigned SrcReg2,
         // CF and OF are used, we can't perform this optimization.
         return false;
       }
+
+      // If we're updating the condition code check if we have to reverse the
+      // condition.
+      if (ShouldUpdateCC)
+        switch (OldCC) {
+        default:
+          return false;
+        case X86::COND_E:
+          break;
+        case X86::COND_NE:
+          NewCC = GetOppositeBranchCondition(NewCC);
+          break;
+        }
     } else if (IsSwapped) {
       // If we have SUB(r1, r2) and CMP(r2, r1), the condition code needs
       // to be changed from r2 > r1 to r1 < r2, from r2 < r1 to r1 > r2, etc.
       // We swap the condition code and synthesize the new opcode.
-      X86::CondCode NewCC = getSwappedCondition(OldCC);
+      NewCC = getSwappedCondition(OldCC);
       if (NewCC == X86::COND_INVALID) return false;
+    }
 
+    if ((ShouldUpdateCC || IsSwapped) && NewCC != OldCC) {
       // Synthesize the new opcode.
       bool HasMemoryOperand = Instr.hasOneMemOperand();
       unsigned NewOpc;
@@ -5335,8 +5395,10 @@ namespace {
       const X86TargetMachine *TM =
         static_cast<const X86TargetMachine *>(&MF.getTarget());
 
-      assert(!TM->getSubtarget<X86Subtarget>().is64Bit() &&
-             "X86-64 PIC uses RIP relative addressing");
+      // Don't do anything if this is 64-bit as 64-bit PIC
+      // uses RIP relative addressing.
+      if (TM->getSubtarget<X86Subtarget>().is64Bit())
+        return false;
 
       // Only emit a global base reg in PIC mode.
       if (TM->getRelocationModel() != Reloc::PIC_)
@@ -5391,7 +5453,7 @@ namespace {
 
 char CGBR::ID = 0;
 FunctionPass*
-llvm::createGlobalBaseRegPass() { return new CGBR(); }
+llvm::createX86GlobalBaseRegPass() { return new CGBR(); }
 
 namespace {
   struct LDTLSCleanup : public MachineFunctionPass {

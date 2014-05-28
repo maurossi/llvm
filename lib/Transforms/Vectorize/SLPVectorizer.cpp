@@ -31,6 +31,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/NoFolder.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Verifier.h"
@@ -72,8 +73,6 @@ static const unsigned RecursionMaxDepth = 12;
 struct BlockNumbering {
 
   BlockNumbering(BasicBlock *Bb) : BB(Bb), Valid(false) {}
-
-  BlockNumbering() : BB(nullptr), Valid(false) {}
 
   void numberInstructions() {
     unsigned Loc = 0;
@@ -346,17 +345,10 @@ public:
   typedef SmallVector<StoreInst *, 8> StoreList;
 
   BoUpSLP(Function *Func, ScalarEvolution *Se, const DataLayout *Dl,
-          TargetTransformInfo *Tti, AliasAnalysis *Aa, LoopInfo *Li,
-          DominatorTree *Dt) :
-    F(Func), SE(Se), DL(Dl), TTI(Tti), AA(Aa), LI(Li), DT(Dt),
-    Builder(Se->getContext()) {
-      // Setup the block numbering utility for all of the blocks in the
-      // function.
-      for (Function::iterator it = F->begin(), e = F->end(); it != e; ++it) {
-        BasicBlock *BB = it;
-        BlocksNumbers[BB] = BlockNumbering(BB);
-      }
-    }
+          TargetTransformInfo *Tti, TargetLibraryInfo *TLi, AliasAnalysis *Aa,
+          LoopInfo *Li, DominatorTree *Dt)
+      : F(Func), SE(Se), DL(Dl), TTI(Tti), TLI(TLi), AA(Aa), LI(Li), DT(Dt),
+        Builder(Se->getContext()) {}
 
   /// \brief Vectorize the tree that starts with the elements in \p VL.
   /// Returns the vectorized root.
@@ -528,6 +520,13 @@ private:
   /// Numbers instructions in different blocks.
   DenseMap<BasicBlock *, BlockNumbering> BlocksNumbers;
 
+  /// \brief Get the corresponding instruction numbering list for a given
+  /// BasicBlock. The list is allocated lazily.
+  BlockNumbering &getBlockNumbering(BasicBlock *BB) {
+    auto I = BlocksNumbers.insert(std::make_pair(BB, BlockNumbering(BB)));
+    return I.first->second;
+  }
+
   /// List of users to ignore during scheduling and that don't need extracting.
   ArrayRef<Value *> UserIgnoreList;
 
@@ -536,6 +535,7 @@ private:
   ScalarEvolution *SE;
   const DataLayout *DL;
   TargetTransformInfo *TTI;
+  TargetLibraryInfo *TLI;
   AliasAnalysis *AA;
   LoopInfo *LI;
   DominatorTree *DT;
@@ -717,7 +717,7 @@ void BoUpSLP::buildTree_rec(ArrayRef<Value *> VL, unsigned Depth) {
         continue;
 
       // Make sure that we can schedule this unknown user.
-      BlockNumbering &BN = BlocksNumbers[BB];
+      BlockNumbering &BN = getBlockNumbering(BB);
       int UserIndex = BN.getIndex(UI);
       if (UserIndex < MyLastIndex) {
 
@@ -952,34 +952,36 @@ void BoUpSLP::buildTree_rec(ArrayRef<Value *> VL, unsigned Depth) {
     }
     case Instruction::Call: {
       // Check if the calls are all to the same vectorizable intrinsic.
-      IntrinsicInst *II = dyn_cast<IntrinsicInst>(VL[0]);
-      Intrinsic::ID ID = II ? II->getIntrinsicID() : Intrinsic::not_intrinsic;
-
+      CallInst *CI = cast<CallInst>(VL[0]);
+      // Check if this is an Intrinsic call or something that can be
+      // represented by an intrinsic call
+      Intrinsic::ID ID = getIntrinsicIDForCall(CI, TLI);
       if (!isTriviallyVectorizable(ID)) {
         newTreeEntry(VL, false);
         DEBUG(dbgs() << "SLP: Non-vectorizable call.\n");
         return;
       }
 
-      Function *Int = II->getCalledFunction();
+      Function *Int = CI->getCalledFunction();
 
       for (unsigned i = 1, e = VL.size(); i != e; ++i) {
-        IntrinsicInst *II2 = dyn_cast<IntrinsicInst>(VL[i]);
-        if (!II2 || II2->getCalledFunction() != Int) {
+        CallInst *CI2 = dyn_cast<CallInst>(VL[i]);
+        if (!CI2 || CI2->getCalledFunction() != Int ||
+            getIntrinsicIDForCall(CI2, TLI) != ID) {
           newTreeEntry(VL, false);
-          DEBUG(dbgs() << "SLP: mismatched calls:" << *II << "!=" << *VL[i]
+          DEBUG(dbgs() << "SLP: mismatched calls:" << *CI << "!=" << *VL[i]
                        << "\n");
           return;
         }
       }
 
       newTreeEntry(VL, true);
-      for (unsigned i = 0, e = II->getNumArgOperands(); i != e; ++i) {
+      for (unsigned i = 0, e = CI->getNumArgOperands(); i != e; ++i) {
         ValueList Operands;
         // Prepare the operand vector.
         for (unsigned j = 0; j < VL.size(); ++j) {
-          IntrinsicInst *II2 = dyn_cast<IntrinsicInst>(VL[j]);
-          Operands.push_back(II2->getArgOperand(i));
+          CallInst *CI2 = dyn_cast<CallInst>(VL[j]);
+          Operands.push_back(CI2->getArgOperand(i));
         }
         buildTree_rec(Operands, Depth + 1);
       }
@@ -1135,12 +1137,11 @@ int BoUpSLP::getEntryCost(TreeEntry *E) {
     }
     case Instruction::Call: {
       CallInst *CI = cast<CallInst>(VL0);
-      IntrinsicInst *II = cast<IntrinsicInst>(CI);
-      Intrinsic::ID ID = II->getIntrinsicID();
+      Intrinsic::ID ID = getIntrinsicIDForCall(CI, TLI);
 
       // Calculate the cost of the scalar and vector calls.
       SmallVector<Type*, 4> ScalarTys, VecTys;
-      for (unsigned op = 0, opc = II->getNumArgOperands(); op!= opc; ++op) {
+      for (unsigned op = 0, opc = CI->getNumArgOperands(); op!= opc; ++op) {
         ScalarTys.push_back(CI->getArgOperand(op)->getType());
         VecTys.push_back(VectorType::get(CI->getArgOperand(op)->getType(),
                                          VecTy->getNumElements()));
@@ -1153,7 +1154,7 @@ int BoUpSLP::getEntryCost(TreeEntry *E) {
 
       DEBUG(dbgs() << "SLP: Call cost "<< VecCallCost - ScalarCallCost
             << " (" << VecCallCost  << "-" <<  ScalarCallCost << ")"
-            << " for " << *II << "\n");
+            << " for " << *CI << "\n");
 
       return VecCallCost - ScalarCallCost;
     }
@@ -1329,8 +1330,8 @@ Value *BoUpSLP::getSinkBarrier(Instruction *Src, Instruction *Dst) {
 
 int BoUpSLP::getLastIndex(ArrayRef<Value *> VL) {
   BasicBlock *BB = cast<Instruction>(VL[0])->getParent();
-  assert(BB == getSameBlock(VL) && BlocksNumbers.count(BB) && "Invalid block");
-  BlockNumbering &BN = BlocksNumbers[BB];
+  assert(BB == getSameBlock(VL) && "Invalid block");
+  BlockNumbering &BN = getBlockNumbering(BB);
 
   int MaxIdx = BN.getIndex(BB->getFirstNonPHI());
   for (unsigned i = 0, e = VL.size(); i < e; ++i)
@@ -1340,8 +1341,8 @@ int BoUpSLP::getLastIndex(ArrayRef<Value *> VL) {
 
 Instruction *BoUpSLP::getLastInstruction(ArrayRef<Value *> VL) {
   BasicBlock *BB = cast<Instruction>(VL[0])->getParent();
-  assert(BB == getSameBlock(VL) && BlocksNumbers.count(BB) && "Invalid block");
-  BlockNumbering &BN = BlocksNumbers[BB];
+  assert(BB == getSameBlock(VL) && "Invalid block");
+  BlockNumbering &BN = getBlockNumbering(BB);
 
   int MaxIdx = BN.getIndex(cast<Instruction>(VL[0]));
   for (unsigned i = 1, e = VL.size(); i < e; ++i)
@@ -1621,6 +1622,8 @@ Value *BoUpSLP::vectorizeTree(TreeEntry *E) {
                                             VecTy->getPointerTo(AS));
       unsigned Alignment = LI->getAlignment();
       LI = Builder.CreateLoad(VecPtr);
+      if (!Alignment)
+        Alignment = DL->getABITypeAlignment(LI->getPointerOperand()->getType());
       LI->setAlignment(Alignment);
       E->VectorizedValue = LI;
       return propagateMetadata(LI, E->Scalars);
@@ -1640,13 +1643,14 @@ Value *BoUpSLP::vectorizeTree(TreeEntry *E) {
       Value *VecPtr = Builder.CreateBitCast(SI->getPointerOperand(),
                                             VecTy->getPointerTo(AS));
       StoreInst *S = Builder.CreateStore(VecValue, VecPtr);
+      if (!Alignment)
+        Alignment = DL->getABITypeAlignment(SI->getPointerOperand()->getType());
       S->setAlignment(Alignment);
       E->VectorizedValue = S;
       return propagateMetadata(S, E->Scalars);
     }
     case Instruction::Call: {
       CallInst *CI = cast<CallInst>(VL0);
-
       setInsertPointAfterBundle(E->Scalars);
       std::vector<Value *> OpVecs;
       for (int j = 0, e = CI->getNumArgOperands(); j < e; ++j) {
@@ -1662,8 +1666,7 @@ Value *BoUpSLP::vectorizeTree(TreeEntry *E) {
       }
 
       Module *M = F->getParent();
-      IntrinsicInst *II = cast<IntrinsicInst>(CI);
-      Intrinsic::ID ID = II->getIntrinsicID();
+      Intrinsic::ID ID = getIntrinsicIDForCall(CI, TLI);
       Type *Tys[] = { VectorType::get(CI->getType(), E->Scalars.size()) };
       Function *CF = Intrinsic::getDeclaration(M, ID, Tys);
       Value *V = Builder.CreateCall(CF, OpVecs);
@@ -1766,9 +1769,9 @@ Value *BoUpSLP::vectorizeTree() {
     }
   }
 
-  for (Function::iterator it = F->begin(), e = F->end(); it != e; ++it) {
-    BlocksNumbers[it].forget();
-  }
+  for (auto &BN : BlocksNumbers)
+    BN.second.forget();
+
   Builder.ClearInsertionPoint();
 
   return VectorizableTree[0].VectorizedValue;
@@ -1809,11 +1812,19 @@ void BoUpSLP::optimizeGatherSequence() {
     Insert->moveBefore(PreHeader->getTerminator());
   }
 
+  // Make a list of all reachable blocks in our CSE queue.
+  SmallVector<const DomTreeNode *, 8> CSEWorkList;
+  CSEWorkList.reserve(CSEBlocks.size());
+  for (BasicBlock *BB : CSEBlocks)
+    if (DomTreeNode *N = DT->getNode(BB)) {
+      assert(DT->isReachableFromEntry(N));
+      CSEWorkList.push_back(N);
+    }
+
   // Sort blocks by domination. This ensures we visit a block after all blocks
   // dominating it are visited.
-  SmallVector<BasicBlock *, 8> CSEWorkList(CSEBlocks.begin(), CSEBlocks.end());
   std::stable_sort(CSEWorkList.begin(), CSEWorkList.end(),
-                   [this](const BasicBlock *A, const BasicBlock *B) {
+                   [this](const DomTreeNode *A, const DomTreeNode *B) {
     return DT->properlyDominates(A, B);
   });
 
@@ -1821,12 +1832,10 @@ void BoUpSLP::optimizeGatherSequence() {
   // instructions. TODO: We can further optimize this scan if we split the
   // instructions into different buckets based on the insert lane.
   SmallVector<Instruction *, 16> Visited;
-  for (SmallVectorImpl<BasicBlock *>::iterator I = CSEWorkList.begin(),
-                                               E = CSEWorkList.end();
-       I != E; ++I) {
+  for (auto I = CSEWorkList.begin(), E = CSEWorkList.end(); I != E; ++I) {
     assert((I == CSEWorkList.begin() || !DT->dominates(*I, *std::prev(I))) &&
            "Worklist not sorted properly!");
-    BasicBlock *BB = *I;
+    BasicBlock *BB = (*I)->getBlock();
     // For all instructions in blocks containing gather sequences:
     for (BasicBlock::iterator it = BB->begin(), e = BB->end(); it != e;) {
       Instruction *In = it++;
@@ -1871,6 +1880,7 @@ struct SLPVectorizer : public FunctionPass {
   ScalarEvolution *SE;
   const DataLayout *DL;
   TargetTransformInfo *TTI;
+  TargetLibraryInfo *TLI;
   AliasAnalysis *AA;
   LoopInfo *LI;
   DominatorTree *DT;
@@ -1883,6 +1893,7 @@ struct SLPVectorizer : public FunctionPass {
     DataLayoutPass *DLP = getAnalysisIfAvailable<DataLayoutPass>();
     DL = DLP ? &DLP->getDataLayout() : nullptr;
     TTI = &getAnalysis<TargetTransformInfo>();
+    TLI = getAnalysisIfAvailable<TargetLibraryInfo>();
     AA = &getAnalysis<AliasAnalysis>();
     LI = &getAnalysis<LoopInfo>();
     DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
@@ -1907,8 +1918,8 @@ struct SLPVectorizer : public FunctionPass {
     DEBUG(dbgs() << "SLP: Analyzing blocks in " << F.getName() << ".\n");
 
     // Use the bottom up slp vectorizer to construct chains that start with
-    // he store instructions.
-    BoUpSLP R(&F, SE, DL, TTI, AA, LI, DT);
+    // store instructions.
+    BoUpSLP R(&F, SE, DL, TTI, TLI, AA, LI, DT);
 
     // Scan the blocks in the function in post order.
     for (po_iterator<BasicBlock*> it = po_begin(&F.getEntryBlock()),
@@ -2201,12 +2212,17 @@ bool SLPVectorizer::tryToVectorizeList(ArrayRef<Value *> VL, BoUpSLP &R,
       // way we handle the case where some elements of the vector are undefined.
       //  (return (inserelt <4 xi32> (insertelt undef (opd0) 0) (opd1) 2))
       if (!BuildVectorSlice.empty()) {
-        Instruction *InsertAfter = cast<Instruction>(VectorizedRoot);
+        // The insert point is the last build vector instruction. The vectorized
+        // root will precede it. This guarantees that we get an instruction. The
+        // vectorized tree could have been constant folded.
+        Instruction *InsertAfter = cast<Instruction>(BuildVectorSlice.back());
+        unsigned VecIdx = 0;
         for (auto &V : BuildVectorSlice) {
+          IRBuilder<true, NoFolder> Builder(
+              ++BasicBlock::iterator(InsertAfter));
           InsertElementInst *IE = cast<InsertElementInst>(V);
-          IRBuilder<> Builder(++BasicBlock::iterator(InsertAfter));
-          Instruction *Extract = cast<Instruction>(
-              Builder.CreateExtractElement(VectorizedRoot, IE->getOperand(2)));
+          Instruction *Extract = cast<Instruction>(Builder.CreateExtractElement(
+              VectorizedRoot, Builder.getInt32(VecIdx++)));
           IE->setOperand(1, Extract);
           IE->removeFromParent();
           IE->insertAfter(Extract);

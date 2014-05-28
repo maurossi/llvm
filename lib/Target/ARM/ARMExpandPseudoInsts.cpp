@@ -22,6 +22,7 @@
 #include "MCTargetDesc/ARMAddressingModes.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/CodeGen/MachineInstrBundle.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/Support/CommandLine.h"
@@ -697,25 +698,34 @@ void ARMExpandPseudo::ExpandMOV32BitImm(MachineBasicBlock &MBB,
     HI16Opc = ARM::MOVTi16;
   }
 
-  if (RequiresBundling)
-    BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(TargetOpcode::BUNDLE));
-
   LO16 = BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(LO16Opc), DstReg);
   HI16 = BuildMI(MBB, MBBI, MI.getDebugLoc(), TII->get(HI16Opc))
     .addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead))
     .addReg(DstReg);
 
-  if (MO.isImm()) {
+  switch (MO.getType()) {
+  case MachineOperand::MO_Immediate: {
     unsigned Imm = MO.getImm();
     unsigned Lo16 = Imm & 0xffff;
     unsigned Hi16 = (Imm >> 16) & 0xffff;
     LO16 = LO16.addImm(Lo16);
     HI16 = HI16.addImm(Hi16);
-  } else {
+    break;
+  }
+  case MachineOperand::MO_ExternalSymbol: {
+    const char *ES = MO.getSymbolName();
+    unsigned TF = MO.getTargetFlags();
+    LO16 = LO16.addExternalSymbol(ES, TF | ARMII::MO_LO16);
+    HI16 = HI16.addExternalSymbol(ES, TF | ARMII::MO_HI16);
+    break;
+  }
+  default: {
     const GlobalValue *GV = MO.getGlobal();
     unsigned TF = MO.getTargetFlags();
     LO16 = LO16.addGlobalAddress(GV, MO.getOffset(), TF | ARMII::MO_LO16);
     HI16 = HI16.addGlobalAddress(GV, MO.getOffset(), TF | ARMII::MO_HI16);
+    break;
+  }
   }
 
   LO16->setMemRefs(MI.memoperands_begin(), MI.memoperands_end());
@@ -723,10 +733,8 @@ void ARMExpandPseudo::ExpandMOV32BitImm(MachineBasicBlock &MBB,
   LO16.addImm(Pred).addReg(PredReg);
   HI16.addImm(Pred).addReg(PredReg);
 
-  if (RequiresBundling) {
-    LO16->bundleWithPred();
-    HI16->bundleWithPred();
-  }
+  if (RequiresBundling)
+    finalizeBundle(MBB, &*LO16, &*MBBI);
 
   TransferImpOps(MI, LO16, HI16);
   MI.eraseFromParent();

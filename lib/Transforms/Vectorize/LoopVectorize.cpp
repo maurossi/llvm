@@ -67,6 +67,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
@@ -83,9 +84,7 @@
 #include "llvm/Support/BranchProbability.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/Local.h"
@@ -479,24 +478,20 @@ static void setDebugLocFromInst(IRBuilder<> &B, const Value *Ptr) {
 }
 
 #ifndef NDEBUG
-/// \return string containing a file name and a line # for the given
-/// instruction.
-static format_object3<const char *, const char *, unsigned>
-getDebugLocString(const Instruction *I) {
-  if (!I)
-    return format<const char *, const char *, unsigned>("", "", "", 0U);
-  MDNode *N = I->getMetadata("dbg");
-  if (!N) {
-    const StringRef ModuleName =
-        I->getParent()->getParent()->getParent()->getModuleIdentifier();
-    return format<const char *, const char *, unsigned>("%s", ModuleName.data(),
-                                                        "", 0U);
+/// \return string containing a file name and a line # for the given loop.
+static std::string getDebugLocString(const Loop *L) {
+  std::string Result;
+  if (L) {
+    raw_string_ostream OS(Result);
+    const DebugLoc LoopDbgLoc = L->getStartLoc();
+    if (!LoopDbgLoc.isUnknown())
+      LoopDbgLoc.print(L->getHeader()->getContext(), OS);
+    else
+      // Just print the module name.
+      OS << L->getHeader()->getParent()->getParent()->getModuleIdentifier();
+    OS.flush();
   }
-  const DILocation Loc(N);
-  const unsigned LineNo = Loc.getLineNumber();
-  const char *DirName = Loc.getDirectory().data();
-  const char *FileName = Loc.getFilename().data();
-  return format("%s/%s:%u", DirName, FileName, LineNo);
+  return Result;
 }
 #endif
 
@@ -888,39 +883,32 @@ private:
 
 /// Utility class for getting and setting loop vectorizer hints in the form
 /// of loop metadata.
-struct LoopVectorizeHints {
-  /// Vectorization width.
-  unsigned Width;
-  /// Vectorization unroll factor.
-  unsigned Unroll;
-  /// Vectorization forced
+class LoopVectorizeHints {
+public:
   enum ForceKind {
     FK_Undefined = -1, ///< Not selected.
     FK_Disabled = 0,   ///< Forcing disabled.
     FK_Enabled = 1,    ///< Forcing enabled.
-  } Force;
+  };
 
   LoopVectorizeHints(const Loop *L, bool DisableUnrolling)
-  : Width(VectorizationFactor)
-  , Unroll(DisableUnrolling ? 1 : VectorizationUnroll)
-  , Force(FK_Undefined)
-  , LoopID(L->getLoopID()) {
+      : Width(VectorizationFactor),
+        Unroll(DisableUnrolling),
+        Force(FK_Undefined),
+        LoopID(L->getLoopID()) {
     getHints(L);
-    // The command line options override any loop metadata except for when
-    // width == 1 which is used to indicate the loop is already vectorized.
-    if (VectorizationFactor.getNumOccurrences() > 0 && Width != 1)
-      Width = VectorizationFactor;
+    // force-vector-unroll overrides DisableUnrolling.
     if (VectorizationUnroll.getNumOccurrences() > 0)
       Unroll = VectorizationUnroll;
 
-    DEBUG(if (DisableUnrolling && Unroll == 1)
-            dbgs() << "LV: Unrolling disabled by the pass manager\n");
+    DEBUG(if (DisableUnrolling && Unroll == 1) dbgs()
+          << "LV: Unrolling disabled by the pass manager\n");
   }
 
   /// Return the loop vectorizer metadata prefix.
   static StringRef Prefix() { return "llvm.vectorizer."; }
 
-  MDNode *createHint(LLVMContext &Context, StringRef Name, unsigned V) {
+  MDNode *createHint(LLVMContext &Context, StringRef Name, unsigned V) const {
     SmallVector<Value*, 2> Vals;
     Vals.push_back(MDString::get(Context, Name));
     Vals.push_back(ConstantInt::get(Type::getInt32Ty(Context), V));
@@ -954,9 +942,12 @@ struct LoopVectorizeHints {
     LoopID = NewLoopID;
   }
 
-private:
-  MDNode *LoopID;
+  unsigned getWidth() const { return Width; }
+  unsigned getUnroll() const { return Unroll; }
+  enum ForceKind getForce() const { return Force; }
+  MDNode *getLoopID() const { return LoopID; }
 
+private:
   /// Find hints specified in the loop metadata.
   void getHints(const Loop *L) {
     if (!LoopID)
@@ -1024,6 +1015,15 @@ private:
       DEBUG(dbgs() << "LV: ignoring unknown hint " << Hint << '\n');
     }
   }
+
+  /// Vectorization width.
+  unsigned Width;
+  /// Vectorization unroll factor.
+  unsigned Unroll;
+  /// Vectorization forced
+  enum ForceKind Force;
+
+  MDNode *LoopID;
 };
 
 static void addInnerLoop(Loop &L, SmallVectorImpl<Loop *> &V) {
@@ -1105,33 +1105,37 @@ struct LoopVectorize : public FunctionPass {
 
   bool processLoop(Loop *L) {
     assert(L->empty() && "Only process inner loops.");
+
+#ifndef NDEBUG
+    const std::string DebugLocStr = getDebugLocString(L);
+#endif /* NDEBUG */
+
     DEBUG(dbgs() << "\nLV: Checking a loop in \""
                  << L->getHeader()->getParent()->getName() << "\" from "
-                 << getDebugLocString(L->getHeader()->getFirstNonPHIOrDbg())
-                 << "\n");
+                 << DebugLocStr << "\n");
 
     LoopVectorizeHints Hints(L, DisableUnrolling);
 
     DEBUG(dbgs() << "LV: Loop hints:"
                  << " force="
-                 << (Hints.Force == LoopVectorizeHints::FK_Disabled
+                 << (Hints.getForce() == LoopVectorizeHints::FK_Disabled
                          ? "disabled"
-                         : (Hints.Force == LoopVectorizeHints::FK_Enabled
+                         : (Hints.getForce() == LoopVectorizeHints::FK_Enabled
                                 ? "enabled"
-                                : "?")) << " width=" << Hints.Width
-                 << " unroll=" << Hints.Unroll << "\n");
+                                : "?")) << " width=" << Hints.getWidth()
+                 << " unroll=" << Hints.getUnroll() << "\n");
 
-    if (Hints.Force == LoopVectorizeHints::FK_Disabled) {
+    if (Hints.getForce() == LoopVectorizeHints::FK_Disabled) {
       DEBUG(dbgs() << "LV: Not vectorizing: #pragma vectorize disable.\n");
       return false;
     }
 
-    if (!AlwaysVectorize && Hints.Force != LoopVectorizeHints::FK_Enabled) {
+    if (!AlwaysVectorize && Hints.getForce() != LoopVectorizeHints::FK_Enabled) {
       DEBUG(dbgs() << "LV: Not vectorizing: No #pragma vectorize enable.\n");
       return false;
     }
 
-    if (Hints.Width == 1 && Hints.Unroll == 1) {
+    if (Hints.getWidth() == 1 && Hints.getUnroll() == 1) {
       DEBUG(dbgs() << "LV: Not vectorizing: Disabled/already vectorized.\n");
       return false;
     }
@@ -1143,7 +1147,7 @@ struct LoopVectorize : public FunctionPass {
     if (TC > 0u && TC < TinyTripCountVectorThreshold) {
       DEBUG(dbgs() << "LV: Found a loop with a very small trip count. "
                    << "This loop is not worth vectorizing.");
-      if (Hints.Force == LoopVectorizeHints::FK_Enabled)
+      if (Hints.getForce() == LoopVectorizeHints::FK_Enabled)
         DEBUG(dbgs() << " But vectorizing was explicitly forced.\n");
       else {
         DEBUG(dbgs() << "\n");
@@ -1164,7 +1168,7 @@ struct LoopVectorize : public FunctionPass {
     // Check the function attributes to find out if this function should be
     // optimized for size.
     Function *F = L->getHeader()->getParent();
-    bool OptForSize = Hints.Force != LoopVectorizeHints::FK_Enabled &&
+    bool OptForSize = Hints.getForce() != LoopVectorizeHints::FK_Enabled &&
                       F->hasFnAttribute(Attribute::OptimizeForSize);
 
     // Compute the weighted frequency of this loop being executed and see if it
@@ -1174,7 +1178,7 @@ struct LoopVectorize : public FunctionPass {
     // exactly what block frequency models.
     if (LoopVectorizeWithBlockFrequency) {
       BlockFrequency LoopEntryFreq = BFI->getBlockFreq(L->getLoopPreheader());
-      if (Hints.Force != LoopVectorizeHints::FK_Enabled &&
+      if (Hints.getForce() != LoopVectorizeHints::FK_Enabled &&
           LoopEntryFreq < ColdEntryFreq)
         OptForSize = true;
     }
@@ -1191,18 +1195,16 @@ struct LoopVectorize : public FunctionPass {
 
     // Select the optimal vectorization factor.
     const LoopVectorizationCostModel::VectorizationFactor VF =
-        CM.selectVectorizationFactor(OptForSize, Hints.Width,
-                                     Hints.Force ==
+        CM.selectVectorizationFactor(OptForSize, Hints.getWidth(),
+                                     Hints.getForce() ==
                                          LoopVectorizeHints::FK_Enabled);
 
     // Select the unroll factor.
-    const unsigned UF = CM.selectUnrollFactor(OptForSize, Hints.Unroll, VF.Width,
-                                        VF.Cost);
+    const unsigned UF =
+        CM.selectUnrollFactor(OptForSize, Hints.getUnroll(), VF.Width, VF.Cost);
 
-    DEBUG(dbgs() << "LV: Found a vectorizable loop ("
-                 << VF.Width << ") in "
-                 << getDebugLocString(L->getHeader()->getFirstNonPHIOrDbg())
-                 << '\n');
+    DEBUG(dbgs() << "LV: Found a vectorizable loop (" << VF.Width << ") in "
+                 << DebugLocStr << '\n');
     DEBUG(dbgs() << "LV: Unroll Factor is " << UF << '\n');
 
     if (VF.Width == 1) {
@@ -1212,10 +1214,10 @@ struct LoopVectorize : public FunctionPass {
       DEBUG(dbgs() << "LV: Trying to at least unroll the loops.\n");
 
       // Report the unrolling decision.
-      F->getContext().emitOptimizationRemark(
-          DEBUG_TYPE, *F, L->getStartLoc(),
-          Twine("unrolled with interleaving factor " + Twine(UF) +
-                " (vectorization not beneficial)"));
+      emitOptimizationRemark(F->getContext(), DEBUG_TYPE, *F, L->getStartLoc(),
+                             Twine("unrolled with interleaving factor " +
+                                   Twine(UF) +
+                                   " (vectorization not beneficial)"));
 
       // We decided not to vectorize, but we may want to unroll.
       InnerLoopUnroller Unroller(L, SE, LI, DT, DL, TLI, UF);
@@ -1227,8 +1229,8 @@ struct LoopVectorize : public FunctionPass {
       ++LoopsVectorized;
 
       // Report the vectorization decision.
-      F->getContext().emitOptimizationRemark(
-          DEBUG_TYPE, *F, L->getStartLoc(),
+      emitOptimizationRemark(
+          F->getContext(), DEBUG_TYPE, *F, L->getStartLoc(),
           Twine("vectorized loop (vectorization factor: ") + Twine(VF.Width) +
               ", unrolling interleave factor: " + Twine(UF) + ")");
     }
@@ -2293,128 +2295,6 @@ LoopVectorizationLegality::getReductionIdentity(ReductionKind K, Type *Tp) {
   default:
     llvm_unreachable("Unknown reduction kind");
   }
-}
-
-static Intrinsic::ID checkUnaryFloatSignature(const CallInst &I,
-                                              Intrinsic::ID ValidIntrinsicID) {
-  if (I.getNumArgOperands() != 1 ||
-      !I.getArgOperand(0)->getType()->isFloatingPointTy() ||
-      I.getType() != I.getArgOperand(0)->getType() ||
-      !I.onlyReadsMemory())
-    return Intrinsic::not_intrinsic;
-
-  return ValidIntrinsicID;
-}
-
-static Intrinsic::ID checkBinaryFloatSignature(const CallInst &I,
-                                               Intrinsic::ID ValidIntrinsicID) {
-  if (I.getNumArgOperands() != 2 ||
-      !I.getArgOperand(0)->getType()->isFloatingPointTy() ||
-      !I.getArgOperand(1)->getType()->isFloatingPointTy() ||
-      I.getType() != I.getArgOperand(0)->getType() ||
-      I.getType() != I.getArgOperand(1)->getType() ||
-      !I.onlyReadsMemory())
-    return Intrinsic::not_intrinsic;
-
-  return ValidIntrinsicID;
-}
-
-
-static Intrinsic::ID
-getIntrinsicIDForCall(CallInst *CI, const TargetLibraryInfo *TLI) {
-  // If we have an intrinsic call, check if it is trivially vectorizable.
-  if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(CI)) {
-    Intrinsic::ID ID = II->getIntrinsicID();
-    if (isTriviallyVectorizable(ID) || ID == Intrinsic::lifetime_start ||
-        ID == Intrinsic::lifetime_end)
-      return ID;
-    else
-      return Intrinsic::not_intrinsic;
-  }
-
-  if (!TLI)
-    return Intrinsic::not_intrinsic;
-
-  LibFunc::Func Func;
-  Function *F = CI->getCalledFunction();
-  // We're going to make assumptions on the semantics of the functions, check
-  // that the target knows that it's available in this environment and it does
-  // not have local linkage.
-  if (!F || F->hasLocalLinkage() || !TLI->getLibFunc(F->getName(), Func))
-    return Intrinsic::not_intrinsic;
-
-  // Otherwise check if we have a call to a function that can be turned into a
-  // vector intrinsic.
-  switch (Func) {
-  default:
-    break;
-  case LibFunc::sin:
-  case LibFunc::sinf:
-  case LibFunc::sinl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::sin);
-  case LibFunc::cos:
-  case LibFunc::cosf:
-  case LibFunc::cosl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::cos);
-  case LibFunc::exp:
-  case LibFunc::expf:
-  case LibFunc::expl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::exp);
-  case LibFunc::exp2:
-  case LibFunc::exp2f:
-  case LibFunc::exp2l:
-    return checkUnaryFloatSignature(*CI, Intrinsic::exp2);
-  case LibFunc::log:
-  case LibFunc::logf:
-  case LibFunc::logl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::log);
-  case LibFunc::log10:
-  case LibFunc::log10f:
-  case LibFunc::log10l:
-    return checkUnaryFloatSignature(*CI, Intrinsic::log10);
-  case LibFunc::log2:
-  case LibFunc::log2f:
-  case LibFunc::log2l:
-    return checkUnaryFloatSignature(*CI, Intrinsic::log2);
-  case LibFunc::fabs:
-  case LibFunc::fabsf:
-  case LibFunc::fabsl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::fabs);
-  case LibFunc::copysign:
-  case LibFunc::copysignf:
-  case LibFunc::copysignl:
-    return checkBinaryFloatSignature(*CI, Intrinsic::copysign);
-  case LibFunc::floor:
-  case LibFunc::floorf:
-  case LibFunc::floorl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::floor);
-  case LibFunc::ceil:
-  case LibFunc::ceilf:
-  case LibFunc::ceill:
-    return checkUnaryFloatSignature(*CI, Intrinsic::ceil);
-  case LibFunc::trunc:
-  case LibFunc::truncf:
-  case LibFunc::truncl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::trunc);
-  case LibFunc::rint:
-  case LibFunc::rintf:
-  case LibFunc::rintl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::rint);
-  case LibFunc::nearbyint:
-  case LibFunc::nearbyintf:
-  case LibFunc::nearbyintl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::nearbyint);
-  case LibFunc::round:
-  case LibFunc::roundf:
-  case LibFunc::roundl:
-    return checkUnaryFloatSignature(*CI, Intrinsic::round);
-  case LibFunc::pow:
-  case LibFunc::powf:
-  case LibFunc::powl:
-    return checkBinaryFloatSignature(*CI, Intrinsic::pow);
-  }
-
-  return Intrinsic::not_intrinsic;
 }
 
 /// This function translates the reduction kind to an LLVM binary operator.

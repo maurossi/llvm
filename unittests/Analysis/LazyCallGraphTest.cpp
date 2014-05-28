@@ -41,17 +41,17 @@ std::unique_ptr<Module> parseAssembly(const char *Assembly) {
 
 // IR forming a call graph with a diamond of triangle-shaped SCCs:
 //
-//         d1       |
-//        /  \      |
-//       d3--d2     |
-//      /     \     |
-//     b1     c1    |
-//   /  \    /  \   |
-//  b3--b2  c3--c2  |
-//       \  /       |
-//        a1        |
-//       /  \       |
-//      a3--a2      |
+//         d1
+//        /  \
+//       d3--d2
+//      /     \
+//     b1     c1
+//   /  \    /  \
+//  b3--b2  c3--c2
+//       \  /
+//        a1
+//       /  \
+//      a3--a2
 //
 // All call edges go up between SCCs, and clockwise around the SCC.
 static const char DiamondOfTriangles[] =
@@ -214,6 +214,10 @@ TEST(LazyCallGraphTest, BasicGraphFormation) {
   EXPECT_EQ("d2", Nodes[1]);
   EXPECT_EQ("d3", Nodes[2]);
   Nodes.clear();
+  EXPECT_FALSE(D.isParentOf(D));
+  EXPECT_FALSE(D.isChildOf(D));
+  EXPECT_FALSE(D.isAncestorOf(D));
+  EXPECT_FALSE(D.isDescendantOf(D));
 
   LazyCallGraph::SCC &C = *SCCI++;
   for (LazyCallGraph::Node *N : C)
@@ -224,6 +228,10 @@ TEST(LazyCallGraphTest, BasicGraphFormation) {
   EXPECT_EQ("c2", Nodes[1]);
   EXPECT_EQ("c3", Nodes[2]);
   Nodes.clear();
+  EXPECT_TRUE(C.isParentOf(D));
+  EXPECT_FALSE(C.isChildOf(D));
+  EXPECT_TRUE(C.isAncestorOf(D));
+  EXPECT_FALSE(C.isDescendantOf(D));
 
   LazyCallGraph::SCC &B = *SCCI++;
   for (LazyCallGraph::Node *N : B)
@@ -234,6 +242,12 @@ TEST(LazyCallGraphTest, BasicGraphFormation) {
   EXPECT_EQ("b2", Nodes[1]);
   EXPECT_EQ("b3", Nodes[2]);
   Nodes.clear();
+  EXPECT_TRUE(B.isParentOf(D));
+  EXPECT_FALSE(B.isChildOf(D));
+  EXPECT_TRUE(B.isAncestorOf(D));
+  EXPECT_FALSE(B.isDescendantOf(D));
+  EXPECT_FALSE(B.isAncestorOf(C));
+  EXPECT_FALSE(C.isAncestorOf(B));
 
   LazyCallGraph::SCC &A = *SCCI++;
   for (LazyCallGraph::Node *N : A)
@@ -244,6 +258,12 @@ TEST(LazyCallGraphTest, BasicGraphFormation) {
   EXPECT_EQ("a2", Nodes[1]);
   EXPECT_EQ("a3", Nodes[2]);
   Nodes.clear();
+  EXPECT_TRUE(A.isParentOf(B));
+  EXPECT_TRUE(A.isParentOf(C));
+  EXPECT_FALSE(A.isParentOf(D));
+  EXPECT_TRUE(A.isAncestorOf(B));
+  EXPECT_TRUE(A.isAncestorOf(C));
+  EXPECT_TRUE(A.isAncestorOf(D));
 
   EXPECT_EQ(CG.postorder_scc_end(), SCCI);
 }
@@ -351,6 +371,214 @@ TEST(LazyCallGraphTest, MultiArmSCC) {
   EXPECT_EQ(&SCC, CG.lookupSCC(C));
   EXPECT_EQ(&SCC, CG.lookupSCC(D));
   EXPECT_EQ(&SCC, CG.lookupSCC(E));
+}
+
+TEST(LazyCallGraphTest, OutgoingSCCEdgeInsertion) {
+  std::unique_ptr<Module> M = parseAssembly(
+      "define void @a() {\n"
+      "entry:\n"
+      "  call void @b()\n"
+      "  call void @c()\n"
+      "  ret void\n"
+      "}\n"
+      "define void @b() {\n"
+      "entry:\n"
+      "  call void @d()\n"
+      "  ret void\n"
+      "}\n"
+      "define void @c() {\n"
+      "entry:\n"
+      "  call void @d()\n"
+      "  ret void\n"
+      "}\n"
+      "define void @d() {\n"
+      "entry:\n"
+      "  ret void\n"
+      "}\n");
+  LazyCallGraph CG(*M);
+
+  // Force the graph to be fully expanded.
+  for (LazyCallGraph::SCC &C : CG.postorder_sccs())
+    (void)C;
+
+  LazyCallGraph::Node &A = *CG.lookup(lookupFunction(*M, "a"));
+  LazyCallGraph::Node &B = *CG.lookup(lookupFunction(*M, "b"));
+  LazyCallGraph::Node &C = *CG.lookup(lookupFunction(*M, "c"));
+  LazyCallGraph::Node &D = *CG.lookup(lookupFunction(*M, "d"));
+  LazyCallGraph::SCC &AC = *CG.lookupSCC(A);
+  LazyCallGraph::SCC &BC = *CG.lookupSCC(B);
+  LazyCallGraph::SCC &CC = *CG.lookupSCC(C);
+  LazyCallGraph::SCC &DC = *CG.lookupSCC(D);
+  EXPECT_TRUE(AC.isAncestorOf(BC));
+  EXPECT_TRUE(AC.isAncestorOf(CC));
+  EXPECT_TRUE(AC.isAncestorOf(DC));
+  EXPECT_TRUE(DC.isDescendantOf(AC));
+  EXPECT_TRUE(DC.isDescendantOf(BC));
+  EXPECT_TRUE(DC.isDescendantOf(CC));
+
+  EXPECT_EQ(2, std::distance(A.begin(), A.end()));
+  AC.insertOutgoingEdge(A, D);
+  EXPECT_EQ(3, std::distance(A.begin(), A.end()));
+  EXPECT_TRUE(AC.isParentOf(DC));
+  EXPECT_EQ(&AC, CG.lookupSCC(A));
+  EXPECT_EQ(&BC, CG.lookupSCC(B));
+  EXPECT_EQ(&CC, CG.lookupSCC(C));
+  EXPECT_EQ(&DC, CG.lookupSCC(D));
+}
+
+TEST(LazyCallGraphTest, IncomingSCCEdgeInsertion) {
+  // We want to ensure we can add edges even across complex diamond graphs, so
+  // we use the diamond of triangles graph defined above. The ascii diagram is
+  // repeated here for easy reference.
+  //
+  //         d1       |
+  //        /  \      |
+  //       d3--d2     |
+  //      /     \     |
+  //     b1     c1    |
+  //   /  \    /  \   |
+  //  b3--b2  c3--c2  |
+  //       \  /       |
+  //        a1        |
+  //       /  \       |
+  //      a3--a2      |
+  //
+  std::unique_ptr<Module> M = parseAssembly(DiamondOfTriangles);
+  LazyCallGraph CG(*M);
+
+  // Force the graph to be fully expanded.
+  for (LazyCallGraph::SCC &C : CG.postorder_sccs())
+    (void)C;
+
+  LazyCallGraph::Node &A1 = *CG.lookup(lookupFunction(*M, "a1"));
+  LazyCallGraph::Node &A2 = *CG.lookup(lookupFunction(*M, "a2"));
+  LazyCallGraph::Node &A3 = *CG.lookup(lookupFunction(*M, "a3"));
+  LazyCallGraph::Node &B1 = *CG.lookup(lookupFunction(*M, "b1"));
+  LazyCallGraph::Node &B2 = *CG.lookup(lookupFunction(*M, "b2"));
+  LazyCallGraph::Node &B3 = *CG.lookup(lookupFunction(*M, "b3"));
+  LazyCallGraph::Node &C1 = *CG.lookup(lookupFunction(*M, "c1"));
+  LazyCallGraph::Node &C2 = *CG.lookup(lookupFunction(*M, "c2"));
+  LazyCallGraph::Node &C3 = *CG.lookup(lookupFunction(*M, "c3"));
+  LazyCallGraph::Node &D1 = *CG.lookup(lookupFunction(*M, "d1"));
+  LazyCallGraph::Node &D2 = *CG.lookup(lookupFunction(*M, "d2"));
+  LazyCallGraph::Node &D3 = *CG.lookup(lookupFunction(*M, "d3"));
+  LazyCallGraph::SCC &AC = *CG.lookupSCC(A1);
+  LazyCallGraph::SCC &BC = *CG.lookupSCC(B1);
+  LazyCallGraph::SCC &CC = *CG.lookupSCC(C1);
+  LazyCallGraph::SCC &DC = *CG.lookupSCC(D1);
+  ASSERT_EQ(&AC, CG.lookupSCC(A2));
+  ASSERT_EQ(&AC, CG.lookupSCC(A3));
+  ASSERT_EQ(&BC, CG.lookupSCC(B2));
+  ASSERT_EQ(&BC, CG.lookupSCC(B3));
+  ASSERT_EQ(&CC, CG.lookupSCC(C2));
+  ASSERT_EQ(&CC, CG.lookupSCC(C3));
+  ASSERT_EQ(&DC, CG.lookupSCC(D2));
+  ASSERT_EQ(&DC, CG.lookupSCC(D3));
+  ASSERT_EQ(1, std::distance(D2.begin(), D2.end()));
+
+  // Add an edge to make the graph:
+  //
+  //         d1         |
+  //        /  \        |
+  //       d3--d2---.   |
+  //      /     \    |  |
+  //     b1     c1   |  |
+  //   /  \    /  \ /   |
+  //  b3--b2  c3--c2    |
+  //       \  /         |
+  //        a1          |
+  //       /  \         |
+  //      a3--a2        |
+  CC.insertIncomingEdge(D2, C2);
+  // Make sure we connected the nodes.
+  EXPECT_EQ(2, std::distance(D2.begin(), D2.end()));
+
+  // Make sure we have the correct nodes in the SCC sets.
+  EXPECT_EQ(&AC, CG.lookupSCC(A1));
+  EXPECT_EQ(&AC, CG.lookupSCC(A2));
+  EXPECT_EQ(&AC, CG.lookupSCC(A3));
+  EXPECT_EQ(&BC, CG.lookupSCC(B1));
+  EXPECT_EQ(&BC, CG.lookupSCC(B2));
+  EXPECT_EQ(&BC, CG.lookupSCC(B3));
+  EXPECT_EQ(&CC, CG.lookupSCC(C1));
+  EXPECT_EQ(&CC, CG.lookupSCC(C2));
+  EXPECT_EQ(&CC, CG.lookupSCC(C3));
+  EXPECT_EQ(&CC, CG.lookupSCC(D1));
+  EXPECT_EQ(&CC, CG.lookupSCC(D2));
+  EXPECT_EQ(&CC, CG.lookupSCC(D3));
+
+  // And that ancestry tests have been updated.
+  EXPECT_TRUE(AC.isParentOf(BC));
+  EXPECT_TRUE(AC.isParentOf(CC));
+  EXPECT_FALSE(AC.isAncestorOf(DC));
+  EXPECT_FALSE(BC.isAncestorOf(DC));
+  EXPECT_FALSE(CC.isAncestorOf(DC));
+}
+
+TEST(LazyCallGraphTest, IncomingSCCEdgeInsertionMidTraversal) {
+  // This is the same fundamental test as the previous, but we perform it
+  // having only partially walked the SCCs of the graph.
+  std::unique_ptr<Module> M = parseAssembly(DiamondOfTriangles);
+  LazyCallGraph CG(*M);
+
+  // Walk the SCCs until we find the one containing 'c1'.
+  auto SCCI = CG.postorder_scc_begin(), SCCE = CG.postorder_scc_end();
+  ASSERT_NE(SCCI, SCCE);
+  LazyCallGraph::SCC &DC = *SCCI;
+  ASSERT_NE(&DC, nullptr);
+  ++SCCI;
+  ASSERT_NE(SCCI, SCCE);
+  LazyCallGraph::SCC &CC = *SCCI;
+  ASSERT_NE(&CC, nullptr);
+
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "a1")));
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "a2")));
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "a3")));
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "b1")));
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "b2")));
+  ASSERT_EQ(nullptr, CG.lookup(lookupFunction(*M, "b3")));
+  LazyCallGraph::Node &C1 = *CG.lookup(lookupFunction(*M, "c1"));
+  LazyCallGraph::Node &C2 = *CG.lookup(lookupFunction(*M, "c2"));
+  LazyCallGraph::Node &C3 = *CG.lookup(lookupFunction(*M, "c3"));
+  LazyCallGraph::Node &D1 = *CG.lookup(lookupFunction(*M, "d1"));
+  LazyCallGraph::Node &D2 = *CG.lookup(lookupFunction(*M, "d2"));
+  LazyCallGraph::Node &D3 = *CG.lookup(lookupFunction(*M, "d3"));
+  ASSERT_EQ(&CC, CG.lookupSCC(C1));
+  ASSERT_EQ(&CC, CG.lookupSCC(C2));
+  ASSERT_EQ(&CC, CG.lookupSCC(C3));
+  ASSERT_EQ(&DC, CG.lookupSCC(D1));
+  ASSERT_EQ(&DC, CG.lookupSCC(D2));
+  ASSERT_EQ(&DC, CG.lookupSCC(D3));
+  ASSERT_EQ(1, std::distance(D2.begin(), D2.end()));
+
+  CC.insertIncomingEdge(D2, C2);
+  EXPECT_EQ(2, std::distance(D2.begin(), D2.end()));
+
+  // Make sure we have the correct nodes in the SCC sets.
+  EXPECT_EQ(&CC, CG.lookupSCC(C1));
+  EXPECT_EQ(&CC, CG.lookupSCC(C2));
+  EXPECT_EQ(&CC, CG.lookupSCC(C3));
+  EXPECT_EQ(&CC, CG.lookupSCC(D1));
+  EXPECT_EQ(&CC, CG.lookupSCC(D2));
+  EXPECT_EQ(&CC, CG.lookupSCC(D3));
+
+  // Check that we can form the last two SCCs now in a coherent way.
+  ++SCCI;
+  EXPECT_NE(SCCI, SCCE);
+  LazyCallGraph::SCC &BC = *SCCI;
+  EXPECT_NE(&BC, nullptr);
+  EXPECT_EQ(&BC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "b1"))));
+  EXPECT_EQ(&BC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "b2"))));
+  EXPECT_EQ(&BC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "b3"))));
+  ++SCCI;
+  EXPECT_NE(SCCI, SCCE);
+  LazyCallGraph::SCC &AC = *SCCI;
+  EXPECT_NE(&AC, nullptr);
+  EXPECT_EQ(&AC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "a1"))));
+  EXPECT_EQ(&AC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "a2"))));
+  EXPECT_EQ(&AC, CG.lookupSCC(*CG.lookup(lookupFunction(*M, "a3"))));
+  ++SCCI;
+  EXPECT_EQ(SCCI, SCCE);
 }
 
 TEST(LazyCallGraphTest, InterSCCEdgeRemoval) {

@@ -65,12 +65,6 @@ static cl::opt<unsigned>
 OutputAsmVariant("output-asm-variant",
                  cl::desc("Syntax variant to use for output printing"));
 
-static cl::opt<bool>
-RelaxAll("mc-relax-all", cl::desc("Relax all fixups"));
-
-static cl::opt<bool>
-NoExecStack("mc-no-exec-stack", cl::desc("File doesn't need an exec stack"));
-
 enum OutputFileType {
   OFT_Null,
   OFT_AssemblyFile,
@@ -148,11 +142,11 @@ NoInitialTextSection("n", cl::desc("Don't assume assembly file starts "
                                    "in the text section"));
 
 static cl::opt<bool>
-SaveTempLabels("L", cl::desc("Don't discard temporary labels"));
-
-static cl::opt<bool>
 GenDwarfForAssembly("g", cl::desc("Generate dwarf debugging info for assembly "
                                   "source files"));
+
+static cl::opt<int>
+DwarfVersion("dwarf-version", cl::desc("Dwarf version"), cl::init(4));
 
 static cl::opt<std::string>
 DebugCompilationDir("fdebug-compilation-dir",
@@ -161,6 +155,12 @@ DebugCompilationDir("fdebug-compilation-dir",
 static cl::opt<std::string>
 MainFileName("main-file-name",
              cl::desc("Specifies the name we should consider the input file"));
+
+static cl::opt<bool> SaveTempLabels("save-temp-labels",
+                                    cl::desc("Don't discard temporary labels"));
+
+static cl::opt<bool> NoExecStack("no-exec-stack",
+                                 cl::desc("File doesn't need an exec stack"));
 
 enum ActionType {
   AC_AsLex,
@@ -406,6 +406,12 @@ int main(int argc, char **argv) {
     Ctx.setAllowTemporaryLabels(false);
 
   Ctx.setGenDwarfForAssembly(GenDwarfForAssembly);
+  if (DwarfVersion < 2 || DwarfVersion > 4) {
+    errs() << ProgName << ": Dwarf version " << DwarfVersion
+           << " is not supported." << '\n';
+    return 1;
+  }
+  Ctx.setDwarfVersion(DwarfVersion);
   if (!DwarfDebugFlags.empty())
     Ctx.setDwarfDebugFlags(StringRef(DwarfDebugFlags));
   if (!DwarfDebugProducer.empty())
@@ -446,9 +452,8 @@ int main(int argc, char **argv) {
       MAB = TheTarget->createMCAsmBackend(*MRI, TripleName, MCPU);
     }
     Str.reset(TheTarget->createAsmStreamer(Ctx, FOS, /*asmverbose*/ true,
-                                           /*UseCFI*/ true,
-                                           /*useDwarfDirectory*/
-                                           true, IP, CE, MAB, ShowInst));
+                                           /*useDwarfDirectory*/ true, IP, CE,
+                                           MAB, ShowInst));
 
   } else if (FileType == OFT_Null) {
     Str.reset(createNullStreamer(Ctx));

@@ -272,11 +272,12 @@ public:
                           /// context).
     RegKind_CCR = 128,    /// CCR
     RegKind_HWRegs = 256, /// HWRegs
+    RegKind_COP3 = 512,   /// COP3
 
     /// Potentially any (e.g. $1)
     RegKind_Numeric = RegKind_GPR | RegKind_FGR | RegKind_FCC | RegKind_MSA128 |
                       RegKind_MSACtrl | RegKind_COP2 | RegKind_ACC |
-                      RegKind_CCR | RegKind_HWRegs
+                      RegKind_CCR | RegKind_HWRegs | RegKind_COP3
   };
 
 private:
@@ -428,6 +429,14 @@ private:
     return RegIdx.RegInfo->getRegClass(ClassID).getRegister(RegIdx.Index);
   }
 
+  /// Coerce the register to COP3 and return the real register for the
+  /// current target.
+  unsigned getCOP3Reg() const {
+    assert(isRegIdx() && (RegIdx.Kind & RegKind_COP3) && "Invalid access!");
+    unsigned ClassID = Mips::COP3RegClassID;
+    return RegIdx.RegInfo->getRegClass(ClassID).getRegister(RegIdx.Index);
+  }
+
   /// Coerce the register to ACC64DSP and return the real register for the
   /// current target.
   unsigned getACC64DSPReg() const {
@@ -537,6 +546,11 @@ public:
   void addCOP2AsmRegOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     Inst.addOperand(MCOperand::CreateReg(getCOP2Reg()));
+  }
+
+  void addCOP3AsmRegOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    Inst.addOperand(MCOperand::CreateReg(getCOP3Reg()));
   }
 
   void addACC64DSPAsmRegOperands(MCInst &Inst, unsigned N) const {
@@ -749,6 +763,9 @@ public:
   }
   bool isCOP2AsmReg() const {
     return isRegIdx() && RegIdx.Kind & RegKind_COP2 && RegIdx.Index <= 31;
+  }
+  bool isCOP3AsmReg() const {
+    return isRegIdx() && RegIdx.Kind & RegKind_COP3 && RegIdx.Index <= 31;
   }
   bool isMSA128AsmReg() const {
     return isRegIdx() && RegIdx.Kind & RegKind_MSA128 && RegIdx.Index <= 31;
@@ -1965,6 +1982,8 @@ MCSymbolRefExpr::VariantKind MipsAsmParser::getVariantKind(StringRef Symbol) {
           .Case("call_lo", MCSymbolRefExpr::VK_Mips_CALL_LO16)
           .Case("higher", MCSymbolRefExpr::VK_Mips_HIGHER)
           .Case("highest", MCSymbolRefExpr::VK_Mips_HIGHEST)
+          .Case("pcrel_hi", MCSymbolRefExpr::VK_Mips_PCREL_HI16)
+          .Case("pcrel_lo", MCSymbolRefExpr::VK_Mips_PCREL_LO16)
           .Default(MCSymbolRefExpr::VK_None);
 
   assert(VK != MCSymbolRefExpr::VK_None);
@@ -2361,58 +2380,8 @@ bool MipsAsmParser::parseDirectiveCPSetup() {
   if (Parser.parseIdentifier(Name))
     reportParseError("expected identifier");
   MCSymbol *Sym = getContext().GetOrCreateSymbol(Name);
-  unsigned GPReg = getGPR(matchCPURegisterName("gp"));
 
-  // FIXME: The code below this point should be in the TargetStreamers.
-  // Only N32 and N64 emit anything for .cpsetup
-  // FIXME: We should only emit something for PIC mode too.
-  if (!isN32() && !isN64())
-    return false;
-
-  MCStreamer &TS = getStreamer();
-  MCInst Inst;
-  // Either store the old $gp in a register or on the stack
-  if (SaveIsReg) {
-    // move $save, $gpreg
-    Inst.setOpcode(Mips::DADDu);
-    Inst.addOperand(MCOperand::CreateReg(Save));
-    Inst.addOperand(MCOperand::CreateReg(GPReg));
-    Inst.addOperand(MCOperand::CreateReg(getGPR(0)));
-  } else {
-    // sd $gpreg, offset($sp)
-    Inst.setOpcode(Mips::SD);
-    Inst.addOperand(MCOperand::CreateReg(GPReg));
-    Inst.addOperand(MCOperand::CreateReg(getGPR(matchCPURegisterName("sp"))));
-    Inst.addOperand(MCOperand::CreateImm(Save));
-  }
-  TS.EmitInstruction(Inst, STI);
-  Inst.clear();
-
-  const MCSymbolRefExpr *HiExpr = MCSymbolRefExpr::Create(
-      Sym->getName(), MCSymbolRefExpr::VK_Mips_GPOFF_HI, getContext());
-  const MCSymbolRefExpr *LoExpr = MCSymbolRefExpr::Create(
-      Sym->getName(), MCSymbolRefExpr::VK_Mips_GPOFF_LO, getContext());
-  // lui $gp, %hi(%neg(%gp_rel(funcSym)))
-  Inst.setOpcode(Mips::LUi);
-  Inst.addOperand(MCOperand::CreateReg(GPReg));
-  Inst.addOperand(MCOperand::CreateExpr(HiExpr));
-  TS.EmitInstruction(Inst, STI);
-  Inst.clear();
-
-  // addiu  $gp, $gp, %lo(%neg(%gp_rel(funcSym)))
-  Inst.setOpcode(Mips::ADDiu);
-  Inst.addOperand(MCOperand::CreateReg(GPReg));
-  Inst.addOperand(MCOperand::CreateReg(GPReg));
-  Inst.addOperand(MCOperand::CreateExpr(LoExpr));
-  TS.EmitInstruction(Inst, STI);
-  Inst.clear();
-
-  // daddu  $gp, $gp, $funcreg
-  Inst.setOpcode(Mips::DADDu);
-  Inst.addOperand(MCOperand::CreateReg(GPReg));
-  Inst.addOperand(MCOperand::CreateReg(GPReg));
-  Inst.addOperand(MCOperand::CreateReg(FuncReg));
-  TS.EmitInstruction(Inst, STI);
+  getTargetStreamer().emitDirectiveCpsetup(FuncReg, Save, *Sym, SaveIsReg);
   return false;
 }
 

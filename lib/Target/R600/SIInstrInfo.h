@@ -73,6 +73,8 @@ public:
                             const TargetRegisterClass *RC,
                             const TargetRegisterInfo *TRI) const override;
 
+  virtual bool expandPostRAPseudo(MachineBasicBlock::iterator MI) const;
+
   unsigned commuteOpcode(unsigned Opcode) const;
 
   MachineInstr *commuteInstruction(MachineInstr *MI,
@@ -165,6 +167,8 @@ public:
 
   void LoadM0(MachineInstr *MoveRel, MachineBasicBlock::iterator I,
               unsigned SavReg, unsigned IndexReg) const;
+
+  void insertNOPs(MachineBasicBlock::iterator MI, int Count) const;
 };
 
 namespace AMDGPU {
@@ -172,6 +176,7 @@ namespace AMDGPU {
   int getVOPe64(uint16_t Opcode);
   int getCommuteRev(uint16_t Opcode);
   int getCommuteOrig(uint16_t Opcode);
+  int getMCOpcode(uint16_t Opcode, unsigned Gen);
 
   const uint64_t RSRC_DATA_FORMAT = 0xf00000000000LL;
 

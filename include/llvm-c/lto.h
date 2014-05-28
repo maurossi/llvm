@@ -84,10 +84,10 @@ typedef enum {
 } lto_codegen_model;
 
 /** opaque reference to a loaded object module */
-typedef struct LTOModule*         lto_module_t;
+typedef struct LLVMOpaqueLTOModule *lto_module_t;
 
 /** opaque reference to a code generator */
-typedef struct LTOCodeGenerator*  lto_code_gen_t;
+typedef struct LLVMOpaqueLTOCodeGenerator *lto_code_gen_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -403,8 +403,9 @@ lto_codegen_set_assembler_args(lto_code_gen_t cg, const char **args,
                                int nargs);
 
 /**
- * Tells LTO optimization passes that this symbol must be preserved
- * because it is referenced by native code or a command line option.
+ * Adds to a list of all global symbols that must exist in the final generated
+ * code. If a function is not listed there, it might be inlined into every usage
+ * and optimized away.
  *
  * \since prior to LTO_API_VERSION=3
  */

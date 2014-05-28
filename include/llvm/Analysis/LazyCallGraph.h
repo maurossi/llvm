@@ -115,17 +115,18 @@ public:
   /// the graph.
   class iterator
       : public iterator_adaptor_base<iterator, NodeVectorImplT::iterator,
-                                     std::bidirectional_iterator_tag, Node> {
+                                     std::forward_iterator_tag, Node> {
     friend class LazyCallGraph;
     friend class LazyCallGraph::Node;
 
     LazyCallGraph *G;
-    NodeVectorImplT::iterator NI;
+    NodeVectorImplT::iterator E;
 
     // Build the iterator for a specific position in a node list.
-    iterator(LazyCallGraph &G, NodeVectorImplT::iterator NI)
-        : iterator_adaptor_base(NI), G(&G) {
-      while (I->isNull())
+    iterator(LazyCallGraph &G, NodeVectorImplT::iterator NI,
+             NodeVectorImplT::iterator E)
+        : iterator_adaptor_base(NI), G(&G), E(E) {
+      while (I != E && I->isNull())
         ++I;
     }
 
@@ -136,15 +137,7 @@ public:
     iterator &operator++() {
       do {
         ++I;
-      } while (I->isNull());
-      return *this;
-    }
-
-    using iterator_adaptor_base::operator--;
-    iterator &operator--() {
-      do {
-        --I;
-      } while (I->isNull());
+      } while (I != E && I->isNull());
       return *this;
     }
 
@@ -199,8 +192,10 @@ public:
       return F;
     };
 
-    iterator begin() const { return iterator(*G, Callees.begin()); }
-    iterator end() const { return iterator(*G, Callees.end()); }
+    iterator begin() const {
+      return iterator(*G, Callees.begin(), Callees.end());
+    }
+    iterator end() const { return iterator(*G, Callees.end(), Callees.end()); }
 
     /// Equality is defined as address equality.
     bool operator==(const Node &N) const { return this == &N; }
@@ -243,6 +238,20 @@ public:
       return iterator_range<parent_iterator>(parent_begin(), parent_end());
     }
 
+    /// \brief Test if this SCC is a parent of \a C.
+    bool isParentOf(const SCC &C) const { return C.isChildOf(*this); }
+
+    /// \brief Test if this SCC is an ancestor of \a C.
+    bool isAncestorOf(const SCC &C) const { return C.isDescendantOf(*this); }
+
+    /// \brief Test if this SCC is a child of \a C.
+    bool isChildOf(const SCC &C) const {
+      return ParentSCCs.count(const_cast<SCC *>(&C));
+    }
+
+    /// \brief Test if this SCC is a descendant of \a C.
+    bool isDescendantOf(const SCC &C) const;
+
     ///@{
     /// \name Mutation API
     ///
@@ -257,6 +266,30 @@ public:
     /// By the definition of an SCC, this does not change the nature or make-up
     /// of any SCCs.
     void insertIntraSCCEdge(Node &CallerN, Node &CalleeN);
+
+    /// \brief Insert an edge whose tail is in this SCC and head is in some
+    /// child SCC.
+    ///
+    /// There must be an existing path from the caller to the callee. This
+    /// operation is inexpensive and does not change the set of SCCs in the
+    /// graph.
+    void insertOutgoingEdge(Node &CallerN, Node &CalleeN);
+
+    /// \brief Insert an edge whose tail is in a descendant SCC and head is in
+    /// this SCC.
+    ///
+    /// There must be an existing path from the callee to the caller in this
+    /// case. NB! This is has the potential to be a very expensive function. It
+    /// inherently forms a cycle in the prior SCC DAG and we have to merge SCCs
+    /// to resolve that cycle. But finding all of the SCCs which participate in
+    /// the cycle can in the worst case require traversing every SCC in the
+    /// graph. Every attempt is made to avoid that, but passes must still
+    /// exercise caution calling this routine repeatedly.
+    ///
+    /// FIXME: We could possibly optimize this quite a bit for cases where the
+    /// caller and callee are very nearby in the graph. See comments in the
+    /// implementation for details, but that use case might impact users.
+    SmallVector<SCC *, 1> insertIncomingEdge(Node &CallerN, Node &CalleeN);
 
     /// \brief Remove an edge whose source is in this SCC and target is *not*.
     ///
@@ -283,7 +316,7 @@ public:
     /// 2) This SCC will be the parent of any new SCCs. Thus, this SCC is
     ///    preserved as the root of any new SCC directed graph formed.
     /// 3) No SCC other than this SCC has its member set changed (this is
-    ///    inherent in the definiton of removing such an edge).
+    ///    inherent in the definition of removing such an edge).
     /// 4) All of the parent links of the SCC graph will be updated to reflect
     ///    the new SCC structure.
     /// 5) All SCCs formed out of this SCC, excluding this SCC, will be
@@ -358,8 +391,10 @@ public:
   LazyCallGraph(LazyCallGraph &&G);
   LazyCallGraph &operator=(LazyCallGraph &&RHS);
 
-  iterator begin() { return iterator(*this, EntryNodes.begin()); }
-  iterator end() { return iterator(*this, EntryNodes.end()); }
+  iterator begin() {
+    return iterator(*this, EntryNodes.begin(), EntryNodes.end());
+  }
+  iterator end() { return iterator(*this, EntryNodes.end(), EntryNodes.end()); }
 
   postorder_scc_iterator postorder_scc_begin() {
     return postorder_scc_iterator(*this);

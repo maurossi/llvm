@@ -15,7 +15,6 @@
 #include "X86AsmPrinter.h"
 #include "InstPrinter/X86ATTInstPrinter.h"
 #include "MCTargetDesc/X86BaseInfo.h"
-#include "X86COFFMachineModuleInfo.h"
 #include "X86InstrInfo.h"
 #include "X86MachineFunctionInfo.h"
 #include "llvm/ADT/SmallString.h"
@@ -550,7 +549,32 @@ emitNonLazySymbolPointer(MCStreamer &OutStreamer, MCSymbol *StubLabel,
         4 /*size*/);
 }
 
+void X86AsmPrinter::GenerateExportDirective(const MCSymbol *Sym, bool IsData) {
+  SmallString<128> Directive;
+  raw_svector_ostream OS(Directive);
+  StringRef Name = Sym->getName();
 
+  if (Subtarget->isTargetKnownWindowsMSVC())
+    OS << " /EXPORT:";
+  else
+    OS << " -export:";
+
+  if ((Subtarget->isTargetWindowsGNU() || Subtarget->isTargetWindowsCygwin()) &&
+      (Name[0] == getDataLayout().getGlobalPrefix()))
+    Name = Name.drop_front();
+
+  OS << Name;
+
+  if (IsData) {
+    if (Subtarget->isTargetKnownWindowsMSVC())
+      OS << ",DATA";
+    else
+      OS << ",data";
+  }
+
+  OS.flush();
+  OutStreamer.EmitBytes(Directive);
+}
 
 void X86AsmPrinter::EmitEndOfAsmFile(Module &M) {
   if (Subtarget->isTargetMacho()) {
@@ -571,11 +595,11 @@ void X86AsmPrinter::EmitEndOfAsmFile(Module &M) {
                                    5, SectionKind::getMetadata());
       OutStreamer.SwitchSection(TheSection);
 
-      for (unsigned i = 0, e = Stubs.size(); i != e; ++i) {
+      for (const auto &Stub : Stubs) {
         // L_foo$stub:
-        OutStreamer.EmitLabel(Stubs[i].first);
+        OutStreamer.EmitLabel(Stub.first);
         //   .indirect_symbol _foo
-        OutStreamer.EmitSymbolAttribute(Stubs[i].second.getPointer(),
+        OutStreamer.EmitSymbolAttribute(Stub.second.getPointer(),
                                         MCSA_IndirectSymbol);
         // hlt; hlt; hlt; hlt; hlt     hlt = 0xf4.
         const char HltInsts[] = "\xf4\xf4\xf4\xf4\xf4";
@@ -634,46 +658,25 @@ void X86AsmPrinter::EmitEndOfAsmFile(Module &M) {
   }
 
   if (Subtarget->isTargetCOFF()) {
-    X86COFFMachineModuleInfo &COFFMMI =
-      MMI->getObjFileInfo<X86COFFMachineModuleInfo>();
-
-    // Emit type information for external functions
-    typedef X86COFFMachineModuleInfo::externals_iterator externals_iterator;
-    for (externals_iterator I = COFFMMI.externals_begin(),
-                            E = COFFMMI.externals_end();
-                            I != E; ++I) {
-      OutStreamer.BeginCOFFSymbolDef(CurrentFnSym);
-      OutStreamer.EmitCOFFSymbolStorageClass(COFF::IMAGE_SYM_CLASS_EXTERNAL);
-      OutStreamer.EmitCOFFSymbolType(COFF::IMAGE_SYM_DTYPE_FUNCTION
-                                               << COFF::SCT_COMPLEX_TYPE_SHIFT);
-      OutStreamer.EndCOFFSymbolDef();
-    }
-
     // Necessary for dllexport support
     std::vector<const MCSymbol*> DLLExportedFns, DLLExportedGlobals;
 
-    for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
-      if (I->hasDLLExportStorageClass())
-        DLLExportedFns.push_back(getSymbol(I));
+    for (const auto &Function : M)
+      if (Function.hasDLLExportStorageClass())
+        DLLExportedFns.push_back(getSymbol(&Function));
 
-    for (Module::const_global_iterator I = M.global_begin(),
-           E = M.global_end(); I != E; ++I)
-      if (I->hasDLLExportStorageClass())
-        DLLExportedGlobals.push_back(getSymbol(I));
+    for (const auto &Global : M.globals())
+      if (Global.hasDLLExportStorageClass())
+        DLLExportedGlobals.push_back(getSymbol(&Global));
 
-    for (Module::const_alias_iterator I = M.alias_begin(), E = M.alias_end();
-                                      I != E; ++I) {
-      const GlobalValue *GV = I;
-      if (!GV->hasDLLExportStorageClass())
+    for (const auto &Alias : M.aliases()) {
+      if (!Alias.hasDLLExportStorageClass())
         continue;
 
-      while (const GlobalAlias *A = dyn_cast<GlobalAlias>(GV))
-        GV = A->getAliasedGlobal();
-
-      if (isa<Function>(GV))
-        DLLExportedFns.push_back(getSymbol(I));
-      else if (isa<GlobalVariable>(GV))
-        DLLExportedGlobals.push_back(getSymbol(I));
+      if (Alias.getType()->getElementType()->isFunctionTy())
+        DLLExportedFns.push_back(getSymbol(&Alias));
+      else
+        DLLExportedGlobals.push_back(getSymbol(&Alias));
     }
 
     // Output linker support code for dllexported globals on windows.
@@ -682,28 +685,11 @@ void X86AsmPrinter::EmitEndOfAsmFile(Module &M) {
         static_cast<const TargetLoweringObjectFileCOFF&>(getObjFileLowering());
 
       OutStreamer.SwitchSection(TLOFCOFF.getDrectveSection());
-      SmallString<128> name;
-      for (unsigned i = 0, e = DLLExportedGlobals.size(); i != e; ++i) {
-        if (Subtarget->isTargetKnownWindowsMSVC())
-          name = " /EXPORT:";
-        else
-          name = " -export:";
-        name += DLLExportedGlobals[i]->getName();
-        if (Subtarget->isTargetKnownWindowsMSVC())
-          name += ",DATA";
-        else
-        name += ",data";
-        OutStreamer.EmitBytes(name);
-      }
 
-      for (unsigned i = 0, e = DLLExportedFns.size(); i != e; ++i) {
-        if (Subtarget->isTargetKnownWindowsMSVC())
-          name = " /EXPORT:";
-        else
-          name = " -export:";
-        name += DLLExportedFns[i]->getName();
-        OutStreamer.EmitBytes(name);
-      }
+      for (auto & Symbol : DLLExportedGlobals)
+        GenerateExportDirective(Symbol, /*IsData=*/true);
+      for (auto & Symbol : DLLExportedFns)
+        GenerateExportDirective(Symbol, /*IsData=*/false);
     }
   }
 
@@ -719,9 +705,9 @@ void X86AsmPrinter::EmitEndOfAsmFile(Module &M) {
       OutStreamer.SwitchSection(TLOFELF.getDataRelSection());
       const DataLayout *TD = TM.getDataLayout();
 
-      for (unsigned i = 0, e = Stubs.size(); i != e; ++i) {
-        OutStreamer.EmitLabel(Stubs[i].first);
-        OutStreamer.EmitSymbolValue(Stubs[i].second.getPointer(),
+      for (const auto &Stub : Stubs) {
+        OutStreamer.EmitLabel(Stub.first);
+        OutStreamer.EmitSymbolValue(Stub.second.getPointer(),
                                     TD->getPointerSize());
       }
       Stubs.clear();

@@ -3180,59 +3180,55 @@ void DependenceAnalysis::updateDirection(Dependence::DVEntry &Level,
 /// source and destination array references are recurrences on a nested loop,
 /// this function flattens the nested recurrences into separate recurrences
 /// for each loop level.
-bool
-DependenceAnalysis::tryDelinearize(const SCEV *SrcSCEV, const SCEV *DstSCEV,
-                                   SmallVectorImpl<Subscript> &Pair) const {
+bool DependenceAnalysis::tryDelinearize(const SCEV *SrcSCEV,
+                                        const SCEV *DstSCEV,
+                                        SmallVectorImpl<Subscript> &Pair,
+                                        const SCEV *ElementSize) const {
+  const SCEVUnknown *SrcBase =
+      dyn_cast<SCEVUnknown>(SE->getPointerBase(SrcSCEV));
+  const SCEVUnknown *DstBase =
+      dyn_cast<SCEVUnknown>(SE->getPointerBase(DstSCEV));
+
+  if (!SrcBase || !DstBase || SrcBase != DstBase)
+    return false;
+
+  SrcSCEV = SE->getMinusSCEV(SrcSCEV, SrcBase);
+  DstSCEV = SE->getMinusSCEV(DstSCEV, DstBase);
+
   const SCEVAddRecExpr *SrcAR = dyn_cast<SCEVAddRecExpr>(SrcSCEV);
   const SCEVAddRecExpr *DstAR = dyn_cast<SCEVAddRecExpr>(DstSCEV);
   if (!SrcAR || !DstAR || !SrcAR->isAffine() || !DstAR->isAffine())
     return false;
 
-  SmallVector<const SCEV *, 4> SrcSubscripts, DstSubscripts, SrcSizes, DstSizes;
-  const SCEV *RemainderS = SrcAR->delinearize(*SE, SrcSubscripts, SrcSizes);
-  const SCEV *RemainderD = DstAR->delinearize(*SE, DstSubscripts, DstSizes);
+  // First step: collect parametric terms in both array references.
+  SmallVector<const SCEV *, 4> Terms;
+  SrcAR->collectParametricTerms(*SE, Terms);
+  DstAR->collectParametricTerms(*SE, Terms);
+
+  // Second step: find subscript sizes.
+  SmallVector<const SCEV *, 4> Sizes;
+  SE->findArrayDimensions(Terms, Sizes, ElementSize);
+
+  // Third step: compute the access functions for each subscript.
+  SmallVector<const SCEV *, 4> SrcSubscripts, DstSubscripts;
+  SrcAR->computeAccessFunctions(*SE, SrcSubscripts, Sizes);
+  DstAR->computeAccessFunctions(*SE, DstSubscripts, Sizes);
+
+  // Fail when there is only a subscript: that's a linearized access function.
+  if (SrcSubscripts.size() < 2 || DstSubscripts.size() < 2 ||
+      SrcSubscripts.size() != DstSubscripts.size())
+    return false;
 
   int size = SrcSubscripts.size();
-  // Fail when there is only a subscript: that's a linearized access function.
-  if (size < 2)
-    return false;
 
-  int dstSize = DstSubscripts.size();
-  // Fail when the number of subscripts in Src and Dst differ.
-  if (size != dstSize)
-    return false;
-
-  // Fail when the size of any of the subscripts in Src and Dst differs: the
-  // dependence analysis assumes that elements in the same array have same size.
-  // SCEV delinearization does not have a context based on which it would decide
-  // globally the size of subscripts that would best fit all the array accesses.
-  for (int i = 0; i < size; ++i)
-    if (SrcSizes[i] != DstSizes[i])
-      return false;
-
-  // When the difference in remainders is different than a constant it might be
-  // that the base address of the arrays is not the same.
-  const SCEV *DiffRemainders = SE->getMinusSCEV(RemainderS, RemainderD);
-  if (!isa<SCEVConstant>(DiffRemainders))
-    return false;
-
-  // Normalize the last dimension: integrate the size of the "scalar dimension"
-  // and the remainder of the delinearization.
-  DstSubscripts[size-1] = SE->getMulExpr(DstSubscripts[size-1],
-                                         DstSizes[size-1]);
-  SrcSubscripts[size-1] = SE->getMulExpr(SrcSubscripts[size-1],
-                                         SrcSizes[size-1]);
-  SrcSubscripts[size-1] = SE->getAddExpr(SrcSubscripts[size-1], RemainderS);
-  DstSubscripts[size-1] = SE->getAddExpr(DstSubscripts[size-1], RemainderD);
-
-#ifndef NDEBUG
-  DEBUG(errs() << "\nSrcSubscripts: ");
-  for (int i = 0; i < size; i++)
-    DEBUG(errs() << *SrcSubscripts[i]);
-  DEBUG(errs() << "\nDstSubscripts: ");
-  for (int i = 0; i < size; i++)
-    DEBUG(errs() << *DstSubscripts[i]);
-#endif
+  DEBUG({
+      dbgs() << "\nSrcSubscripts: ";
+    for (int i = 0; i < size; i++)
+      dbgs() << *SrcSubscripts[i];
+    dbgs() << "\nDstSubscripts: ";
+    for (int i = 0; i < size; i++)
+      dbgs() << *DstSubscripts[i];
+    });
 
   // The delinearization transforms a single-subscript MIV dependence test into
   // a multi-subscript SIV dependence test that is easier to compute. So we
@@ -3363,7 +3359,7 @@ Dependence *DependenceAnalysis::depends(Instruction *Src,
   }
 
   if (Delinearize && Pairs == 1 && CommonLevels > 1 &&
-      tryDelinearize(Pair[0].Src, Pair[0].Dst, Pair)) {
+      tryDelinearize(Pair[0].Src, Pair[0].Dst, Pair, SE->getElementSize(Src))) {
     DEBUG(dbgs() << "    delinerized GEP\n");
     Pairs = Pair.size();
   }
@@ -3787,7 +3783,7 @@ const  SCEV *DependenceAnalysis::getSplitIteration(const Dependence *Dep,
   }
 
   if (Delinearize && Pairs == 1 && CommonLevels > 1 &&
-      tryDelinearize(Pair[0].Src, Pair[0].Dst, Pair)) {
+      tryDelinearize(Pair[0].Src, Pair[0].Dst, Pair, SE->getElementSize(Src))) {
     DEBUG(dbgs() << "    delinerized GEP\n");
     Pairs = Pair.size();
   }

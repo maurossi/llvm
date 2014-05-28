@@ -162,6 +162,13 @@ namespace {
       return "X86 DAG->DAG Instruction Selection";
     }
 
+    bool runOnMachineFunction(MachineFunction &MF) override {
+      // Reset the subtarget each time through.
+      Subtarget = &TM.getSubtarget<X86Subtarget>();
+      SelectionDAGISel::runOnMachineFunction(MF);
+      return true;
+    }
+
     void EmitFunctionEntryCode() override;
 
     bool IsProfitableToFold(SDValue N, SDNode *U, SDNode *Root) const override;
@@ -927,7 +934,7 @@ static bool FoldMaskAndShiftToScale(SelectionDAG &DAG, SDValue N,
   APInt MaskedHighBits =
     APInt::getHighBitsSet(X.getSimpleValueType().getSizeInBits(), MaskLZ);
   APInt KnownZero, KnownOne;
-  DAG.ComputeMaskedBits(X, KnownZero, KnownOne);
+  DAG.computeKnownBits(X, KnownZero, KnownOne);
   if (MaskedHighBits != KnownZero) return true;
 
   // We've identified a pattern that can be transformed into a single shift

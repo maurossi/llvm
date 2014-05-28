@@ -25,7 +25,6 @@
 #include "llvm/CodeGen/RegisterScavenging.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/Function.h"
-#include "llvm/IR/Module.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Target/TargetOptions.h"
@@ -300,10 +299,12 @@ void ARMFrameLowering::emitPrologue(MachineFunction &MF) const {
 
     if (NumWords < 65536)
       AddDefaultPred(BuildMI(MBB, MBBI, dl, TII.get(ARM::t2MOVi16), ARM::R4)
-                     .addImm(NumWords));
+                     .addImm(NumWords)
+                     .setMIFlags(MachineInstr::FrameSetup));
     else
       BuildMI(MBB, MBBI, dl, TII.get(ARM::t2MOVi32imm), ARM::R4)
-        .addImm(NumWords);
+        .addImm(NumWords)
+        .setMIFlags(MachineInstr::FrameSetup);
 
     switch (TM.getCodeModel()) {
     case CodeModel::Small:
@@ -313,22 +314,21 @@ void ARMFrameLowering::emitPrologue(MachineFunction &MF) const {
       BuildMI(MBB, MBBI, dl, TII.get(ARM::tBL))
         .addImm((unsigned)ARMCC::AL).addReg(0)
         .addExternalSymbol("__chkstk")
-        .addReg(ARM::R4, RegState::Implicit);
+        .addReg(ARM::R4, RegState::Implicit)
+        .setMIFlags(MachineInstr::FrameSetup);
       break;
     case CodeModel::Large:
-    case CodeModel::JITDefault: {
-      LLVMContext &Ctx = MF.getMMI().getModule()->getContext();
-      const GlobalValue *F =
-        Function::Create(FunctionType::get(Type::getVoidTy(Ctx), false),
-                         GlobalValue::AvailableExternallyLinkage, "__chkstk");
-
+    case CodeModel::JITDefault:
       BuildMI(MBB, MBBI, dl, TII.get(ARM::t2MOVi32imm), ARM::R12)
-        .addGlobalAddress(F);
-      BuildMI(MBB, MBBI, dl, TII.get(ARM::BLX))
+        .addExternalSymbol("__chkstk")
+        .setMIFlags(MachineInstr::FrameSetup);
+
+      BuildMI(MBB, MBBI, dl, TII.get(ARM::tBLXr))
+        .addImm((unsigned)ARMCC::AL).addReg(0)
         .addReg(ARM::R12, RegState::Kill)
-        .addReg(ARM::R4, RegState::Implicit);
+        .addReg(ARM::R4, RegState::Implicit)
+        .setMIFlags(MachineInstr::FrameSetup);
       break;
-    }
     }
 
     AddDefaultCC(AddDefaultPred(BuildMI(MBB, MBBI, dl, TII.get(ARM::t2SUBrr),
@@ -1535,6 +1535,10 @@ ARMFrameLowering::processFunctionBeforeCalleeSavedScan(MachineFunction &MF,
 
     if (hasFP(MF)) {
       MRI.setPhysRegUsed(FramePtr);
+      auto FPPos = std::find(UnspilledCS1GPRs.begin(), UnspilledCS1GPRs.end(),
+                             FramePtr);
+      if (FPPos != UnspilledCS1GPRs.end())
+        UnspilledCS1GPRs.erase(FPPos);
       NumGPRSpills++;
     }
 
@@ -1742,6 +1746,12 @@ void ARMFrameLowering::adjustForSegmentedStacks(MachineFunction &MF) const {
   ARMFunctionInfo *ARMFI = MF.getInfo<ARMFunctionInfo>();
   DebugLoc DL;
 
+  uint64_t StackSize = MFI->getStackSize();
+
+  // Do not generate a prologue for functions with a stack of size zero
+  if (StackSize == 0)
+    return;
+
   // Use R4 and R5 as scratch registers.
   // We save R4 and R5 before use and restore them before leaving the function.
   unsigned ScratchReg0 = ARM::R4;
@@ -1771,8 +1781,6 @@ void ARMFrameLowering::adjustForSegmentedStacks(MachineFunction &MF) const {
   MF.push_front(PrevStackMBB);
 
   // The required stack size that is aligned to ARM constant criterion.
-  uint64_t StackSize = MFI->getStackSize();
-
   AlignedStackSize = alignToARMConstant(StackSize);
 
   // When the frame size is less than 256 we just compare the stack

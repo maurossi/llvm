@@ -271,6 +271,8 @@ StringRef MCSymbolRefExpr::getVariantKindName(VariantKind Kind) {
   case VK_Mips_GOT_LO16: return "GOT_LO16";
   case VK_Mips_CALL_HI16: return "CALL_HI16";
   case VK_Mips_CALL_LO16: return "CALL_LO16";
+  case VK_Mips_PCREL_HI16: return "PCREL_HI16";
+  case VK_Mips_PCREL_LO16: return "PCREL_LO16";
   case VK_COFF_IMGREL32: return "IMGREL32";
   }
   llvm_unreachable("Invalid variant kind");
@@ -658,12 +660,11 @@ bool MCExpr::EvaluateAsRelocatableImpl(MCValue &Res, const MCAssembler *Asm,
 
   case SymbolRef: {
     const MCSymbolRefExpr *SRE = cast<MCSymbolRefExpr>(this);
-    bool IsWeakRef = SRE->getKind() == MCSymbolRefExpr::VK_WEAKREF;
     const MCSymbol &Sym = SRE->getSymbol();
     const MCAsmInfo &MCAsmInfo = SRE->getMCAsmInfo();
 
     // Evaluate recursively if this is a variable.
-    if (Sym.isVariable() && !IsWeakRef) {
+    if (Sym.isVariable() && SRE->getKind() == MCSymbolRefExpr::VK_None) {
       if (Sym.getVariableValue()->EvaluateAsRelocatableImpl(
               Res, Asm, Layout, Addrs, true, ForceVarExpansion)) {
         const MCSymbolRefExpr *A = Res.getSymA();

@@ -385,6 +385,18 @@ void WinCOFFObjectWriter::DefineSection(MCSectionData const &SectionData) {
   SectionMap[&SectionData.getSection()] = coff_section;
 }
 
+static uint64_t getSymbolValue(const MCSymbolData &Data,
+                               const MCAsmLayout &Layout) {
+  if (Data.isCommon() && Data.isExternal())
+    return Data.getCommonSize();
+
+  uint64_t Res;
+  if (!Layout.getSymbolOffset(&Data, Res))
+    return 0;
+
+  return Res;
+}
+
 /// This function takes a symbol data object from the assembler
 /// and creates the associated COFF symbol staging object.
 void WinCOFFObjectWriter::DefineSymbol(MCSymbolData const &SymbolData,
@@ -427,16 +439,9 @@ void WinCOFFObjectWriter::DefineSymbol(MCSymbolData const &SymbolData,
 
     coff_symbol->MCData = &SymbolData;
   } else {
-    const MCSymbolData &ResSymData =
-      Assembler.getSymbolData(Symbol.AliasedSymbol());
-
-    if (Symbol.isVariable()) {
-      int64_t Addr;
-      if (Symbol.getVariableValue()->EvaluateAsAbsolute(Addr, Layout))
-        coff_symbol->Data.Value = Addr;
-    } else if (SymbolData.isExternal() && SymbolData.isCommon()) {
-      coff_symbol->Data.Value = SymbolData.getCommonSize();
-    }
+    const MCSymbolData &ResSymData = Assembler.getSymbolData(Symbol);
+    const MCSymbol *Base = Layout.getBaseSymbol(Symbol);
+    coff_symbol->Data.Value = getSymbolValue(ResSymData, Layout);
 
     coff_symbol->Data.Type         = (ResSymData.getFlags() & 0x0000FFFF) >>  0;
     coff_symbol->Data.StorageClass = (ResSymData.getFlags() & 0x00FF0000) >> 16;
@@ -449,11 +454,14 @@ void WinCOFFObjectWriter::DefineSymbol(MCSymbolData const &SymbolData,
        external ? COFF::IMAGE_SYM_CLASS_EXTERNAL : COFF::IMAGE_SYM_CLASS_STATIC;
     }
 
-    if (Symbol.isAbsolute() || Symbol.AliasedSymbol().isVariable())
+    if (!Base) {
       coff_symbol->Data.SectionNumber = COFF::IMAGE_SYM_ABSOLUTE;
-    else if (ResSymData.Fragment)
-      coff_symbol->Section =
-        SectionMap[&ResSymData.Fragment->getParent()->getSection()];
+    } else {
+      const MCSymbolData &BaseData = Assembler.getSymbolData(*Base);
+      if (BaseData.Fragment)
+        coff_symbol->Section =
+            SectionMap[&BaseData.Fragment->getParent()->getSection()];
+    }
 
     coff_symbol->MCData = &ResSymData;
   }
@@ -641,6 +649,7 @@ void WinCOFFObjectWriter::ExecutePostLayoutBinding(MCAssembler &Asm,
     unsigned Count = (FI->size() + COFF::SymbolSize - 1) / COFF::SymbolSize;
 
     COFFSymbol *file = createSymbol(".file");
+    file->Data.SectionNumber = COFF::IMAGE_SYM_DEBUG;
     file->Data.StorageClass = COFF::IMAGE_SYM_CLASS_FILE;
     file->Aux.resize(Count);
 
@@ -780,7 +789,7 @@ void WinCOFFObjectWriter::RecordRelocation(const MCAssembler &Asm,
     case COFF::IMAGE_REL_ARM_MOV32A:
       // IMAGE_REL_ARM_BRANCH24, IMAGE_REL_ARM_BLX24, IMAGE_REL_ARM_MOV32A are
       // only used for ARM mode code, which is documented as being unsupported
-      // by Windows on ARM.  Emperical proof indicates that masm is able to
+      // by Windows on ARM.  Empirical proof indicates that masm is able to
       // generate the relocations however the rest of the MSVC toolchain is
       // unable to handle it.
       llvm_unreachable("unsupported relocation");
@@ -799,7 +808,8 @@ void WinCOFFObjectWriter::RecordRelocation(const MCAssembler &Asm,
     }
   }
 
-  coff_section->Relocations.push_back(Reloc);
+  if (TargetObjectWriter->recordRelocation(Fixup))
+    coff_section->Relocations.push_back(Reloc);
 }
 
 void WinCOFFObjectWriter::WriteObject(MCAssembler &Asm,
@@ -821,16 +831,9 @@ void WinCOFFObjectWriter::WriteObject(MCAssembler &Asm,
   Header.NumberOfSymbols = 0;
 
   for (auto & Symbol : Symbols) {
-    MCSymbolData const *SymbolData = Symbol->MCData;
-
     // Update section number & offset for symbols that have them.
-    if (SymbolData && SymbolData->Fragment) {
-      assert(Symbol->Section != nullptr);
-
+    if (Symbol->Section)
       Symbol->Data.SectionNumber = Symbol->Section->Number;
-      Symbol->Data.Value = Layout.getFragmentOffset(SymbolData->Fragment)
-                         + SymbolData->Offset;
-    }
 
     if (Symbol->should_keep()) {
       MakeSymbolReal(*Symbol, Header.NumberOfSymbols++);

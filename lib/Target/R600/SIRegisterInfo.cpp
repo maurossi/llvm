@@ -71,10 +71,9 @@ const TargetRegisterClass *SIRegisterInfo::getPhysRegClass(unsigned Reg) const {
     &AMDGPU::SReg_256RegClass
   };
 
-  for (unsigned i = 0, e = sizeof(BaseClasses) /
-                           sizeof(const TargetRegisterClass*); i != e; ++i) {
-    if (BaseClasses[i]->contains(Reg)) {
-      return BaseClasses[i];
+  for (const TargetRegisterClass *BaseClass : BaseClasses) {
+    if (BaseClass->contains(Reg)) {
+      return BaseClass;
     }
   }
   return nullptr;
@@ -128,4 +127,11 @@ const TargetRegisterClass *SIRegisterInfo::getSubRegClass(
   } else {
     return &AMDGPU::VGPR_32RegClass;
   }
+}
+
+unsigned SIRegisterInfo::getPhysRegSubReg(unsigned Reg,
+                                          const TargetRegisterClass *SubRC,
+                                          unsigned Channel) const {
+  unsigned Index = getHWRegIndex(Reg);
+  return SubRC->getRegister(Index + Channel);
 }
