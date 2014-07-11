@@ -53,13 +53,15 @@ LOCAL_C_INCLUDES :=	\
 
 LOCAL_IS_HOST_MODULE := true
 
+LOCAL_32_BIT_ONLY := true
+
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
 define transform-host-td-to-out
 @mkdir -p $(dir $@)
 @echo "Host TableGen: $(TBLGEN_LOCAL_MODULE) (gen-$(1)) <= $<"
-$(hide) $(TBLGEN) \
+$(hide) $(LLVM_TBLGEN) \
 	-I $(dir $<)	\
 	-I $(LLVM_ROOT_PATH)/include	\
 	-I $(LLVM_ROOT_PATH)/host/include	\
