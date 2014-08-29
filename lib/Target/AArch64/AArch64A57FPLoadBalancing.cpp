@@ -191,10 +191,10 @@ public:
   /// instruction can be more tricky.
   Color LastColor;
 
-  Chain(MachineInstr *MI, unsigned Idx, Color C) :
-  StartInst(MI), LastInst(MI), KillInst(NULL),
-  StartInstIdx(Idx), LastInstIdx(Idx), KillInstIdx(0),
-  LastColor(C) {
+  Chain(MachineInstr *MI, unsigned Idx, Color C)
+      : StartInst(MI), LastInst(MI), KillInst(nullptr),
+        StartInstIdx(Idx), LastInstIdx(Idx), KillInstIdx(0),
+        LastColor(C) {
     Insts.insert(MI);
   }
 
@@ -204,6 +204,9 @@ public:
     LastInst = MI;
     LastInstIdx = Idx;
     LastColor = C;
+    assert((KillInstIdx == 0 || LastInstIdx < KillInstIdx) &&
+           "Chain: broken invariant. A Chain can only be killed after its last "
+           "def");
 
     Insts.insert(MI);
   }
@@ -222,6 +225,9 @@ public:
     KillInst = MI;
     KillInstIdx = Idx;
     KillIsImmutable = Immutable;
+    assert((KillInstIdx == 0 || LastInstIdx < KillInstIdx) &&
+           "Chain: broken invariant. A Chain can only be killed after its last "
+           "def");
   }
 
   /// Return the first instruction in the chain.
@@ -624,7 +630,10 @@ scanInstruction(MachineInstr *MI, unsigned Idx,
         DEBUG(dbgs() << "Instruction was successfully added to chain.\n");
         ActiveChains[AccumReg]->add(MI, Idx, getColor(DestReg));
         // Handle cases where the destination is not the same as the accumulator.
-        ActiveChains[DestReg] = ActiveChains[AccumReg];
+        if (DestReg != AccumReg) {
+          ActiveChains[DestReg] = ActiveChains[AccumReg];
+          ActiveChains.erase(AccumReg);
+        }
         return;
       }
 
