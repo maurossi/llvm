@@ -65,6 +65,11 @@ EnableEarlyIfConversion("aarch64-enable-early-ifcvt", cl::Hidden,
                         cl::init(true));
 
 
+static cl::opt<bool>
+EnableA53Fix835769("aarch64-fix-cortex-a53-835769", cl::Hidden,
+                cl::desc("Work around Cortex-A53 erratum 835769"),
+                cl::init(false));
+
 extern "C" void LLVMInitializeAArch64Target() {
   // Register the target.
   RegisterTargetMachine<AArch64leTargetMachine> X(TheAArch64leTarget);
@@ -217,6 +222,8 @@ bool AArch64PassConfig::addPreSched2() {
 }
 
 bool AArch64PassConfig::addPreEmitPass() {
+  if (EnableA53Fix835769)
+    addPass(createAArch64A53Fix835769());
   // Relax conditional branch instructions if they're otherwise out of
   // range of their destination.
   addPass(createAArch64BranchRelaxation());
