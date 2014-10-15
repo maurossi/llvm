@@ -69,8 +69,10 @@ void DAGTypeLegalizer::ScalarizeVectorResult(SDNode *N, unsigned ResNo) {
   case ISD::ANY_EXTEND:
   case ISD::BSWAP:
   case ISD::CTLZ:
+  case ISD::CTLZ_ZERO_UNDEF:
   case ISD::CTPOP:
   case ISD::CTTZ:
+  case ISD::CTTZ_ZERO_UNDEF:
   case ISD::FABS:
   case ISD::FCEIL:
   case ISD::FCOS:
