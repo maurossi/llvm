@@ -125,6 +125,7 @@ $(generated_sources)/%GenAsmMatcher.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out,asm-matcher)
 endif
 
+# TODO(srhines): Is this needed
 ifneq ($(filter %GenCodeEmitter.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenCodeEmitter.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenCodeEmitter.inc: $(tblgen_source_dir)/%.td \
@@ -136,7 +137,7 @@ ifneq ($(filter %GenMCCodeEmitter.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenMCCodeEmitter.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenMCCodeEmitter.inc: $(tblgen_source_dir)/%.td \
                                         $(tblgen_td_deps) | $(LLVM_TBLGEN)
-	$(call transform-td-to-out,emitter -mc-emitter)
+	$(call transform-td-to-out,emitter)
 endif
 
 ifneq ($(filter %GenMCPseudoLowering.inc,$(tblgen_gen_tables)),)
