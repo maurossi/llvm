@@ -68,7 +68,8 @@ llvm_post_static_libraries := \
 llvm_host_static_libraries := \
   libLLVMExecutionEngine \
   libLLVMRuntimeDyld \
-  libLLVMMCJIT
+  libLLVMMCJIT \
+  libLLVMOrcJIT
 
 ifeq (true,$(FORCE_BUILD_LLVM_COMPONENTS))
 # HOST LLVM shared library build

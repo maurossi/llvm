@@ -14,6 +14,7 @@ subdirs := \
   lib/ExecutionEngine \
   lib/ExecutionEngine/RuntimeDyld \
   lib/ExecutionEngine/MCJIT \
+  lib/ExecutionEngine/Orc \
   lib/ExecutionEngine/Interpreter \
   lib/CodeGen \
   lib/CodeGen/AsmPrinter \

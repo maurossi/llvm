@@ -17,6 +17,7 @@ debuginfo_SRC_FILES := \
   DWARFFormValue.cpp \
   DWARFTypeUnit.cpp \
   DWARFUnit.cpp \
+  SyntaxHighlighting.cpp
 
 # For the host
 # =====================================================

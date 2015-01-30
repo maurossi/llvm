@@ -40,6 +40,7 @@ llvm_objdump_STATIC_LIBRARIES := \
   libLLVMX86Disassembler \
   libLLVMAsmPrinter \
   libLLVMCodeGen \
+  libLLVMTransformUtils \
   libLLVMAnalysis \
   libLLVMTarget \
   libLLVMObject \

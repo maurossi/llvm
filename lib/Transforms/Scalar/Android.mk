@@ -12,6 +12,7 @@ transforms_scalar_SRC_FILES := \
   FlattenCFGPass.cpp \
   GVN.cpp \
   IndVarSimplify.cpp \
+  InductiveRangeCheckElimination.cpp \
   JumpThreading.cpp \
   LICM.cpp \
   LoadCombine.cpp \
@@ -24,6 +25,7 @@ transforms_scalar_SRC_FILES := \
   LoopUnrollPass.cpp \
   LoopUnswitch.cpp \
   LowerAtomic.cpp \
+  LowerExpectIntrinsic.cpp \
   MemCpyOptimizer.cpp \
   MergedLoadStoreMotion.cpp \
   PartiallyInlineLibCalls.cpp \

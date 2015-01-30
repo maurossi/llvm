@@ -29,15 +29,16 @@ vmcore_SRC_FILES := \
   IntrinsicInst.cpp \
   LLVMContext.cpp \
   LLVMContextImpl.cpp \
-  LeakDetector.cpp \
   LegacyPassManager.cpp \
   Mangler.cpp \
   MDBuilder.cpp \
   Metadata.cpp \
+  MetadataTracking.cpp \
   Module.cpp \
   Pass.cpp \
   PassManager.cpp \
   PassRegistry.cpp \
+  Statepoint.cpp \
   Type.cpp \
   TypeFinder.cpp \
   Use.cpp \

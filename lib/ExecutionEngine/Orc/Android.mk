@@ -5,13 +5,12 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	ExecutionEngineBindings.cpp \
-	ExecutionEngine.cpp \
-	GDBRegistrationListener.cpp \
-	RTDyldMemoryManager.cpp \
-	TargetSelect.cpp
+  CloneSubModule.cpp \
+  IndirectionUtils.cpp \
+  OrcMCJITReplacement.cpp \
+  OrcTargetSupport.cpp
 
-LOCAL_MODULE:= libLLVMExecutionEngine
+LOCAL_MODULE:= libLLVMOrcJIT
 
 LOCAL_MODULE_TAGS := optional
 

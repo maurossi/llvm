@@ -5,7 +5,6 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES :=	\
-	GDBRegistrar.cpp \
 	RuntimeDyld.cpp \
 	RuntimeDyldChecker.cpp \
 	RuntimeDyldELF.cpp \
