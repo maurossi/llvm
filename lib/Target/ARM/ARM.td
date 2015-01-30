@@ -147,6 +147,11 @@ def FeatureAClass : SubtargetFeature<"aclass", "ARMProcClass", "AClass",
 def FeatureNaClTrap : SubtargetFeature<"nacl-trap", "UseNaClTrap", "true",
                                        "NaCl trap">;
 
+// RenderScript-specific support for 64-bit long types on all targets
+def FeatureLong64 : SubtargetFeature<"long64", "UseLong64",
+                                     "true",
+                                     "long type is forced to be 64-bit">;
+
 // ARM ISAs.
 def HasV4TOps   : SubtargetFeature<"v4t", "HasV4TOps", "true",
                                    "Support ARM v4T instructions">;
@@ -269,17 +274,6 @@ def ProcKrait   : SubtargetFeature<"krait", "ARMProcFamily", "Krait",
                                     FeatureHWDiv,
                                     FeatureHWDivARM]>;
 
-
-def FeatureAPCS  : SubtargetFeature<"apcs", "TargetABI", "ARM_ABI_APCS",
-                                   "Use the APCS ABI">;
-
-def FeatureAAPCS : SubtargetFeature<"aapcs", "TargetABI", "ARM_ABI_AAPCS",
-                                   "Use the AAPCS ABI">;
-
-// RenderScript-specific support for 64-bit long types on all targets
-def FeatureLong64 : SubtargetFeature<"long64", "UseLong64",
-                                     "true",
-                                     "long type is forced to be 64-bit">;
 
 class ProcNoItin<string Name, list<SubtargetFeature> Features>
  : Processor<Name, NoItineraries, Features>;

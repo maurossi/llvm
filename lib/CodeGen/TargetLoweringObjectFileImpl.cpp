@@ -73,10 +73,9 @@ void TargetLoweringObjectFileELF::emitPersonalityValue(MCStreamer &Streamer,
                                                     Flags,
                                                     SectionKind::getDataRel(),
                                                     0, Label->getName());
-  unsigned Size = TM.getSubtargetImpl()->getDataLayout()->getPointerSize();
+  unsigned Size = TM.getDataLayout()->getPointerSize();
   Streamer.SwitchSection(Sec);
-  Streamer.EmitValueToAlignment(
-      TM.getSubtargetImpl()->getDataLayout()->getPointerABIAlignment());
+  Streamer.EmitValueToAlignment(TM.getDataLayout()->getPointerABIAlignment());
   Streamer.EmitSymbolAttribute(Label, MCSA_ELF_TypeObject);
   const MCExpr *E = MCConstantExpr::Create(Size, getContext());
   Streamer.EmitELFSize(Label, E);
@@ -257,8 +256,7 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
 
   // If this global is linkonce/weak and the target handles this by emitting it
   // into a 'uniqued' section name, create and return the section now.
-  if ((GV->isWeakForLinker() || EmitUniquedSection || GV->hasComdat()) &&
-      !Kind.isCommon()) {
+  if ((EmitUniquedSection && !Kind.isCommon()) || GV->hasComdat()) {
     StringRef Prefix = getSectionPrefixForGlobal(Kind);
 
     SmallString<128> Name(Prefix);
@@ -266,12 +264,9 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
 
     StringRef Group = "";
     unsigned Flags = getELFSectionFlags(Kind);
-    if (GV->isWeakForLinker() || GV->hasComdat()) {
-      if (const Comdat *C = getELFComdat(GV))
-        Group = C->getName();
-      else
-        Group = Name.substr(Prefix.size());
+    if (const Comdat *C = getELFComdat(GV)) {
       Flags |= ELF::SHF_GROUP;
+      Group = C->getName();
     }
 
     return getContext().getELFSection(Name.str(),
@@ -281,16 +276,13 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
 
   if (Kind.isText()) return TextSection;
 
-  if (Kind.isMergeable1ByteCString() ||
-      Kind.isMergeable2ByteCString() ||
-      Kind.isMergeable4ByteCString()) {
+  if (Kind.isMergeableCString()) {
 
     // We also need alignment here.
     // FIXME: this is getting the alignment of the character, not the
     // alignment of the global!
     unsigned Align =
-        TM.getSubtargetImpl()->getDataLayout()->getPreferredAlignment(
-            cast<GlobalVariable>(GV));
+        TM.getDataLayout()->getPreferredAlignment(cast<GlobalVariable>(GV));
 
     const char *SizeSpec = ".rodata.str1.";
     if (Kind.isMergeable2ByteCString())
@@ -464,14 +456,15 @@ emitModuleFlags(MCStreamer &Streamer,
       continue;
 
     StringRef Key = MFE.Key->getString();
-    Value *Val = MFE.Val;
+    Metadata *Val = MFE.Val;
 
     if (Key == "Objective-C Image Info Version") {
-      VersionVal = cast<ConstantInt>(Val)->getZExtValue();
+      VersionVal = mdconst::extract<ConstantInt>(Val)->getZExtValue();
     } else if (Key == "Objective-C Garbage Collection" ||
                Key == "Objective-C GC Only" ||
-               Key == "Objective-C Is Simulated") {
-      ImageInfoFlags |= cast<ConstantInt>(Val)->getZExtValue();
+               Key == "Objective-C Is Simulated" ||
+               Key == "Objective-C Image Swift Version") {
+      ImageInfoFlags |= mdconst::extract<ConstantInt>(Val)->getZExtValue();
     } else if (Key == "Objective-C Image Info Section") {
       SectionVal = cast<MDString>(Val)->getString();
     } else if (Key == "Linker Options") {
@@ -572,60 +565,6 @@ const MCSection *TargetLoweringObjectFileMachO::getExplicitSectionGlobal(
   return S;
 }
 
-bool TargetLoweringObjectFileMachO::isSectionAtomizableBySymbols(
-    const MCSection &Section) const {
-    const MCSectionMachO &SMO = static_cast<const MCSectionMachO&>(Section);
-
-    // Sections holding 1 byte strings are atomized based on the data
-    // they contain.
-    // Sections holding 2 byte strings require symbols in order to be
-    // atomized.
-    // There is no dedicated section for 4 byte strings.
-    if (SMO.getKind().isMergeable1ByteCString())
-      return false;
-
-    if (SMO.getSegmentName() == "__TEXT" &&
-        SMO.getSectionName() == "__objc_classname" &&
-        SMO.getType() == MachO::S_CSTRING_LITERALS)
-      return false;
-
-    if (SMO.getSegmentName() == "__TEXT" &&
-        SMO.getSectionName() == "__objc_methname" &&
-        SMO.getType() == MachO::S_CSTRING_LITERALS)
-      return false;
-
-    if (SMO.getSegmentName() == "__TEXT" &&
-        SMO.getSectionName() == "__objc_methtype" &&
-        SMO.getType() == MachO::S_CSTRING_LITERALS)
-      return false;
-
-    if (SMO.getSegmentName() == "__DATA" &&
-        SMO.getSectionName() == "__cfstring")
-      return false;
-
-    // no_dead_strip sections are not atomized in practice.
-    if (SMO.hasAttribute(MachO::S_ATTR_NO_DEAD_STRIP))
-      return false;
-
-    switch (SMO.getType()) {
-    default:
-      return true;
-
-      // These sections are atomized at the element boundaries without using
-      // symbols.
-    case MachO::S_4BYTE_LITERALS:
-    case MachO::S_8BYTE_LITERALS:
-    case MachO::S_16BYTE_LITERALS:
-    case MachO::S_LITERAL_POINTERS:
-    case MachO::S_NON_LAZY_SYMBOL_POINTERS:
-    case MachO::S_LAZY_SYMBOL_POINTERS:
-    case MachO::S_MOD_INIT_FUNC_POINTERS:
-    case MachO::S_MOD_TERM_FUNC_POINTERS:
-    case MachO::S_INTERPOSING:
-      return false;
-    }
-}
-
 const MCSection *TargetLoweringObjectFileMachO::
 SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
                        Mangler &Mang, const TargetMachine &TM) const {
@@ -648,16 +587,14 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
 
   // FIXME: Alignment check should be handled by section classifier.
   if (Kind.isMergeable1ByteCString() &&
-      TM.getSubtargetImpl()->getDataLayout()->getPreferredAlignment(
-          cast<GlobalVariable>(GV)) < 32)
+      TM.getDataLayout()->getPreferredAlignment(cast<GlobalVariable>(GV)) < 32)
     return CStringSection;
 
   // Do not put 16-bit arrays in the UString section if they have an
   // externally visible label, this runs into issues with certain linker
   // versions.
   if (Kind.isMergeable2ByteCString() && !GV->hasExternalLinkage() &&
-      TM.getSubtargetImpl()->getDataLayout()->getPreferredAlignment(
-          cast<GlobalVariable>(GV)) < 32)
+      TM.getDataLayout()->getPreferredAlignment(cast<GlobalVariable>(GV)) < 32)
     return UStringSection;
 
   // With MachO only variables whose corresponding symbol starts with 'l' or
@@ -854,7 +791,7 @@ const MCSection *TargetLoweringObjectFileCOFF::getExplicitSectionGlobal(
   unsigned Characteristics = getCOFFSectionFlags(Kind);
   StringRef Name = GV->getSection();
   StringRef COMDATSymName = "";
-  if ((GV->isWeakForLinker() || GV->hasComdat()) && !Kind.isCommon()) {
+  if (GV->hasComdat()) {
     Selection = getSelectionForCOFF(GV);
     const GlobalValue *ComdatGV;
     if (Selection == COFF::IMAGE_COMDAT_SELECT_ASSOCIATIVE)
@@ -901,12 +838,7 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
   else
     EmitUniquedSection = TM.getDataSections();
 
-  // If this global is linkonce/weak and the target handles this by emitting it
-  // into a 'uniqued' section name, create and return the section now.
-  // Section names depend on the name of the symbol which is not feasible if the
-  // symbol has private linkage.
-  if ((GV->isWeakForLinker() || EmitUniquedSection || GV->hasComdat()) &&
-      !Kind.isCommon()) {
+  if ((EmitUniquedSection && !Kind.isCommon()) || GV->hasComdat()) {
     const char *Name = getCOFFSectionNameForUniqueGlobal(Kind);
     unsigned Characteristics = getCOFFSectionFlags(Kind);
 
@@ -965,7 +897,7 @@ emitModuleFlags(MCStreamer &Streamer,
        i = ModuleFlags.begin(), e = ModuleFlags.end(); i != e; ++i) {
     const Module::ModuleFlagEntry &MFE = *i;
     StringRef Key = MFE.Key->getString();
-    Value *Val = MFE.Val;
+    Metadata *Val = MFE.Val;
     if (Key == "Linker Options") {
       LinkerOptions = cast<MDNode>(Val);
       break;
@@ -985,7 +917,7 @@ emitModuleFlags(MCStreamer &Streamer,
       StringRef Op = MDOption->getString();
       // Lead with a space for consistency with our dllexport implementation.
       std::string Escaped(" ");
-      if (Op.find(" ") != StringRef::npos) {
+      if (!Op.startswith("\"") && (Op.find(" ") != StringRef::npos)) {
         // The PE-COFF spec says args with spaces must be quoted.  It doesn't say
         // how to escape quotes, but it probably uses this algorithm:
         // http://msdn.microsoft.com/en-us/library/17w5ykft(v=vs.85).aspx

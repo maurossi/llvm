@@ -19,6 +19,7 @@
 #include "MipsAsmPrinter.h"
 #include "MipsInstrInfo.h"
 #include "MipsMCInstLower.h"
+#include "MipsTargetMachine.h"
 #include "MipsTargetStreamer.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringExtras.h"
@@ -53,7 +54,7 @@ using namespace llvm;
 
 #define DEBUG_TYPE "mips-asm-printer"
 
-MipsTargetStreamer &MipsAsmPrinter::getTargetStreamer() {
+MipsTargetStreamer &MipsAsmPrinter::getTargetStreamer() const {
   return static_cast<MipsTargetStreamer &>(*OutStreamer.getTargetStreamer());
 }
 
@@ -319,7 +320,7 @@ void MipsAsmPrinter::emitFrameDirective() {
 
 /// Emit Set directives.
 const char *MipsAsmPrinter::getCurrentABIString() const {
-  switch (Subtarget->getABI().GetEnumValue()) {
+  switch (static_cast<MipsTargetMachine &>(TM).getABI().GetEnumValue()) {
   case MipsABIInfo::ABI::O32:  return "abi32";
   case MipsABIInfo::ABI::N32:  return "abiN32";
   case MipsABIInfo::ABI::N64:  return "abi64";
@@ -560,7 +561,7 @@ bool MipsAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI,
 
 void MipsAsmPrinter::printOperand(const MachineInstr *MI, int opNum,
                                   raw_ostream &O) {
-  const DataLayout *DL = TM.getSubtargetImpl()->getDataLayout();
+  const DataLayout *DL = TM.getDataLayout();
   const MachineOperand &MO = MI->getOperand(opNum);
   bool closeP = false;
 
@@ -741,6 +742,29 @@ void MipsAsmPrinter::EmitStartOfAsmFile(Module &M) {
                                  Subtarget->isABI_FPXX()))
     getTargetStreamer().emitDirectiveModuleOddSPReg(Subtarget->useOddSPReg(),
                                                     Subtarget->isABI_O32());
+}
+
+void MipsAsmPrinter::emitInlineAsmStart(
+    const MCSubtargetInfo &StartInfo) const {
+  MipsTargetStreamer &TS = getTargetStreamer();
+
+  // GCC's choice of assembler options for inline assembly code ('at', 'macro'
+  // and 'reorder') is different from LLVM's choice for generated code ('noat',
+  // 'nomacro' and 'noreorder').
+  // In order to maintain compatibility with inline assembly code which depends
+  // on GCC's assembler options being used, we have to switch to those options
+  // for the duration of the inline assembly block and then switch back.
+  TS.emitDirectiveSetPush();
+  TS.emitDirectiveSetAt();
+  TS.emitDirectiveSetMacro();
+  TS.emitDirectiveSetReorder();
+  OutStreamer.AddBlankLine();
+}
+
+void MipsAsmPrinter::emitInlineAsmEnd(const MCSubtargetInfo &StartInfo,
+                                      const MCSubtargetInfo *EndInfo) const {
+  OutStreamer.AddBlankLine();
+  getTargetStreamer().emitDirectiveSetPop();
 }
 
 void MipsAsmPrinter::EmitJal(MCSymbol *Symbol) {
@@ -951,7 +975,7 @@ void MipsAsmPrinter::EmitFPCallStub(
   // called otherwise. when the full stub generation is moved here
   // we need to deal with pic.
   //
-  if (Subtarget->getRelocationModel() == Reloc::PIC_)
+  if (TM.getRelocationModel() == Reloc::PIC_)
     llvm_unreachable("should not be here if we are compiling pic");
   TS.emitDirectiveSetReorder();
   //

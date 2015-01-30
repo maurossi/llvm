@@ -27,6 +27,10 @@ def AMDGPULdExpOp : SDTypeProfile<1, 2,
   [SDTCisSameAs<0, 1>, SDTCisFP<0>, SDTCisInt<2>]
 >;
 
+def AMDGPUFPClassOp : SDTypeProfile<1, 2,
+  [SDTCisInt<0>, SDTCisFP<1>, SDTCisInt<2>]
+>;
+
 def AMDGPUDivScaleOp : SDTypeProfile<2, 3,
   [SDTCisFP<0>, SDTCisInt<1>, SDTCisSameAs<0, 2>, SDTCisSameAs<0, 3>, SDTCisSameAs<0, 4>]
 >;
@@ -58,12 +62,14 @@ def AMDGPUrsq_clamped : SDNode<"AMDGPUISD::RSQ_CLAMPED", SDTFPUnaryOp>;
 
 def AMDGPUldexp : SDNode<"AMDGPUISD::LDEXP", AMDGPULdExpOp>;
 
+def AMDGPUfp_class : SDNode<"AMDGPUISD::FP_CLASS", AMDGPUFPClassOp>;
+
 // out = max(a, b) a and b are floats, where a nan comparison fails.
 // This is not commutative because this gives the second operand:
 //   x < nan ? x : nan -> nan
 //   nan < x ? nan : x -> x
 def AMDGPUfmax_legacy : SDNode<"AMDGPUISD::FMAX_LEGACY", SDTFPBinOp,
-  [SDNPAssociative]
+  []
 >;
 
 def AMDGPUclamp : SDNode<"AMDGPUISD::CLAMP", SDTFPTernaryOp, []>;
@@ -81,7 +87,7 @@ def AMDGPUumax : SDNode<"AMDGPUISD::UMAX", SDTIntBinOp,
 
 // out = min(a, b) a and b are floats, where a nan comparison fails.
 def AMDGPUfmin_legacy : SDNode<"AMDGPUISD::FMIN_LEGACY", SDTFPBinOp,
-  [SDNPAssociative]
+  []
 >;
 
 // out = min(a, b) a and b are signed ints

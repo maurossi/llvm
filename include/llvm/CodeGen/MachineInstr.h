@@ -1048,6 +1048,11 @@ public:
   bool addRegisterDead(unsigned Reg, const TargetRegisterInfo *RegInfo,
                        bool AddIfNotFound = false);
 
+  /// Mark all subregister defs of register @p Reg with the undef flag.
+  /// This function is used when we determined to have a subregister def in an
+  /// otherwise undefined super register.
+  void addRegisterDefReadUndef(unsigned Reg);
+
   /// addRegisterDefined - We have determined MI defines a register. Make sure
   /// there is an operand defining Reg.
   void addRegisterDefined(unsigned Reg,
@@ -1139,7 +1144,10 @@ public:
   /// setDebugLoc - Replace current source information with new such.
   /// Avoid using this, the constructor argument is preferable.
   ///
-  void setDebugLoc(const DebugLoc dl) { debugLoc = dl; }
+  void setDebugLoc(const DebugLoc dl) {
+    debugLoc = dl;
+    assert(debugLoc.hasTrivialDestructor() && "Expected trivial destructor");
+  }
 
   /// RemoveOperand - Erase an operand  from an instruction, leaving it with one
   /// fewer operand than it started with.

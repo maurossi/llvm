@@ -55,7 +55,7 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AliasSetTracker.h"
-#include "llvm/Analysis/AssumptionTracker.h"
+#include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/BlockFrequencyInfo.h"
 #include "llvm/Analysis/CodeMetrics.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -580,9 +580,10 @@ public:
 
   LoopVectorizationLegality(Loop *L, ScalarEvolution *SE, const DataLayout *DL,
                             DominatorTree *DT, TargetLibraryInfo *TLI,
-                            AliasAnalysis *AA, Function *F)
+                            AliasAnalysis *AA, Function *F,
+                            const TargetTransformInfo *TTI)
       : NumLoads(0), NumStores(0), NumPredStores(0), TheLoop(L), SE(SE), DL(DL),
-        DT(DT), TLI(TLI), AA(AA), TheFunction(F), Induction(nullptr),
+        DT(DT), TLI(TLI), AA(AA), TheFunction(F), TTI(TTI), Induction(nullptr),
         WidestIndTy(nullptr), HasFunNoNaNAttr(false), MaxSafeDepDistBytes(-1U) {
   }
 
@@ -768,6 +769,21 @@ public:
   }
   SmallPtrSet<Value *, 8>::iterator strides_end() { return StrideSet.end(); }
 
+  /// Returns true if the target machine supports masked store operation
+  /// for the given \p DataType and kind of access to \p Ptr.
+  bool isLegalMaskedStore(Type *DataType, Value *Ptr) {
+    return TTI->isLegalMaskedStore(DataType, isConsecutivePtr(Ptr));
+  }
+  /// Returns true if the target machine supports masked load operation
+  /// for the given \p DataType and kind of access to \p Ptr.
+  bool isLegalMaskedLoad(Type *DataType, Value *Ptr) {
+    return TTI->isLegalMaskedLoad(DataType, isConsecutivePtr(Ptr));
+  }
+  /// Returns true if vector representation of the instruction \p I
+  /// requires mask.
+  bool isMaskRequired(const Instruction* I) {
+    return (MaskedOp.count(I) != 0);
+  }
 private:
   /// Check if a single basic block loop is vectorizable.
   /// At this point we know that this is a loop with a constant trip count
@@ -814,7 +830,7 @@ private:
   ///
   /// Looks for accesses like "a[i * StrideA]" where "StrideA" is loop
   /// invariant.
-  void collectStridedAcccess(Value *LoadOrStoreInst);
+  void collectStridedAccess(Value *LoadOrStoreInst);
 
   /// Report an analysis message to assist the user in diagnosing loops that are
   /// not vectorized.
@@ -840,6 +856,8 @@ private:
   AliasAnalysis *AA;
   /// Parent function
   Function *TheFunction;
+  /// Target Transform Info
+  const TargetTransformInfo *TTI;
 
   //  ---  vectorization state --- //
 
@@ -871,6 +889,10 @@ private:
 
   ValueToValueMap Strides;
   SmallPtrSet<Value *, 8> StrideSet;
+  
+  /// While vectorizing these instructions we have to generate a
+  /// call to the appropriate masked intrinsic
+  SmallPtrSet<const Instruction*, 8> MaskedOp;
 };
 
 /// LoopVectorizationCostModel - estimates the expected speedups due to
@@ -886,11 +908,11 @@ public:
                              LoopVectorizationLegality *Legal,
                              const TargetTransformInfo &TTI,
                              const DataLayout *DL, const TargetLibraryInfo *TLI,
-                             AssumptionTracker *AT, const Function *F,
+                             AssumptionCache *AC, const Function *F,
                              const LoopVectorizeHints *Hints)
       : TheLoop(L), SE(SE), LI(LI), Legal(Legal), TTI(TTI), DL(DL), TLI(TLI),
         TheFunction(F), Hints(Hints) {
-    CodeMetrics::collectEphemeralValues(L, AT, EphValues);
+    CodeMetrics::collectEphemeralValues(L, AC, EphValues);
   }
 
   /// Information about vectorization costs
@@ -1097,7 +1119,7 @@ private:
 
     for (unsigned i = 1, ie = LoopID->getNumOperands(); i < ie; ++i) {
       const MDString *S = nullptr;
-      SmallVector<Value*, 4> Args;
+      SmallVector<Metadata *, 4> Args;
 
       // The expected hint is either a MDString or a MDNode with the first
       // operand a MDString.
@@ -1123,12 +1145,12 @@ private:
   }
 
   /// Checks string hint with one operand and set value if valid.
-  void setHint(StringRef Name, Value *Arg) {
+  void setHint(StringRef Name, Metadata *Arg) {
     if (!Name.startswith(Prefix()))
       return;
     Name = Name.substr(Prefix().size(), StringRef::npos);
 
-    const ConstantInt *C = dyn_cast<ConstantInt>(Arg);
+    const ConstantInt *C = mdconst::dyn_extract<ConstantInt>(Arg);
     if (!C) return;
     unsigned Val = C->getZExtValue();
 
@@ -1147,9 +1169,10 @@ private:
   /// Create a new hint from name / value pair.
   MDNode *createHintMetadata(StringRef Name, unsigned V) const {
     LLVMContext &Context = TheLoop->getHeader()->getContext();
-    Value *Vals[] = {MDString::get(Context, Name),
-                     ConstantInt::get(Type::getInt32Ty(Context), V)};
-    return MDNode::get(Context, Vals);
+    Metadata *MDs[] = {MDString::get(Context, Name),
+                       ConstantAsMetadata::get(
+                           ConstantInt::get(Type::getInt32Ty(Context), V))};
+    return MDNode::get(Context, MDs);
   }
 
   /// Matches metadata with hint name.
@@ -1170,7 +1193,7 @@ private:
       return;
 
     // Reserve the first element to LoopID (see below).
-    SmallVector<Value*, 4> Vals(1);
+    SmallVector<Metadata *, 4> MDs(1);
     // If the loop already has metadata, then ignore the existing operands.
     MDNode *LoopID = TheLoop->getLoopID();
     if (LoopID) {
@@ -1178,25 +1201,21 @@ private:
         MDNode *Node = cast<MDNode>(LoopID->getOperand(i));
         // If node in update list, ignore old value.
         if (!matchesHintMetadataName(Node, HintTypes))
-          Vals.push_back(Node);
+          MDs.push_back(Node);
       }
     }
 
     // Now, add the missing hints.
     for (auto H : HintTypes)
-      Vals.push_back(
-          createHintMetadata(Twine(Prefix(), H.Name).str(), H.Value));
+      MDs.push_back(createHintMetadata(Twine(Prefix(), H.Name).str(), H.Value));
 
     // Replace current metadata node with new one.
     LLVMContext &Context = TheLoop->getHeader()->getContext();
-    MDNode *NewLoopID = MDNode::get(Context, Vals);
+    MDNode *NewLoopID = MDNode::get(Context, MDs);
     // Set operand 0 to refer to the loop id itself.
     NewLoopID->replaceOperandWith(0, NewLoopID);
 
     TheLoop->setLoopID(NewLoopID);
-    if (LoopID)
-      LoopID->replaceAllUsesWith(NewLoopID);
-    LoopID = NewLoopID;
   }
 
   /// The loop these hints belong to.
@@ -1248,7 +1267,7 @@ struct LoopVectorize : public FunctionPass {
   BlockFrequencyInfo *BFI;
   TargetLibraryInfo *TLI;
   AliasAnalysis *AA;
-  AssumptionTracker *AT;
+  AssumptionCache *AC;
   bool DisableUnrolling;
   bool AlwaysVectorize;
 
@@ -1258,13 +1277,14 @@ struct LoopVectorize : public FunctionPass {
     SE = &getAnalysis<ScalarEvolution>();
     DataLayoutPass *DLP = getAnalysisIfAvailable<DataLayoutPass>();
     DL = DLP ? &DLP->getDataLayout() : nullptr;
-    LI = &getAnalysis<LoopInfo>();
+    LI = &getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
     TTI = &getAnalysis<TargetTransformInfo>();
     DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
     BFI = &getAnalysis<BlockFrequencyInfo>();
-    TLI = getAnalysisIfAvailable<TargetLibraryInfo>();
+    auto *TLIP = getAnalysisIfAvailable<TargetLibraryInfoWrapperPass>();
+    TLI = TLIP ? &TLIP->getTLI() : nullptr;
     AA = &getAnalysis<AliasAnalysis>();
-    AT = &getAnalysis<AssumptionTracker>();
+    AC = &getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
 
     // Compute some weights outside of the loop over the loops. Compute this
     // using a BranchProbability to re-use its scaling math.
@@ -1375,7 +1395,7 @@ struct LoopVectorize : public FunctionPass {
     }
 
     // Check if it is legal to vectorize the loop.
-    LoopVectorizationLegality LVL(L, SE, DL, DT, TLI, AA, F);
+    LoopVectorizationLegality LVL(L, SE, DL, DT, TLI, AA, F, TTI);
     if (!LVL.canVectorize()) {
       DEBUG(dbgs() << "LV: Not vectorizing: Cannot prove legality.\n");
       emitMissedWarning(F, L, Hints);
@@ -1383,7 +1403,7 @@ struct LoopVectorize : public FunctionPass {
     }
 
     // Use the cost model.
-    LoopVectorizationCostModel CM(L, SE, LI, &LVL, *TTI, DL, TLI, AT, F,
+    LoopVectorizationCostModel CM(L, SE, LI, &LVL, *TTI, DL, TLI, AC, F,
                                   &Hints);
 
     // Check the function attributes to find out if this function should be
@@ -1471,16 +1491,16 @@ struct LoopVectorize : public FunctionPass {
   }
 
   void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.addRequired<AssumptionTracker>();
+    AU.addRequired<AssumptionCacheTracker>();
     AU.addRequiredID(LoopSimplifyID);
     AU.addRequiredID(LCSSAID);
     AU.addRequired<BlockFrequencyInfo>();
     AU.addRequired<DominatorTreeWrapperPass>();
-    AU.addRequired<LoopInfo>();
+    AU.addRequired<LoopInfoWrapperPass>();
     AU.addRequired<ScalarEvolution>();
     AU.addRequired<TargetTransformInfo>();
     AU.addRequired<AliasAnalysis>();
-    AU.addPreserved<LoopInfo>();
+    AU.addPreserved<LoopInfoWrapperPass>();
     AU.addPreserved<DominatorTreeWrapperPass>();
     AU.addPreserved<AliasAnalysis>();
   }
@@ -1763,7 +1783,8 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
   unsigned ScalarAllocatedSize = DL->getTypeAllocSize(ScalarDataTy);
   unsigned VectorElementSize = DL->getTypeStoreSize(DataTy)/VF;
 
-  if (SI && Legal->blockNeedsPredication(SI->getParent()))
+  if (SI && Legal->blockNeedsPredication(SI->getParent()) &&
+      !Legal->isMaskRequired(SI))
     return scalarizeInstruction(Instr, true);
 
   if (ScalarAllocatedSize != VectorElementSize)
@@ -1832,6 +1853,7 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
     Ptr = Builder.CreateExtractElement(PtrVal[0], Zero);
   }
 
+  VectorParts Mask = createBlockInMask(Instr->getParent());
   // Handle Stores:
   if (SI) {
     assert(!Legal->isUniform(SI->getPointerOperand()) &&
@@ -1840,7 +1862,7 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
     // We don't want to update the value in the map as it might be used in
     // another expression. So don't use a reference type for "StoredVal".
     VectorParts StoredVal = getVectorValue(SI->getValueOperand());
-
+    
     for (unsigned Part = 0; Part < UF; ++Part) {
       // Calculate the pointer for the specific unroll-part.
       Value *PartPtr = Builder.CreateGEP(Ptr, Builder.getInt32(Part * VF));
@@ -1853,12 +1875,18 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
         // wide store needs to start at the last vector element.
         PartPtr = Builder.CreateGEP(Ptr, Builder.getInt32(-Part * VF));
         PartPtr = Builder.CreateGEP(PartPtr, Builder.getInt32(1 - VF));
+        Mask[Part] = reverseVector(Mask[Part]);
       }
 
       Value *VecPtr = Builder.CreateBitCast(PartPtr,
                                             DataTy->getPointerTo(AddressSpace));
-      StoreInst *NewSI =
-        Builder.CreateAlignedStore(StoredVal[Part], VecPtr, Alignment);
+
+      Instruction *NewSI;
+      if (Legal->isMaskRequired(SI))
+        NewSI = Builder.CreateMaskedStore(StoredVal[Part], VecPtr, Alignment,
+                                          Mask[Part]);
+      else 
+        NewSI = Builder.CreateAlignedStore(StoredVal[Part], VecPtr, Alignment);
       propagateMetadata(NewSI, SI);
     }
     return;
@@ -1873,14 +1901,21 @@ void InnerLoopVectorizer::vectorizeMemoryInstruction(Instruction *Instr) {
 
     if (Reverse) {
       // If the address is consecutive but reversed, then the
-      // wide store needs to start at the last vector element.
+      // wide load needs to start at the last vector element.
       PartPtr = Builder.CreateGEP(Ptr, Builder.getInt32(-Part * VF));
       PartPtr = Builder.CreateGEP(PartPtr, Builder.getInt32(1 - VF));
+      Mask[Part] = reverseVector(Mask[Part]);
     }
 
+    Instruction* NewLI;
     Value *VecPtr = Builder.CreateBitCast(PartPtr,
                                           DataTy->getPointerTo(AddressSpace));
-    LoadInst *NewLI = Builder.CreateAlignedLoad(VecPtr, Alignment, "wide.load");
+    if (Legal->isMaskRequired(LI))
+      NewLI = Builder.CreateMaskedLoad(VecPtr, Alignment, Mask[Part],
+                                       UndefValue::get(DataTy),
+                                       "wide.masked.load");
+    else
+      NewLI = Builder.CreateAlignedLoad(VecPtr, Alignment, "wide.load");
     propagateMetadata(NewLI, LI);
     Entry[Part] = Reverse ? reverseVector(NewLI) :  NewLI;
   }
@@ -1958,7 +1993,7 @@ void InnerLoopVectorizer::scalarizeInstruction(Instruction *Instr, bool IfPredic
         Cmp = Builder.CreateICmp(ICmpInst::ICMP_EQ, Cmp, ConstantInt::get(Cmp->getType(), 1));
         CondBlock = IfBlock->splitBasicBlock(InsertPt, "cond.store");
         LoopVectorBody.push_back(CondBlock);
-        VectorLp->addBasicBlockToLoop(CondBlock, LI->getBase());
+        VectorLp->addBasicBlockToLoop(CondBlock, *LI);
         // Update Builder with newly created basic block.
         Builder.SetInsertPoint(InsertPt);
       }
@@ -1987,7 +2022,7 @@ void InnerLoopVectorizer::scalarizeInstruction(Instruction *Instr, bool IfPredic
       if (IfPredicateStore) {
          BasicBlock *NewIfBlock = CondBlock->splitBasicBlock(InsertPt, "else");
          LoopVectorBody.push_back(NewIfBlock);
-         VectorLp->addBasicBlockToLoop(NewIfBlock, LI->getBase());
+         VectorLp->addBasicBlockToLoop(NewIfBlock, *LI);
          Builder.SetInsertPoint(InsertPt);
          Instruction *OldBr = IfBlock->getTerminator();
          BranchInst::Create(CondBlock, NewIfBlock, Cmp, OldBr);
@@ -2265,13 +2300,13 @@ void InnerLoopVectorizer::createEmptyLoop() {
   // before calling any utilities such as SCEV that require valid LoopInfo.
   if (ParentLoop) {
     ParentLoop->addChildLoop(Lp);
-    ParentLoop->addBasicBlockToLoop(ScalarPH, LI->getBase());
-    ParentLoop->addBasicBlockToLoop(VectorPH, LI->getBase());
-    ParentLoop->addBasicBlockToLoop(MiddleBlock, LI->getBase());
+    ParentLoop->addBasicBlockToLoop(ScalarPH, *LI);
+    ParentLoop->addBasicBlockToLoop(VectorPH, *LI);
+    ParentLoop->addBasicBlockToLoop(MiddleBlock, *LI);
   } else {
     LI->addTopLevelLoop(Lp);
   }
-  Lp->addBasicBlockToLoop(VecBody, LI->getBase());
+  Lp->addBasicBlockToLoop(VecBody, *LI);
 
   // Use this IR builder to create the loop instructions (Phi, Br, Cmp)
   // inside the loop.
@@ -2326,7 +2361,7 @@ void InnerLoopVectorizer::createEmptyLoop() {
     BasicBlock *CheckBlock =
       LastBypassBlock->splitBasicBlock(PastOverflowCheck, "overflow.checked");
     if (ParentLoop)
-      ParentLoop->addBasicBlockToLoop(CheckBlock, LI->getBase());
+      ParentLoop->addBasicBlockToLoop(CheckBlock, *LI);
     LoopBypassBlocks.push_back(CheckBlock);
     Instruction *OldTerm = LastBypassBlock->getTerminator();
     BranchInst::Create(ScalarPH, CheckBlock, CheckBCOverflow, OldTerm);
@@ -2346,7 +2381,7 @@ void InnerLoopVectorizer::createEmptyLoop() {
     BasicBlock *CheckBlock =
         LastBypassBlock->splitBasicBlock(FirstCheckInst, "vector.stridecheck");
     if (ParentLoop)
-      ParentLoop->addBasicBlockToLoop(CheckBlock, LI->getBase());
+      ParentLoop->addBasicBlockToLoop(CheckBlock, *LI);
     LoopBypassBlocks.push_back(CheckBlock);
 
     // Replace the branch into the memory check block with a conditional branch
@@ -2370,7 +2405,7 @@ void InnerLoopVectorizer::createEmptyLoop() {
     BasicBlock *CheckBlock =
         LastBypassBlock->splitBasicBlock(MemRuntimeCheck, "vector.memcheck");
     if (ParentLoop)
-      ParentLoop->addBasicBlockToLoop(CheckBlock, LI->getBase());
+      ParentLoop->addBasicBlockToLoop(CheckBlock, *LI);
     LoopBypassBlocks.push_back(CheckBlock);
 
     // Replace the branch into the memory check block with a conditional branch
@@ -2835,9 +2870,6 @@ void InnerLoopVectorizer::vectorizeLoop() {
     }
 
     // Fix the vector-loop phi.
-    // We created the induction variable so we know that the
-    // preheader is the first entry.
-    BasicBlock *VecPreheader = Induction->getIncomingBlock(0);
 
     // Reductions do not have to start at zero. They can start with
     // any loop invariant values.
@@ -2849,7 +2881,8 @@ void InnerLoopVectorizer::vectorizeLoop() {
       // Make sure to add the reduction stat value only to the
       // first unroll part.
       Value *StartVal = (part == 0) ? VectorStart : Identity;
-      cast<PHINode>(VecRdxPhi[part])->addIncoming(StartVal, VecPreheader);
+      cast<PHINode>(VecRdxPhi[part])->addIncoming(StartVal,
+                                                  LoopVectorPreHeader);
       cast<PHINode>(VecRdxPhi[part])->addIncoming(Val[part],
                                                   LoopVectorBody.back());
     }
@@ -3518,7 +3551,7 @@ bool LoopVectorizationLegality::canVectorize() {
   }
 
   // We can only vectorize innermost loops.
-  if (TheLoop->getSubLoopsVector().size()) {
+  if (!TheLoop->getSubLoopsVector().empty()) {
     emitAnalysis(Report() << "loop is not the innermost loop");
     return false;
   }
@@ -3532,6 +3565,15 @@ bool LoopVectorizationLegality::canVectorize() {
 
   // We must have a single exiting block.
   if (!TheLoop->getExitingBlock()) {
+    emitAnalysis(
+        Report() << "loop control flow is not understood by vectorizer");
+    return false;
+  }
+
+  // We only handle bottom-tested loops, i.e. loop in which the condition is
+  // checked at the end of each iteration. With that we can assume that all
+  // instructions in the loop are executed the same number of times.
+  if (TheLoop->getExitingBlock() != TheLoop->getLoopLatch()) {
     emitAnalysis(
         Report() << "loop control flow is not understood by vectorizer");
     return false;
@@ -3664,7 +3706,7 @@ bool LoopVectorizationLegality::canVectorizeInstrs() {
           return false;
         }
 
-        // We only allow if-converted PHIs with more than two incoming values.
+        // We only allow if-converted PHIs with exactly two incoming values.
         if (Phi->getNumIncomingValues() != 2) {
           emitAnalysis(Report(it)
                        << "control flow not understood by vectorizer");
@@ -3790,12 +3832,12 @@ bool LoopVectorizationLegality::canVectorizeInstrs() {
           return false;
         }
         if (EnableMemAccessVersioning)
-          collectStridedAcccess(ST);
+          collectStridedAccess(ST);
       }
 
       if (EnableMemAccessVersioning)
         if (LoadInst *LI = dyn_cast<LoadInst>(it))
-          collectStridedAcccess(LI);
+          collectStridedAccess(LI);
 
       // Reduction instructions are allowed to have exit users.
       // All other instructions must not have external users.
@@ -3933,7 +3975,7 @@ static Value *getStrideFromPointer(Value *Ptr, ScalarEvolution *SE,
   return Stride;
 }
 
-void LoopVectorizationLegality::collectStridedAcccess(Value *MemAccess) {
+void LoopVectorizationLegality::collectStridedAccess(Value *MemAccess) {
   Value *Ptr = nullptr;
   if (LoadInst *LI = dyn_cast<LoadInst>(MemAccess))
     Ptr = LI->getPointerOperand();
@@ -3971,7 +4013,7 @@ void LoopVectorizationLegality::collectLoopUniforms() {
       if (I->getType()->isPointerTy() && isConsecutivePtr(I))
         Worklist.insert(Worklist.end(), I->op_begin(), I->op_end());
 
-  while (Worklist.size()) {
+  while (!Worklist.empty()) {
     Instruction *I = dyn_cast<Instruction>(Worklist.back());
     Worklist.pop_back();
 
@@ -4229,57 +4271,66 @@ void AccessAnalysis::processMemAccesses() {
       bool UseDeferred = SetIteration > 0;
       PtrAccessSet &S = UseDeferred ? DeferredAccesses : Accesses;
 
-      for (auto A : AS) {
-        Value *Ptr = A.getValue();
-        bool IsWrite = S.count(MemAccessInfo(Ptr, true));
+      for (auto AV : AS) {
+        Value *Ptr = AV.getValue();
 
-        // If we're using the deferred access set, then it contains only reads.
-        bool IsReadOnlyPtr = ReadOnlyPtr.count(Ptr) && !IsWrite;
-        if (UseDeferred && !IsReadOnlyPtr)
-          continue;
-        // Otherwise, the pointer must be in the PtrAccessSet, either as a read
-        // or a write.
-        assert(((IsReadOnlyPtr && UseDeferred) || IsWrite ||
-                 S.count(MemAccessInfo(Ptr, false))) &&
-               "Alias-set pointer not in the access set?");
+        // For a single memory access in AliasSetTracker, Accesses may contain
+        // both read and write, and they both need to be handled for CheckDeps.
+        for (auto AC : S) {
+          if (AC.getPointer() != Ptr)
+            continue;
 
-        MemAccessInfo Access(Ptr, IsWrite);
-        DepCands.insert(Access);
+          bool IsWrite = AC.getInt();
 
-        // Memorize read-only pointers for later processing and skip them in the
-        // first round (they need to be checked after we have seen all write
-        // pointers). Note: we also mark pointer that are not consecutive as
-        // "read-only" pointers (so that we check "a[b[i]] +="). Hence, we need
-        // the second check for "!IsWrite".
-        if (!UseDeferred && IsReadOnlyPtr) {
-          DeferredAccesses.insert(Access);
-          continue;
-        }
+          // If we're using the deferred access set, then it contains only
+          // reads.
+          bool IsReadOnlyPtr = ReadOnlyPtr.count(Ptr) && !IsWrite;
+          if (UseDeferred && !IsReadOnlyPtr)
+            continue;
+          // Otherwise, the pointer must be in the PtrAccessSet, either as a
+          // read or a write.
+          assert(((IsReadOnlyPtr && UseDeferred) || IsWrite ||
+                  S.count(MemAccessInfo(Ptr, false))) &&
+                 "Alias-set pointer not in the access set?");
 
-        // If this is a write - check other reads and writes for conflicts.  If
-        // this is a read only check other writes for conflicts (but only if
-        // there is no other write to the ptr - this is an optimization to
-        // catch "a[i] = a[i] + " without having to do a dependence check).
-        if ((IsWrite || IsReadOnlyPtr) && SetHasWrite) {
-          CheckDeps.insert(Access);
-          IsRTCheckNeeded = true;
-        }
+          MemAccessInfo Access(Ptr, IsWrite);
+          DepCands.insert(Access);
 
-        if (IsWrite)
-          SetHasWrite = true;
+          // Memorize read-only pointers for later processing and skip them in
+          // the first round (they need to be checked after we have seen all
+          // write pointers). Note: we also mark pointer that are not
+          // consecutive as "read-only" pointers (so that we check
+          // "a[b[i]] +="). Hence, we need the second check for "!IsWrite".
+          if (!UseDeferred && IsReadOnlyPtr) {
+            DeferredAccesses.insert(Access);
+            continue;
+          }
 
-        // Create sets of pointers connected by a shared alias set and
-        // underlying object.
-        typedef SmallVector<Value *, 16> ValueVector;
-        ValueVector TempObjects;
-        GetUnderlyingObjects(Ptr, TempObjects, DL);
-        for (Value *UnderlyingObj : TempObjects) {
-          UnderlyingObjToAccessMap::iterator Prev =
-            ObjToLastAccess.find(UnderlyingObj);
-          if (Prev != ObjToLastAccess.end())
-            DepCands.unionSets(Access, Prev->second);
+          // If this is a write - check other reads and writes for conflicts. If
+          // this is a read only check other writes for conflicts (but only if
+          // there is no other write to the ptr - this is an optimization to
+          // catch "a[i] = a[i] + " without having to do a dependence check).
+          if ((IsWrite || IsReadOnlyPtr) && SetHasWrite) {
+            CheckDeps.insert(Access);
+            IsRTCheckNeeded = true;
+          }
 
-          ObjToLastAccess[UnderlyingObj] = Access;
+          if (IsWrite)
+            SetHasWrite = true;
+
+          // Create sets of pointers connected by a shared alias set and
+          // underlying object.
+          typedef SmallVector<Value *, 16> ValueVector;
+          ValueVector TempObjects;
+          GetUnderlyingObjects(Ptr, TempObjects, DL);
+          for (Value *UnderlyingObj : TempObjects) {
+            UnderlyingObjToAccessMap::iterator Prev =
+                ObjToLastAccess.find(UnderlyingObj);
+            if (Prev != ObjToLastAccess.end())
+              DepCands.unionSets(Access, Prev->second);
+
+            ObjToLastAccess[UnderlyingObj] = Access;
+          }
         }
       }
     }
@@ -5300,27 +5351,8 @@ bool LoopVectorizationLegality::blockNeedsPredication(BasicBlock *BB)  {
 
 bool LoopVectorizationLegality::blockCanBePredicated(BasicBlock *BB,
                                            SmallPtrSetImpl<Value *> &SafePtrs) {
+  
   for (BasicBlock::iterator it = BB->begin(), e = BB->end(); it != e; ++it) {
-    // We might be able to hoist the load.
-    if (it->mayReadFromMemory()) {
-      LoadInst *LI = dyn_cast<LoadInst>(it);
-      if (!LI || !SafePtrs.count(LI->getPointerOperand()))
-        return false;
-    }
-
-    // We don't predicate stores at the moment.
-    if (it->mayWriteToMemory()) {
-      StoreInst *SI = dyn_cast<StoreInst>(it);
-      // We only support predication of stores in basic blocks with one
-      // predecessor.
-      if (!SI || ++NumPredStores > NumberOfStoresToPredicate ||
-          !SafePtrs.count(SI->getPointerOperand()) ||
-          !SI->getParent()->getSinglePredecessor())
-        return false;
-    }
-    if (it->mayThrow())
-      return false;
-
     // Check that we don't have a constant expression that can trap as operand.
     for (Instruction::op_iterator OI = it->op_begin(), OE = it->op_end();
          OI != OE; ++OI) {
@@ -5328,6 +5360,48 @@ bool LoopVectorizationLegality::blockCanBePredicated(BasicBlock *BB,
         if (C->canTrap())
           return false;
     }
+    // We might be able to hoist the load.
+    if (it->mayReadFromMemory()) {
+      LoadInst *LI = dyn_cast<LoadInst>(it);
+      if (!LI)
+        return false;
+      if (!SafePtrs.count(LI->getPointerOperand())) {
+        if (isLegalMaskedLoad(LI->getType(), LI->getPointerOperand())) {
+          MaskedOp.insert(LI);
+          continue;
+        }
+        return false;
+      }
+    }
+
+    // We don't predicate stores at the moment.
+    if (it->mayWriteToMemory()) {
+      StoreInst *SI = dyn_cast<StoreInst>(it);
+      // We only support predication of stores in basic blocks with one
+      // predecessor.
+      if (!SI)
+        return false;
+
+      bool isSafePtr = (SafePtrs.count(SI->getPointerOperand()) != 0);
+      bool isSinglePredecessor = SI->getParent()->getSinglePredecessor();
+      
+      if (++NumPredStores > NumberOfStoresToPredicate || !isSafePtr ||
+          !isSinglePredecessor) {
+        // Build a masked store if it is legal for the target, otherwise scalarize
+        // the block.
+        bool isLegalMaskedOp =
+          isLegalMaskedStore(SI->getValueOperand()->getType(),
+                             SI->getPointerOperand());
+        if (isLegalMaskedOp) {
+          --NumPredStores;
+          MaskedOp.insert(SI);
+          continue;
+        }
+        return false;
+      }
+    }
+    if (it->mayThrow())
+      return false;
 
     // The instructions below can trap.
     switch (it->getOpcode()) {
@@ -5336,7 +5410,7 @@ bool LoopVectorizationLegality::blockCanBePredicated(BasicBlock *BB,
     case Instruction::SDiv:
     case Instruction::URem:
     case Instruction::SRem:
-             return false;
+      return false;
     }
   }
 
@@ -5380,7 +5454,7 @@ LoopVectorizationCostModel::selectVectorizationFactor(bool OptForSize) {
     MaxVectorSize = 1;
   }
 
-  assert(MaxVectorSize <= 32 && "Did not expect to pack so many elements"
+  assert(MaxVectorSize <= 64 && "Did not expect to pack so many elements"
          " into one vector!");
 
   unsigned VF = MaxVectorSize;
@@ -6083,12 +6157,12 @@ static const char lv_name[] = "Loop Vectorization";
 INITIALIZE_PASS_BEGIN(LoopVectorize, LV_NAME, lv_name, false, false)
 INITIALIZE_AG_DEPENDENCY(TargetTransformInfo)
 INITIALIZE_AG_DEPENDENCY(AliasAnalysis)
-INITIALIZE_PASS_DEPENDENCY(AssumptionTracker)
+INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(BlockFrequencyInfo)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(ScalarEvolution)
 INITIALIZE_PASS_DEPENDENCY(LCSSA)
-INITIALIZE_PASS_DEPENDENCY(LoopInfo)
+INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LoopSimplify)
 INITIALIZE_PASS_END(LoopVectorize, LV_NAME, lv_name, false, false)
 
@@ -6186,7 +6260,7 @@ void InnerLoopUnroller::scalarizeInstruction(Instruction *Instr,
                                ConstantInt::get(Cond[Part]->getType(), 1));
       CondBlock = IfBlock->splitBasicBlock(InsertPt, "cond.store");
       LoopVectorBody.push_back(CondBlock);
-      VectorLp->addBasicBlockToLoop(CondBlock, LI->getBase());
+      VectorLp->addBasicBlockToLoop(CondBlock, *LI);
       // Update Builder with newly created basic block.
       Builder.SetInsertPoint(InsertPt);
     }
@@ -6212,7 +6286,7 @@ void InnerLoopUnroller::scalarizeInstruction(Instruction *Instr,
       if (IfPredicateStore) {
         BasicBlock *NewIfBlock = CondBlock->splitBasicBlock(InsertPt, "else");
         LoopVectorBody.push_back(NewIfBlock);
-        VectorLp->addBasicBlockToLoop(NewIfBlock, LI->getBase());
+        VectorLp->addBasicBlockToLoop(NewIfBlock, *LI);
         Builder.SetInsertPoint(InsertPt);
         Instruction *OldBr = IfBlock->getTerminator();
         BranchInst::Create(CondBlock, NewIfBlock, Cmp, OldBr);

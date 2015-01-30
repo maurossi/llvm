@@ -51,7 +51,7 @@ enum ShiftExtendType {
 /// getShiftName - Get the string encoding for the shift type.
 static inline const char *getShiftExtendName(AArch64_AM::ShiftExtendType ST) {
   switch (ST) {
-  default: assert(false && "unhandled shift type!");
+  default: llvm_unreachable("unhandled shift type!");
   case AArch64_AM::LSL: return "lsl";
   case AArch64_AM::LSR: return "lsr";
   case AArch64_AM::ASR: return "asr";
@@ -236,6 +236,7 @@ static inline bool processLogicalImmediate(uint64_t Imm, unsigned RegSize,
 
   if (isShiftedMask_64(Imm)) {
     I = countTrailingZeros(Imm);
+    assert(I < 64 && "undefined behavior");
     CTO = CountTrailingOnes_64(Imm >> I);
   } else {
     Imm |= ~Mask;
@@ -248,9 +249,9 @@ static inline bool processLogicalImmediate(uint64_t Imm, unsigned RegSize,
   }
 
   // Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
-  // to our target value, where i is the number of RORs to go the opposite
+  // to our target value, where I is the number of RORs to go the opposite
   // direction.
-  assert(Size > I && "I should be smaller than element Size");
+  assert(Size > I && "I should be smaller than element size");
   unsigned Immr = (Size - I) & (Size - 1);
 
   // If size has a 1 in the n'th bit, create a value that has zeroes in

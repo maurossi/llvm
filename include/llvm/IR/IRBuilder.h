@@ -429,11 +429,46 @@ public:
   /// If the pointer isn't i8* it will be converted.
   CallInst *CreateLifetimeEnd(Value *Ptr, ConstantInt *Size = nullptr);
 
+  /// \brief Create a call to Masked Load intrinsic
+  CallInst *CreateMaskedLoad(Value *Ptr, unsigned Align, Value *Mask,
+                             Value *PassThru = 0, const Twine &Name = "");
+
+  /// \brief Create a call to Masked Store intrinsic
+  CallInst *CreateMaskedStore(Value *Val, Value *Ptr, unsigned Align,
+                              Value *Mask);
+
   /// \brief Create an assume intrinsic call that allows the optimizer to
   /// assume that the provided condition will be true.
   CallInst *CreateAssumption(Value *Cond);
 
+  /// \brief Create a call to the experimental.gc.statepoint intrinsic to
+  /// start a new statepoint sequence.
+  CallInst *CreateGCStatepoint(Value *ActualCallee,
+                               ArrayRef<Value*> CallArgs,
+                               ArrayRef<Value*> DeoptArgs,
+                               ArrayRef<Value*> GCArgs,
+                               const Twine &Name = "");
+
+  /// \brief Create a call to the experimental.gc.result intrinsic to extract
+  /// the result from a call wrapped in a statepoint.
+  CallInst *CreateGCResult(Instruction *Statepoint,
+                           Type *ResultType,
+                           const Twine &Name = "");
+
+  /// \brief Create a call to the experimental.gc.relocate intrinsics to
+  /// project the relocated value of one pointer from the statepoint.
+  CallInst *CreateGCRelocate(Instruction *Statepoint,
+                             int BaseOffset,
+                             int DerivedOffset,
+                             Type *ResultType,
+                             const Twine &Name = "");
+
 private:
+  /// \brief Create a call to a masked intrinsic with given Id.
+  /// Masked intrinsic has only one overloaded type - data type.
+  CallInst *CreateMaskedIntrinsic(unsigned Id, ArrayRef<Value *> Ops,
+                                  Type *DataTy, const Twine &Name = "");
+
   Value *getCastedInt8PtrValue(Value *Ptr);
 };
 
@@ -1245,6 +1280,18 @@ public:
     if (Constant *VC = dyn_cast<Constant>(V))
       return Insert(Folder.CreateIntCast(VC, DestTy, isSigned), Name);
     return Insert(CastInst::CreateIntegerCast(V, DestTy, isSigned), Name);
+  }
+
+  Value *CreateBitOrPointerCast(Value *V, Type *DestTy,
+                                const Twine &Name = "") {
+    if (V->getType() == DestTy)
+      return V;
+    if (V->getType()->isPointerTy() && DestTy->isIntegerTy())
+      return CreatePtrToInt(V, DestTy, Name);
+    if (V->getType()->isIntegerTy() && DestTy->isPointerTy())
+      return CreateIntToPtr(V, DestTy, Name);
+
+    return CreateBitCast(V, DestTy, Name);
   }
 private:
   // \brief Provided to resolve 'CreateIntCast(Ptr, Ptr, "...")', giving a

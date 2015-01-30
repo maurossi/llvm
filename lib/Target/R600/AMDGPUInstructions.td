@@ -73,6 +73,11 @@ def COND_OEQ : PatLeaf <
   [{return N->get() == ISD::SETOEQ || N->get() == ISD::SETEQ;}]
 >;
 
+def COND_ONE : PatLeaf <
+  (cond),
+  [{return N->get() == ISD::SETONE || N->get() == ISD::SETNE;}]
+>;
+
 def COND_OGT : PatLeaf <
   (cond),
   [{return N->get() == ISD::SETOGT || N->get() == ISD::SETGT;}]
@@ -93,22 +98,27 @@ def COND_OLE : PatLeaf <
   [{return N->get() == ISD::SETOLE || N->get() == ISD::SETLE;}]
 >;
 
-def COND_UNE : PatLeaf <
-  (cond),
-  [{return N->get() == ISD::SETUNE || N->get() == ISD::SETNE;}]
->;
 
 def COND_O : PatLeaf <(cond), [{return N->get() == ISD::SETO;}]>;
 def COND_UO : PatLeaf <(cond), [{return N->get() == ISD::SETUO;}]>;
 
 //===----------------------------------------------------------------------===//
-// PatLeafs for unsigned comparisons
+// PatLeafs for unsigned / unordered comparisons
 //===----------------------------------------------------------------------===//
 
+def COND_UEQ : PatLeaf <(cond), [{return N->get() == ISD::SETUEQ;}]>;
+def COND_UNE : PatLeaf <(cond), [{return N->get() == ISD::SETUNE;}]>;
 def COND_UGT : PatLeaf <(cond), [{return N->get() == ISD::SETUGT;}]>;
 def COND_UGE : PatLeaf <(cond), [{return N->get() == ISD::SETUGE;}]>;
 def COND_ULT : PatLeaf <(cond), [{return N->get() == ISD::SETULT;}]>;
 def COND_ULE : PatLeaf <(cond), [{return N->get() == ISD::SETULE;}]>;
+
+// XXX - For some reason R600 version is preferring to use unordered
+// for setne?
+def COND_UNE_NE : PatLeaf <
+  (cond),
+  [{return N->get() == ISD::SETUNE || N->get() == ISD::SETNE;}]
+>;
 
 //===----------------------------------------------------------------------===//
 // PatLeafs for signed comparisons
@@ -428,6 +438,11 @@ def FP_ONE : PatLeaf <
   [{return N->isExactlyValue(1.0);}]
 >;
 
+def FP_HALF : PatLeaf <
+  (fpimm),
+  [{return N->isExactlyValue(0.5);}]
+>;
+
 let isCodeGenOnly = 1, isPseudo = 1 in {
 
 let usesCustomInserter = 1  in {
@@ -592,6 +607,18 @@ class ROTRPattern <Instruction BIT_ALIGN> : Pat <
 
 // 24-bit arithmetic patterns
 def umul24 : PatFrag <(ops node:$x, node:$y), (mul node:$x, node:$y)>;
+
+// Special conversion patterns
+
+def cvt_rpi_i32_f32 : PatFrag <
+  (ops node:$src),
+  (fp_to_sint (ffloor (fadd $src, FP_HALF)))
+>;
+
+def cvt_flr_i32_f32 : PatFrag <
+  (ops node:$src),
+  (fp_to_sint (ffloor $src))
+>;
 
 /*
 class UMUL24Pattern <Instruction UMUL24> : Pat <

@@ -296,7 +296,7 @@ multiclass F2<string OpcStr, SDNode OpNode> {
 // General Type Conversion
 //-----------------------------------
 
-let neverHasSideEffects = 1 in {
+let hasSideEffects = 0 in {
 // Generate a cvt to the given type from all possible types.
 // Each instance takes a CvtMode immediate that defines the conversion mode to
 // use.  It can be CvtNONE to omit a conversion mode.
@@ -1356,11 +1356,6 @@ defm SELP_u64 : SELP<"u64", Int64Regs, i64imm>;
 defm SELP_f32 : SELP_PATTERN<"f32", Float32Regs, f32imm, fpimm>;
 defm SELP_f64 : SELP_PATTERN<"f64", Float64Regs, f64imm, fpimm>;
 
-// Special select for predicate operands
-def : Pat<(i1 (select Int1Regs:$p, Int1Regs:$a, Int1Regs:$b)),
-              (ORb1rr (ANDb1rr Int1Regs:$p, Int1Regs:$a),
-              (ANDb1rr (NOT1 Int1Regs:$p), Int1Regs:$b))>;
-
 //
 // Funnnel shift in clamp mode
 //
@@ -1659,12 +1654,12 @@ multiclass FSET_FORMAT<PatFrag OpNode, PatLeaf Mode, PatLeaf ModeFTZ> {
             (SET_f64ir fpimm:$a, Float64Regs:$b, Mode)>;
 }
 
-defm FSetGT : FSET_FORMAT<setogt, CmpGT, CmpGT_FTZ>;
-defm FSetLT : FSET_FORMAT<setolt, CmpLT, CmpLT_FTZ>;
-defm FSetGE : FSET_FORMAT<setoge, CmpGE, CmpGE_FTZ>;
-defm FSetLE : FSET_FORMAT<setole, CmpLE, CmpLE_FTZ>;
-defm FSetEQ : FSET_FORMAT<setoeq, CmpEQ, CmpEQ_FTZ>;
-defm FSetNE : FSET_FORMAT<setone, CmpNE, CmpNE_FTZ>;
+defm FSetOGT : FSET_FORMAT<setogt, CmpGT, CmpGT_FTZ>;
+defm FSetOLT : FSET_FORMAT<setolt, CmpLT, CmpLT_FTZ>;
+defm FSetOGE : FSET_FORMAT<setoge, CmpGE, CmpGE_FTZ>;
+defm FSetOLE : FSET_FORMAT<setole, CmpLE, CmpLE_FTZ>;
+defm FSetOEQ : FSET_FORMAT<setoeq, CmpEQ, CmpEQ_FTZ>;
+defm FSetONE : FSET_FORMAT<setone, CmpNE, CmpNE_FTZ>;
 
 defm FSetUGT : FSET_FORMAT<setugt, CmpGTU, CmpGTU_FTZ>;
 defm FSetULT : FSET_FORMAT<setult, CmpLTU, CmpLTU_FTZ>;
@@ -1672,6 +1667,13 @@ defm FSetUGE : FSET_FORMAT<setuge, CmpGEU, CmpGEU_FTZ>;
 defm FSetULE : FSET_FORMAT<setule, CmpLEU, CmpLEU_FTZ>;
 defm FSetUEQ : FSET_FORMAT<setueq, CmpEQU, CmpEQU_FTZ>;
 defm FSetUNE : FSET_FORMAT<setune, CmpNEU, CmpNEU_FTZ>;
+
+defm FSetGT : FSET_FORMAT<setgt, CmpGT, CmpGT_FTZ>;
+defm FSetLT : FSET_FORMAT<setlt, CmpLT, CmpLT_FTZ>;
+defm FSetGE : FSET_FORMAT<setge, CmpGE, CmpGE_FTZ>;
+defm FSetLE : FSET_FORMAT<setle, CmpLE, CmpLE_FTZ>;
+defm FSetEQ : FSET_FORMAT<seteq, CmpEQ, CmpEQ_FTZ>;
+defm FSetNE : FSET_FORMAT<setne, CmpNE, CmpNE_FTZ>;
 
 defm FSetNUM : FSET_FORMAT<seto, CmpNUM, CmpNUM_FTZ>;
 defm FSetNAN : FSET_FORMAT<setuo, CmpNAN, CmpNAN_FTZ>;
@@ -2094,7 +2096,7 @@ multiclass LD<NVPTXRegClass regclass> {
            "$fromWidth \t$dst, [$addr+$offset];"), []>;
 }
 
-let mayLoad=1, neverHasSideEffects=1 in {
+let mayLoad=1, hasSideEffects=0 in {
 defm LD_i8  : LD<Int16Regs>;
 defm LD_i16 : LD<Int16Regs>;
 defm LD_i32 : LD<Int32Regs>;
@@ -2136,7 +2138,7 @@ multiclass ST<NVPTXRegClass regclass> {
            " \t[$addr+$offset], $src;"), []>;
 }
 
-let mayStore=1, neverHasSideEffects=1 in {
+let mayStore=1, hasSideEffects=0 in {
 defm ST_i8  : ST<Int16Regs>;
 defm ST_i16 : ST<Int16Regs>;
 defm ST_i32 : ST<Int32Regs>;
@@ -2220,7 +2222,7 @@ multiclass LD_VEC<NVPTXRegClass regclass> {
                "$fromWidth \t{{$dst1, $dst2, $dst3, $dst4}}, [$addr+$offset];"),
                 []>;
 }
-let mayLoad=1, neverHasSideEffects=1 in {
+let mayLoad=1, hasSideEffects=0 in {
 defm LDV_i8  : LD_VEC<Int16Regs>;
 defm LDV_i16 : LD_VEC<Int16Regs>;
 defm LDV_i32 : LD_VEC<Int32Regs>;
@@ -2303,7 +2305,7 @@ multiclass ST_VEC<NVPTXRegClass regclass> {
                "$fromWidth \t[$addr+$offset], {{$src1, $src2, $src3, $src4}};"),
     []>;
 }
-let mayStore=1, neverHasSideEffects=1 in {
+let mayStore=1, hasSideEffects=0 in {
 defm STV_i8  : ST_VEC<Int16Regs>;
 defm STV_i16 : ST_VEC<Int16Regs>;
 defm STV_i32 : ST_VEC<Int32Regs>;

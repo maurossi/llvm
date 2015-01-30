@@ -13,6 +13,7 @@
 
 #include "PPCISelLowering.h"
 #include "MCTargetDesc/PPCPredicates.h"
+#include "PPCCallingConv.h"
 #include "PPCMachineFunctionInfo.h"
 #include "PPCPerfectShuffle.h"
 #include "PPCTargetMachine.h"
@@ -24,6 +25,7 @@
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
+#include "llvm/CodeGen/MachineLoopInfo.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/SelectionDAG.h"
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
@@ -58,8 +60,6 @@ extern cl::opt<bool> ANDIGlueBug;
 PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     : TargetLowering(TM),
       Subtarget(*TM.getSubtargetImpl()) {
-  setPow2SDivIsCheap();
-
   // Use _setjmp/_longjmp instead of setjmp/longjmp.
   setUseUnderscoreSetJmp(true);
   setUseUnderscoreLongJmp(true);
@@ -75,8 +75,10 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
   addRegisterClass(MVT::f64, &PPC::F8RCRegClass);
 
   // PowerPC has an i16 but no i8 (or i1) SEXTLOAD
-  setLoadExtAction(ISD::SEXTLOAD, MVT::i1, Promote);
-  setLoadExtAction(ISD::SEXTLOAD, MVT::i8, Expand);
+  for (MVT VT : MVT::integer_valuetypes()) {
+    setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i1, Promote);
+    setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i8, Expand);
+  }
 
   setTruncStoreAction(MVT::f64, MVT::f32, Expand);
 
@@ -115,12 +117,11 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     if (ANDIGlueBug)
       setOperationAction(ISD::TRUNCATE, MVT::i1, Custom);
 
-    setLoadExtAction(ISD::SEXTLOAD, MVT::i1, Promote);
-    setLoadExtAction(ISD::ZEXTLOAD, MVT::i1, Promote);
-    setTruncStoreAction(MVT::i64, MVT::i1, Expand);
-    setTruncStoreAction(MVT::i32, MVT::i1, Expand);
-    setTruncStoreAction(MVT::i16, MVT::i1, Expand);
-    setTruncStoreAction(MVT::i8, MVT::i1, Expand);
+    for (MVT VT : MVT::integer_valuetypes()) {
+      setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i1, Promote);
+      setLoadExtAction(ISD::ZEXTLOAD, VT, MVT::i1, Promote);
+      setTruncStoreAction(VT, MVT::i1, Expand);
+    }
 
     addRegisterClass(MVT::i1, &PPC::CRBITRCRegClass);
   }
@@ -395,10 +396,7 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
   if (Subtarget.hasAltivec()) {
     // First set operation action for all vector types to expand. Then we
     // will selectively turn on ones that can be effectively codegen'd.
-    for (unsigned i = (unsigned)MVT::FIRST_VECTOR_VALUETYPE;
-         i <= (unsigned)MVT::LAST_VECTOR_VALUETYPE; ++i) {
-      MVT::SimpleValueType VT = (MVT::SimpleValueType)i;
-
+    for (MVT VT : MVT::vector_valuetypes()) {
       // add/sub are legal for all supported vector VT's.
       setOperationAction(ISD::ADD , VT, Legal);
       setOperationAction(ISD::SUB , VT, Legal);
@@ -465,14 +463,12 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
       setOperationAction(ISD::VSELECT, VT, Expand);
       setOperationAction(ISD::SIGN_EXTEND_INREG, VT, Expand);
 
-      for (unsigned j = (unsigned)MVT::FIRST_VECTOR_VALUETYPE;
-           j <= (unsigned)MVT::LAST_VECTOR_VALUETYPE; ++j) {
-        MVT::SimpleValueType InnerVT = (MVT::SimpleValueType)j;
+      for (MVT InnerVT : MVT::vector_valuetypes()) {
         setTruncStoreAction(VT, InnerVT, Expand);
+        setLoadExtAction(ISD::SEXTLOAD, VT, InnerVT, Expand);
+        setLoadExtAction(ISD::ZEXTLOAD, VT, InnerVT, Expand);
+        setLoadExtAction(ISD::EXTLOAD, VT, InnerVT, Expand);
       }
-      setLoadExtAction(ISD::SEXTLOAD, VT, Expand);
-      setLoadExtAction(ISD::ZEXTLOAD, VT, Expand);
-      setLoadExtAction(ISD::EXTLOAD, VT, Expand);
     }
 
     // We can custom expand all VECTOR_SHUFFLEs to VPERM, others we can handle
@@ -599,10 +595,10 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     }
   }
 
-  if (Subtarget.has64BitSupport()) {
+  if (Subtarget.has64BitSupport())
     setOperationAction(ISD::PREFETCH, MVT::Other, Legal);
-    setOperationAction(ISD::READCYCLECOUNTER, MVT::i64, Legal);
-  }
+
+  setOperationAction(ISD::READCYCLECOUNTER, MVT::i64, isPPC64 ? Legal : Custom);
 
   if (!isPPC64) {
     setOperationAction(ISD::ATOMIC_LOAD,  MVT::i64, Expand);
@@ -632,6 +628,8 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
 
   // We have target-specific dag combine patterns for the following nodes:
   setTargetDAGCombine(ISD::SINT_TO_FP);
+  if (Subtarget.hasFPCVT())
+    setTargetDAGCombine(ISD::UINT_TO_FP);
   setTargetDAGCombine(ISD::LOAD);
   setTargetDAGCombine(ISD::STORE);
   setTargetDAGCombine(ISD::BR_CC);
@@ -639,6 +637,8 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     setTargetDAGCombine(ISD::BRCOND);
   setTargetDAGCombine(ISD::BSWAP);
   setTargetDAGCombine(ISD::INTRINSIC_WO_CHAIN);
+  setTargetDAGCombine(ISD::INTRINSIC_W_CHAIN);
+  setTargetDAGCombine(ISD::INTRINSIC_VOID);
 
   setTargetDAGCombine(ISD::SIGN_EXTEND);
   setTargetDAGCombine(ISD::ZERO_EXTEND);
@@ -679,6 +679,24 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
   if (Subtarget.isDarwin())
     setPrefFunctionAlignment(4);
 
+  switch (Subtarget.getDarwinDirective()) {
+  default: break;
+  case PPC::DIR_970:
+  case PPC::DIR_A2:
+  case PPC::DIR_E500mc:
+  case PPC::DIR_E5500:
+  case PPC::DIR_PWR4:
+  case PPC::DIR_PWR5:
+  case PPC::DIR_PWR5X:
+  case PPC::DIR_PWR6:
+  case PPC::DIR_PWR6X:
+  case PPC::DIR_PWR7:
+  case PPC::DIR_PWR8:
+    setPrefFunctionAlignment(4);
+    setPrefLoopAlignment(4);
+    break;
+  }
+
   setInsertFencesForAtomic(true);
 
   if (Subtarget.enableMachineScheduler())
@@ -688,8 +706,8 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
 
   computeRegisterProperties();
 
-  // The Freescale cores does better with aggressive inlining of memcpy and
-  // friends. Gcc uses same threshold of 128 bytes (= 32 word stores).
+  // The Freescale cores do better with aggressive inlining of memcpy and
+  // friends. GCC uses same threshold of 128 bytes (= 32 word stores).
   if (Subtarget.getDarwinDirective() == PPC::DIR_E500mc ||
       Subtarget.getDarwinDirective() == PPC::DIR_E5500) {
     MaxStoresPerMemset = 32;
@@ -698,8 +716,6 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM)
     MaxStoresPerMemcpyOptSize = 8;
     MaxStoresPerMemmove = 32;
     MaxStoresPerMemmoveOptSize = 8;
-
-    setPrefFunctionAlignment(4);
   }
 }
 
@@ -751,19 +767,23 @@ const char *PPCTargetLowering::getTargetNodeName(unsigned Opcode) const {
   default: return nullptr;
   case PPCISD::FSEL:            return "PPCISD::FSEL";
   case PPCISD::FCFID:           return "PPCISD::FCFID";
+  case PPCISD::FCFIDU:          return "PPCISD::FCFIDU";
+  case PPCISD::FCFIDS:          return "PPCISD::FCFIDS";
+  case PPCISD::FCFIDUS:         return "PPCISD::FCFIDUS";
   case PPCISD::FCTIDZ:          return "PPCISD::FCTIDZ";
   case PPCISD::FCTIWZ:          return "PPCISD::FCTIWZ";
+  case PPCISD::FCTIDUZ:         return "PPCISD::FCTIDUZ";
+  case PPCISD::FCTIWUZ:         return "PPCISD::FCTIWUZ";
   case PPCISD::FRE:             return "PPCISD::FRE";
   case PPCISD::FRSQRTE:         return "PPCISD::FRSQRTE";
   case PPCISD::STFIWX:          return "PPCISD::STFIWX";
   case PPCISD::VMADDFP:         return "PPCISD::VMADDFP";
   case PPCISD::VNMSUBFP:        return "PPCISD::VNMSUBFP";
   case PPCISD::VPERM:           return "PPCISD::VPERM";
+  case PPCISD::CMPB:            return "PPCISD::CMPB";
   case PPCISD::Hi:              return "PPCISD::Hi";
   case PPCISD::Lo:              return "PPCISD::Lo";
   case PPCISD::TOC_ENTRY:       return "PPCISD::TOC_ENTRY";
-  case PPCISD::LOAD:            return "PPCISD::LOAD";
-  case PPCISD::LOAD_TOC:        return "PPCISD::LOAD_TOC";
   case PPCISD::DYNALLOC:        return "PPCISD::DYNALLOC";
   case PPCISD::GlobalBaseReg:   return "PPCISD::GlobalBaseReg";
   case PPCISD::SRL:             return "PPCISD::SRL";
@@ -775,7 +795,9 @@ const char *PPCTargetLowering::getTargetNodeName(unsigned Opcode) const {
   case PPCISD::CALL_NOP_TLS:    return "PPCISD::CALL_NOP_TLS";
   case PPCISD::MTCTR:           return "PPCISD::MTCTR";
   case PPCISD::BCTRL:           return "PPCISD::BCTRL";
+  case PPCISD::BCTRL_LOAD_TOC:  return "PPCISD::BCTRL_LOAD_TOC";
   case PPCISD::RET_FLAG:        return "PPCISD::RET_FLAG";
+  case PPCISD::READ_TIME_BASE:  return "PPCISD::READ_TIME_BASE";
   case PPCISD::EH_SJLJ_SETJMP:  return "PPCISD::EH_SJLJ_SETJMP";
   case PPCISD::EH_SJLJ_LONGJMP: return "PPCISD::EH_SJLJ_LONGJMP";
   case PPCISD::MFOCRF:          return "PPCISD::MFOCRF";
@@ -783,6 +805,8 @@ const char *PPCTargetLowering::getTargetNodeName(unsigned Opcode) const {
   case PPCISD::VCMPo:           return "PPCISD::VCMPo";
   case PPCISD::LBRX:            return "PPCISD::LBRX";
   case PPCISD::STBRX:           return "PPCISD::STBRX";
+  case PPCISD::LFIWAX:          return "PPCISD::LFIWAX";
+  case PPCISD::LFIWZX:          return "PPCISD::LFIWZX";
   case PPCISD::LARX:            return "PPCISD::LARX";
   case PPCISD::STCX:            return "PPCISD::STCX";
   case PPCISD::COND_BRANCH:     return "PPCISD::COND_BRANCH";
@@ -853,7 +877,7 @@ static bool isConstantOrUndef(int Op, int Val) {
 /// For the latter, the input operands are swapped (see PPCInstrAltivec.td).
 bool PPC::isVPKUHUMShuffleMask(ShuffleVectorSDNode *N, unsigned ShuffleKind,
                                SelectionDAG &DAG) {
-  bool IsLE = DAG.getSubtarget().getDataLayout()->isLittleEndian();
+  bool IsLE = DAG.getTarget().getDataLayout()->isLittleEndian();
   if (ShuffleKind == 0) {
     if (IsLE)
       return false;
@@ -884,7 +908,7 @@ bool PPC::isVPKUHUMShuffleMask(ShuffleVectorSDNode *N, unsigned ShuffleKind,
 /// For the latter, the input operands are swapped (see PPCInstrAltivec.td).
 bool PPC::isVPKUWUMShuffleMask(ShuffleVectorSDNode *N, unsigned ShuffleKind,
                                SelectionDAG &DAG) {
-  bool IsLE = DAG.getSubtarget().getDataLayout()->isLittleEndian();
+  bool IsLE = DAG.getTarget().getDataLayout()->isLittleEndian();
   if (ShuffleKind == 0) {
     if (IsLE)
       return false;
@@ -939,7 +963,7 @@ static bool isVMerge(ShuffleVectorSDNode *N, unsigned UnitSize,
 /// the input operands are swapped (see PPCInstrAltivec.td).
 bool PPC::isVMRGLShuffleMask(ShuffleVectorSDNode *N, unsigned UnitSize,
                              unsigned ShuffleKind, SelectionDAG &DAG) {
-  if (DAG.getSubtarget().getDataLayout()->isLittleEndian()) {
+  if (DAG.getTarget().getDataLayout()->isLittleEndian()) {
     if (ShuffleKind == 1) // unary
       return isVMerge(N, UnitSize, 0, 0);
     else if (ShuffleKind == 2) // swapped
@@ -964,7 +988,7 @@ bool PPC::isVMRGLShuffleMask(ShuffleVectorSDNode *N, unsigned UnitSize,
 /// the input operands are swapped (see PPCInstrAltivec.td).
 bool PPC::isVMRGHShuffleMask(ShuffleVectorSDNode *N, unsigned UnitSize,
                              unsigned ShuffleKind, SelectionDAG &DAG) {
-  if (DAG.getSubtarget().getDataLayout()->isLittleEndian()) {
+  if (DAG.getTarget().getDataLayout()->isLittleEndian()) {
     if (ShuffleKind == 1) // unary
       return isVMerge(N, UnitSize, 8, 8);
     else if (ShuffleKind == 2) // swapped
@@ -1008,8 +1032,7 @@ int PPC::isVSLDOIShuffleMask(SDNode *N, unsigned ShuffleKind,
   if (ShiftAmt < i) return -1;
 
   ShiftAmt -= i;
-  bool isLE = DAG.getTarget().getSubtargetImpl()->getDataLayout()->
-    isLittleEndian();
+  bool isLE = DAG.getTarget().getDataLayout()->isLittleEndian();
 
   if ((ShuffleKind == 0 && !isLE) || (ShuffleKind == 2 && isLE)) {
     // Check the rest of the elements to see if they are consecutive.
@@ -1082,7 +1105,7 @@ unsigned PPC::getVSPLTImmediate(SDNode *N, unsigned EltSize,
                                 SelectionDAG &DAG) {
   ShuffleVectorSDNode *SVOp = cast<ShuffleVectorSDNode>(N);
   assert(isSplatShuffleMask(SVOp, EltSize));
-  if (DAG.getSubtarget().getDataLayout()->isLittleEndian())
+  if (DAG.getTarget().getDataLayout()->isLittleEndian())
     return (16 / EltSize) - 1 - (SVOp->getMaskElt(0) / EltSize);
   else
     return SVOp->getMaskElt(0) / EltSize;
@@ -2599,6 +2622,9 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
   MachineFrameInfo *MFI = MF.getFrameInfo();
   PPCFunctionInfo *FuncInfo = MF.getInfo<PPCFunctionInfo>();
 
+  assert(!(CallConv == CallingConv::Fast && isVarArg) &&
+         "fastcc not supported on varargs functions");
+
   EVT PtrVT = DAG.getTargetLoweringInfo().getPointerTy();
   // Potential tail calls could cause overwriting of argument stack slots.
   bool isImmutable = !(getTargetMachine().Options.GuaranteedTailCallOpt &&
@@ -2650,7 +2676,7 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
   // although the first ones are often in registers.
 
   unsigned ArgOffset = LinkageSize;
-  unsigned GPR_idx, FPR_idx = 0, VR_idx = 0;
+  unsigned GPR_idx = 0, FPR_idx = 0, VR_idx = 0;
   SmallVector<SDValue, 8> MemOps;
   Function::const_arg_iterator FuncArg = MF.getFunction()->arg_begin();
   unsigned CurArgIdx = 0;
@@ -2665,19 +2691,31 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
     std::advance(FuncArg, Ins[ArgNo].OrigArgIndex - CurArgIdx);
     CurArgIdx = Ins[ArgNo].OrigArgIndex;
 
-    /* Respect alignment of argument on the stack.  */
-    unsigned Align =
-      CalculateStackSlotAlignment(ObjectVT, OrigVT, Flags, PtrByteSize);
-    ArgOffset = ((ArgOffset + Align - 1) / Align) * Align;
-    unsigned CurArgOffset = ArgOffset;
+    // We re-align the argument offset for each argument, except when using the
+    // fast calling convention, when we need to make sure we do that only when
+    // we'll actually use a stack slot.
+    unsigned CurArgOffset, Align;
+    auto ComputeArgOffset = [&]() {
+      /* Respect alignment of argument on the stack.  */
+      Align = CalculateStackSlotAlignment(ObjectVT, OrigVT, Flags, PtrByteSize);
+      ArgOffset = ((ArgOffset + Align - 1) / Align) * Align;
+      CurArgOffset = ArgOffset;
+    };
 
-    /* Compute GPR index associated with argument offset.  */
-    GPR_idx = (ArgOffset - LinkageSize) / PtrByteSize;
-    GPR_idx = std::min(GPR_idx, Num_GPR_Regs);
+    if (CallConv != CallingConv::Fast) {
+      ComputeArgOffset();
+
+      /* Compute GPR index associated with argument offset.  */
+      GPR_idx = (ArgOffset - LinkageSize) / PtrByteSize;
+      GPR_idx = std::min(GPR_idx, Num_GPR_Regs);
+    }
 
     // FIXME the codegen can be much improved in some cases.
     // We do not have to keep everything in memory.
     if (Flags.isByVal()) {
+      if (CallConv == CallingConv::Fast)
+        ComputeArgOffset();
+
       // ObjSize is the true size, ArgSize rounded up to multiple of registers.
       ObjSize = Flags.getByValSize();
       ArgSize = ((ObjSize + PtrByteSize - 1)/PtrByteSize) * PtrByteSize;
@@ -2721,7 +2759,7 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
         InVals.push_back(Arg);
 
         if (GPR_idx != Num_GPR_Regs) {
-          unsigned VReg = MF.addLiveIn(GPR[GPR_idx], &PPC::G8RCRegClass);
+          unsigned VReg = MF.addLiveIn(GPR[GPR_idx++], &PPC::G8RCRegClass);
           SDValue Val = DAG.getCopyFromReg(Chain, dl, VReg, PtrVT);
           SDValue Store;
 
@@ -2783,7 +2821,7 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
       // passed directly.  Clang may use those instead of "byval" aggregate
       // types to avoid forcing arguments to memory unnecessarily.
       if (GPR_idx != Num_GPR_Regs) {
-        unsigned VReg = MF.addLiveIn(GPR[GPR_idx], &PPC::G8RCRegClass);
+        unsigned VReg = MF.addLiveIn(GPR[GPR_idx++], &PPC::G8RCRegClass);
         ArgVal = DAG.getCopyFromReg(Chain, dl, VReg, MVT::i64);
 
         if (ObjectVT == MVT::i32 || ObjectVT == MVT::i1)
@@ -2791,10 +2829,14 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
           // value to MVT::i64 and then truncate to the correct register size.
           ArgVal = extendArgForPPC64(Flags, ObjectVT, DAG, ArgVal, dl);
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputeArgOffset();
+
         needsLoad = true;
         ArgSize = PtrByteSize;
       }
-      ArgOffset += 8;
+      if (CallConv != CallingConv::Fast || needsLoad)
+        ArgOffset += 8;
       break;
 
     case MVT::f32:
@@ -2814,11 +2856,14 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
 
         ArgVal = DAG.getCopyFromReg(Chain, dl, VReg, ObjectVT);
         ++FPR_idx;
-      } else if (GPR_idx != Num_GPR_Regs) {
+      } else if (GPR_idx != Num_GPR_Regs && CallConv != CallingConv::Fast) {
+        // FIXME: We may want to re-enable this for CallingConv::Fast on the P8
+        // once we support fp <-> gpr moves.
+
         // This can only ever happen in the presence of f32 array types,
         // since otherwise we never run out of FPRs before running out
         // of GPRs.
-        unsigned VReg = MF.addLiveIn(GPR[GPR_idx], &PPC::G8RCRegClass);
+        unsigned VReg = MF.addLiveIn(GPR[GPR_idx++], &PPC::G8RCRegClass);
         ArgVal = DAG.getCopyFromReg(Chain, dl, VReg, MVT::i64);
 
         if (ObjectVT == MVT::f32) {
@@ -2830,16 +2875,21 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
 
         ArgVal = DAG.getNode(ISD::BITCAST, dl, ObjectVT, ArgVal);
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputeArgOffset();
+
         needsLoad = true;
       }
 
       // When passing an array of floats, the array occupies consecutive
       // space in the argument area; only round up to the next doubleword
       // at the end of the array.  Otherwise, each float takes 8 bytes.
-      ArgSize = Flags.isInConsecutiveRegs() ? ObjSize : PtrByteSize;
-      ArgOffset += ArgSize;
-      if (Flags.isInConsecutiveRegsLast())
-        ArgOffset = ((ArgOffset + PtrByteSize - 1)/PtrByteSize) * PtrByteSize;
+      if (CallConv != CallingConv::Fast || needsLoad) {
+        ArgSize = Flags.isInConsecutiveRegs() ? ObjSize : PtrByteSize;
+        ArgOffset += ArgSize;
+        if (Flags.isInConsecutiveRegsLast())
+          ArgOffset = ((ArgOffset + PtrByteSize - 1)/PtrByteSize) * PtrByteSize;
+      }
       break;
     case MVT::v4f32:
     case MVT::v4i32:
@@ -2857,9 +2907,13 @@ PPCTargetLowering::LowerFormalArguments_64SVR4(
         ArgVal = DAG.getCopyFromReg(Chain, dl, VReg, ObjectVT);
         ++VR_idx;
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputeArgOffset();
+
         needsLoad = true;
       }
-      ArgOffset += 16;
+      if (CallConv != CallingConv::Fast || needsLoad)
+        ArgOffset += 16;
       break;
     }
 
@@ -3548,12 +3602,27 @@ void PrepareTailCall(SelectionDAG &DAG, SDValue &InFlag, SDValue &Chain,
   InFlag = Chain.getValue(1);
 }
 
+// Is this global address that of a function that can be called by name? (as
+// opposed to something that must hold a descriptor for an indirect call).
+static bool isFunctionGlobalAddress(SDValue Callee) {
+  if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
+    if (Callee.getOpcode() == ISD::GlobalTLSAddress ||
+        Callee.getOpcode() == ISD::TargetGlobalTLSAddress)
+      return false;
+
+    return G->getGlobal()->getType()->getElementType()->isFunctionTy();
+  }
+
+  return false;
+}
+
 static
 unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
-                     SDValue &Chain, SDLoc dl, int SPDiff, bool isTailCall,
+                     SDValue &Chain, SDValue CallSeqStart, SDLoc dl, int SPDiff,
+                     bool isTailCall, bool IsPatchPoint,
                      SmallVectorImpl<std::pair<unsigned, SDValue> > &RegsToPass,
                      SmallVectorImpl<SDValue> &Ops, std::vector<EVT> &NodeTys,
-                     const PPCSubtarget &Subtarget) {
+                     ImmutableCallSite *CS, const PPCSubtarget &Subtarget) {
 
   bool isPPC64 = Subtarget.isPPC64();
   bool isSVR4ABI = Subtarget.isSVR4ABI();
@@ -3573,7 +3642,10 @@ unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
       needIndirectCall = false;
     }
 
-  if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
+  if (isFunctionGlobalAddress(Callee)) {
+    GlobalAddressSDNode *G = cast<GlobalAddressSDNode>(Callee);
+    // A call to a TLS address is actually an indirect call to a
+    // thread-specific pointer.
     unsigned OpFlags = 0;
     if ((DAG.getTarget().getRelocationModel() != Reloc::Static &&
          (Subtarget.getTargetTriple().isMacOSX() &&
@@ -3604,7 +3676,7 @@ unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
          (Subtarget.getTargetTriple().isMacOSX() &&
           Subtarget.getTargetTriple().isMacOSXVersionLT(10, 5))) ||
         (Subtarget.isTargetELF() && !isPPC64 &&
-         DAG.getTarget().getRelocationModel() == Reloc::PIC_)	) {
+         DAG.getTarget().getRelocationModel() == Reloc::PIC_)) {
       // PC-relative references to external symbols should go through $stub,
       // unless we're building with the leopard linker or later, which
       // automatically synthesizes these stubs.
@@ -3613,6 +3685,16 @@ unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
 
     Callee = DAG.getTargetExternalSymbol(S->getSymbol(), Callee.getValueType(),
                                          OpFlags);
+    needIndirectCall = false;
+  }
+
+  if (IsPatchPoint) {
+    // We'll form an invalid direct call when lowering a patchpoint; the full
+    // sequence for an indirect call is complicated, and many of the
+    // instructions introduced might have side effects (and, thus, can't be
+    // removed later). The call itself will be removed as soon as the
+    // argument/return lowering is complete, so the fact that it has the wrong
+    // kind of operands should not really matter.
     needIndirectCall = false;
   }
 
@@ -3641,49 +3723,49 @@ unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
       //   6. On return of the callee, the TOC of the caller needs to be
       //      restored (this is done in FinishCall()).
       //
-      // All those operations are flagged together to ensure that no other
+      // The loads are scheduled at the beginning of the call sequence, and the
+      // register copies are flagged together to ensure that no other
       // operations can be scheduled in between. E.g. without flagging the
-      // operations together, a TOC access in the caller could be scheduled
-      // between the load of the callee TOC and the branch to the callee, which
+      // copies together, a TOC access in the caller could be scheduled between
+      // the assignment of the callee TOC and the branch to the callee, which
       // results in the TOC access going through the TOC of the callee instead
       // of going through the TOC of the caller, which leads to incorrect code.
 
       // Load the address of the function entry point from the function
       // descriptor.
-      SDVTList VTs = DAG.getVTList(MVT::i64, MVT::Other, MVT::Glue);
-      SDValue LoadFuncPtr = DAG.getNode(PPCISD::LOAD, dl, VTs,
-                              makeArrayRef(MTCTROps, InFlag.getNode() ? 3 : 2));
-      Chain = LoadFuncPtr.getValue(1);
-      InFlag = LoadFuncPtr.getValue(2);
+      SDValue LDChain = CallSeqStart.getValue(CallSeqStart->getNumValues()-1);
+      if (LDChain.getValueType() == MVT::Glue)
+        LDChain = CallSeqStart.getValue(CallSeqStart->getNumValues()-2);
+
+      bool LoadsInv = Subtarget.hasInvariantFunctionDescriptors();
+
+      MachinePointerInfo MPI(CS ? CS->getCalledValue() : nullptr);
+      SDValue LoadFuncPtr = DAG.getLoad(MVT::i64, dl, LDChain, Callee, MPI,
+                                        false, false, LoadsInv, 8);
 
       // Load environment pointer into r11.
-      // Offset of the environment pointer within the function descriptor.
       SDValue PtrOff = DAG.getIntPtrConstant(16);
-
       SDValue AddPtr = DAG.getNode(ISD::ADD, dl, MVT::i64, Callee, PtrOff);
-      SDValue LoadEnvPtr = DAG.getNode(PPCISD::LOAD, dl, VTs, Chain, AddPtr,
-                                       InFlag);
-      Chain = LoadEnvPtr.getValue(1);
-      InFlag = LoadEnvPtr.getValue(2);
+      SDValue LoadEnvPtr = DAG.getLoad(MVT::i64, dl, LDChain, AddPtr,
+                                       MPI.getWithOffset(16), false, false,
+                                       LoadsInv, 8);
+
+      SDValue TOCOff = DAG.getIntPtrConstant(8);
+      SDValue AddTOC = DAG.getNode(ISD::ADD, dl, MVT::i64, Callee, TOCOff);
+      SDValue TOCPtr = DAG.getLoad(MVT::i64, dl, LDChain, AddTOC,
+                                   MPI.getWithOffset(8), false, false,
+                                   LoadsInv, 8);
+
+      SDValue TOCVal = DAG.getCopyToReg(Chain, dl, PPC::X2, TOCPtr,
+                                        InFlag);
+      Chain = TOCVal.getValue(0);
+      InFlag = TOCVal.getValue(1);
 
       SDValue EnvVal = DAG.getCopyToReg(Chain, dl, PPC::X11, LoadEnvPtr,
                                         InFlag);
+
       Chain = EnvVal.getValue(0);
       InFlag = EnvVal.getValue(1);
-
-      // Load TOC of the callee into r2. We are using a target-specific load
-      // with r2 hard coded, because the result of a target-independent load
-      // would never go directly into r2, since r2 is a reserved register (which
-      // prevents the register allocator from allocating it), resulting in an
-      // additional register being allocated and an unnecessary move instruction
-      // being generated.
-      VTs = DAG.getVTList(MVT::Other, MVT::Glue);
-      SDValue TOCOff = DAG.getIntPtrConstant(8);
-      SDValue AddTOC = DAG.getNode(ISD::ADD, dl, MVT::i64, Callee, TOCOff);
-      SDValue LoadTOCPtr = DAG.getNode(PPCISD::LOAD_TOC, dl, VTs, Chain,
-                                       AddTOC, InFlag);
-      Chain = LoadTOCPtr.getValue(0);
-      InFlag = LoadTOCPtr.getValue(1);
 
       MTCTROps[0] = Chain;
       MTCTROps[1] = LoadFuncPtr;
@@ -3740,8 +3822,9 @@ unsigned PrepareCall(SelectionDAG &DAG, SDValue &Callee, SDValue &InFlag,
     Ops.push_back(DAG.getRegister(RegsToPass[i].first,
                                   RegsToPass[i].second.getValueType()));
 
-  // Direct calls in the ELFv2 ABI need the TOC register live into the call.
-  if (Callee.getNode() && isELFv2ABI)
+  // All calls, in both the ELF V1 and V2 ABIs, need the TOC register live
+  // into the call.
+  if (isSVR4ABI && isPPC64 && !IsPatchPoint)
     Ops.push_back(DAG.getRegister(PPC::X2, PtrVT));
 
   return CallOpc;
@@ -3804,22 +3887,23 @@ PPCTargetLowering::LowerCallResult(SDValue Chain, SDValue InFlag,
 
 SDValue
 PPCTargetLowering::FinishCall(CallingConv::ID CallConv, SDLoc dl,
-                              bool isTailCall, bool isVarArg,
+                              bool isTailCall, bool isVarArg, bool IsPatchPoint,
                               SelectionDAG &DAG,
                               SmallVector<std::pair<unsigned, SDValue>, 8>
                                 &RegsToPass,
                               SDValue InFlag, SDValue Chain,
-                              SDValue &Callee,
+                              SDValue CallSeqStart, SDValue &Callee,
                               int SPDiff, unsigned NumBytes,
                               const SmallVectorImpl<ISD::InputArg> &Ins,
-                              SmallVectorImpl<SDValue> &InVals) const {
+                              SmallVectorImpl<SDValue> &InVals,
+                              ImmutableCallSite *CS) const {
 
   bool isELFv2ABI = Subtarget.isELFv2ABI();
   std::vector<EVT> NodeTys;
   SmallVector<SDValue, 8> Ops;
-  unsigned CallOpc = PrepareCall(DAG, Callee, InFlag, Chain, dl, SPDiff,
-                                 isTailCall, RegsToPass, Ops, NodeTys,
-                                 Subtarget);
+  unsigned CallOpc = PrepareCall(DAG, Callee, InFlag, Chain, CallSeqStart, dl,
+                                 SPDiff, isTailCall, IsPatchPoint, RegsToPass,
+                                 Ops, NodeTys, CS, Subtarget);
 
   // Add implicit use of CR bit 6 for 32-bit SVR4 vararg calls
   if (isVarArg && Subtarget.isSVR4ABI() && !Subtarget.isPPC64())
@@ -3863,8 +3947,8 @@ PPCTargetLowering::FinishCall(CallingConv::ID CallConv, SDLoc dl,
   // stack frame. If caller and callee belong to the same module (and have the
   // same TOC), the NOP will remain unchanged.
 
-  bool needsTOCRestore = false;
-  if (!isTailCall && Subtarget.isSVR4ABI()&& Subtarget.isPPC64()) {
+  if (!isTailCall && Subtarget.isSVR4ABI()&& Subtarget.isPPC64() &&
+      !IsPatchPoint) {
     if (CallOpc == PPCISD::BCTRL) {
       // This is a call through a function pointer.
       // Restore the caller TOC from the save area into R2.
@@ -3875,7 +3959,17 @@ PPCTargetLowering::FinishCall(CallingConv::ID CallConv, SDLoc dl,
       // since r2 is a reserved register (which prevents the register allocator
       // from allocating it), resulting in an additional register being
       // allocated and an unnecessary move instruction being generated.
-      needsTOCRestore = true;
+      CallOpc = PPCISD::BCTRL_LOAD_TOC;
+
+      EVT PtrVT = DAG.getTargetLoweringInfo().getPointerTy();
+      SDValue StackPtr = DAG.getRegister(PPC::X1, PtrVT);
+      unsigned TOCSaveOffset = PPCFrameLowering::getTOCSaveOffset(isELFv2ABI);
+      SDValue TOCOff = DAG.getIntPtrConstant(TOCSaveOffset);
+      SDValue AddTOC = DAG.getNode(ISD::ADD, dl, MVT::i64, StackPtr, TOCOff);
+
+      // The address needs to go after the chain input but before the flag (or
+      // any other variadic arguments).
+      Ops.insert(std::next(Ops.begin()), AddTOC);
     } else if ((CallOpc == PPCISD::CALL) &&
                (!isLocalCall(Callee) ||
                 DAG.getTarget().getRelocationModel() == Reloc::PIC_)) {
@@ -3888,17 +3982,6 @@ PPCTargetLowering::FinishCall(CallingConv::ID CallConv, SDLoc dl,
 
   Chain = DAG.getNode(CallOpc, dl, NodeTys, Ops);
   InFlag = Chain.getValue(1);
-
-  if (needsTOCRestore) {
-    SDVTList VTs = DAG.getVTList(MVT::Other, MVT::Glue);
-    EVT PtrVT = DAG.getTargetLoweringInfo().getPointerTy();
-    SDValue StackPtr = DAG.getRegister(PPC::X1, PtrVT);
-    unsigned TOCSaveOffset = PPCFrameLowering::getTOCSaveOffset(isELFv2ABI);
-    SDValue TOCOff = DAG.getIntPtrConstant(TOCSaveOffset);
-    SDValue AddTOC = DAG.getNode(ISD::ADD, dl, MVT::i64, StackPtr, TOCOff);
-    Chain = DAG.getNode(PPCISD::LOAD_TOC, dl, VTs, Chain, AddTOC, InFlag);
-    InFlag = Chain.getValue(1);
-  }
 
   Chain = DAG.getCALLSEQ_END(Chain, DAG.getIntPtrConstant(NumBytes, true),
                              DAG.getIntPtrConstant(BytesCalleePops, true),
@@ -3923,40 +4006,43 @@ PPCTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   bool &isTailCall                      = CLI.IsTailCall;
   CallingConv::ID CallConv              = CLI.CallConv;
   bool isVarArg                         = CLI.IsVarArg;
+  bool IsPatchPoint                     = CLI.IsPatchPoint;
+  ImmutableCallSite *CS                 = CLI.CS;
 
   if (isTailCall)
     isTailCall = IsEligibleForTailCallOptimization(Callee, CallConv, isVarArg,
                                                    Ins, DAG);
 
-  if (!isTailCall && CLI.CS && CLI.CS->isMustTailCall())
+  if (!isTailCall && CS && CS->isMustTailCall())
     report_fatal_error("failed to perform tail call elimination on a call "
                        "site marked musttail");
 
   if (Subtarget.isSVR4ABI()) {
     if (Subtarget.isPPC64())
       return LowerCall_64SVR4(Chain, Callee, CallConv, isVarArg,
-                              isTailCall, Outs, OutVals, Ins,
-                              dl, DAG, InVals);
+                              isTailCall, IsPatchPoint, Outs, OutVals, Ins,
+                              dl, DAG, InVals, CS);
     else
       return LowerCall_32SVR4(Chain, Callee, CallConv, isVarArg,
-                              isTailCall, Outs, OutVals, Ins,
-                              dl, DAG, InVals);
+                              isTailCall, IsPatchPoint, Outs, OutVals, Ins,
+                              dl, DAG, InVals, CS);
   }
 
   return LowerCall_Darwin(Chain, Callee, CallConv, isVarArg,
-                          isTailCall, Outs, OutVals, Ins,
-                          dl, DAG, InVals);
+                          isTailCall, IsPatchPoint, Outs, OutVals, Ins,
+                          dl, DAG, InVals, CS);
 }
 
 SDValue
 PPCTargetLowering::LowerCall_32SVR4(SDValue Chain, SDValue Callee,
                                     CallingConv::ID CallConv, bool isVarArg,
-                                    bool isTailCall,
+                                    bool isTailCall, bool IsPatchPoint,
                                     const SmallVectorImpl<ISD::OutputArg> &Outs,
                                     const SmallVectorImpl<SDValue> &OutVals,
                                     const SmallVectorImpl<ISD::InputArg> &Ins,
                                     SDLoc dl, SelectionDAG &DAG,
-                                    SmallVectorImpl<SDValue> &InVals) const {
+                                    SmallVectorImpl<SDValue> &InVals,
+                                    ImmutableCallSite *CS) const {
   // See PPCTargetLowering::LowerFormalArguments_32SVR4() for a description
   // of the 32-bit SVR4 ABI stack frame layout.
 
@@ -4161,9 +4247,9 @@ PPCTargetLowering::LowerCall_32SVR4(SDValue Chain, SDValue Callee,
     PrepareTailCall(DAG, InFlag, Chain, dl, false, SPDiff, NumBytes, LROp, FPOp,
                     false, TailCallArguments);
 
-  return FinishCall(CallConv, dl, isTailCall, isVarArg, DAG,
-                    RegsToPass, InFlag, Chain, Callee, SPDiff, NumBytes,
-                    Ins, InVals);
+  return FinishCall(CallConv, dl, isTailCall, isVarArg, IsPatchPoint, DAG,
+                    RegsToPass, InFlag, Chain, CallSeqStart, Callee, SPDiff,
+                    NumBytes, Ins, InVals, CS);
 }
 
 // Copy an argument into memory, being careful to do this outside the
@@ -4189,12 +4275,13 @@ PPCTargetLowering::createMemcpyOutsideCallSeq(SDValue Arg, SDValue PtrOff,
 SDValue
 PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
                                     CallingConv::ID CallConv, bool isVarArg,
-                                    bool isTailCall,
+                                    bool isTailCall, bool IsPatchPoint,
                                     const SmallVectorImpl<ISD::OutputArg> &Outs,
                                     const SmallVectorImpl<SDValue> &OutVals,
                                     const SmallVectorImpl<ISD::InputArg> &Ins,
                                     SDLoc dl, SelectionDAG &DAG,
-                                    SmallVectorImpl<SDValue> &InVals) const {
+                                    SmallVectorImpl<SDValue> &InVals,
+                                    ImmutableCallSite *CS) const {
 
   bool isELFv2ABI = Subtarget.isELFv2ABI();
   bool isLittleEndian = Subtarget.isLittleEndian();
@@ -4214,6 +4301,9 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
       CallConv == CallingConv::Fast)
     MF.getInfo<PPCFunctionInfo>()->setHasFastCall();
 
+  assert(!(CallConv == CallingConv::Fast && isVarArg) &&
+         "fastcc not supported on varargs functions");
+
   // Count how many bytes are to be pushed on the stack, including the linkage
   // area, and parameter passing area.  On ELFv1, the linkage area is 48 bytes
   // reserved space for [SP][CR][LR][2 x unused][TOC]; on ELFv2, the linkage
@@ -4221,12 +4311,65 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
   unsigned LinkageSize = PPCFrameLowering::getLinkageSize(true, false,
                                                           isELFv2ABI);
   unsigned NumBytes = LinkageSize;
+  unsigned GPR_idx = 0, FPR_idx = 0, VR_idx = 0;
+
+  static const MCPhysReg GPR[] = {
+    PPC::X3, PPC::X4, PPC::X5, PPC::X6,
+    PPC::X7, PPC::X8, PPC::X9, PPC::X10,
+  };
+  static const MCPhysReg *FPR = GetFPR();
+
+  static const MCPhysReg VR[] = {
+    PPC::V2, PPC::V3, PPC::V4, PPC::V5, PPC::V6, PPC::V7, PPC::V8,
+    PPC::V9, PPC::V10, PPC::V11, PPC::V12, PPC::V13
+  };
+  static const MCPhysReg VSRH[] = {
+    PPC::VSH2, PPC::VSH3, PPC::VSH4, PPC::VSH5, PPC::VSH6, PPC::VSH7, PPC::VSH8,
+    PPC::VSH9, PPC::VSH10, PPC::VSH11, PPC::VSH12, PPC::VSH13
+  };
+
+  const unsigned NumGPRs = array_lengthof(GPR);
+  const unsigned NumFPRs = 13;
+  const unsigned NumVRs  = array_lengthof(VR);
+
+  // When using the fast calling convention, we don't provide backing for
+  // arguments that will be in registers.
+  unsigned NumGPRsUsed = 0, NumFPRsUsed = 0, NumVRsUsed = 0;
 
   // Add up all the space actually used.
   for (unsigned i = 0; i != NumOps; ++i) {
     ISD::ArgFlagsTy Flags = Outs[i].Flags;
     EVT ArgVT = Outs[i].VT;
     EVT OrigVT = Outs[i].ArgVT;
+
+    if (CallConv == CallingConv::Fast) {
+      if (Flags.isByVal())
+        NumGPRsUsed += (Flags.getByValSize()+7)/8;
+      else
+        switch (ArgVT.getSimpleVT().SimpleTy) {
+        default: llvm_unreachable("Unexpected ValueType for argument!");
+        case MVT::i1:
+        case MVT::i32:
+        case MVT::i64:
+          if (++NumGPRsUsed <= NumGPRs)
+            continue;
+          break;
+        case MVT::f32:
+        case MVT::f64:
+          if (++NumFPRsUsed <= NumFPRs)
+            continue;
+          break;
+        case MVT::v4f32:
+        case MVT::v4i32:
+        case MVT::v8i16:
+        case MVT::v16i8:
+        case MVT::v2f64:
+        case MVT::v2i64:
+          if (++NumVRsUsed <= NumVRs)
+            continue;
+          break;
+        }
+    }
 
     /* Respect alignment of argument on the stack.  */
     unsigned Align =
@@ -4284,26 +4427,6 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
   // must be stored to our stack, and loaded into integer regs as well, if
   // any integer regs are available for argument passing.
   unsigned ArgOffset = LinkageSize;
-  unsigned GPR_idx, FPR_idx = 0, VR_idx = 0;
-
-  static const MCPhysReg GPR[] = {
-    PPC::X3, PPC::X4, PPC::X5, PPC::X6,
-    PPC::X7, PPC::X8, PPC::X9, PPC::X10,
-  };
-  static const MCPhysReg *FPR = GetFPR();
-
-  static const MCPhysReg VR[] = {
-    PPC::V2, PPC::V3, PPC::V4, PPC::V5, PPC::V6, PPC::V7, PPC::V8,
-    PPC::V9, PPC::V10, PPC::V11, PPC::V12, PPC::V13
-  };
-  static const MCPhysReg VSRH[] = {
-    PPC::VSH2, PPC::VSH3, PPC::VSH4, PPC::VSH5, PPC::VSH6, PPC::VSH7, PPC::VSH8,
-    PPC::VSH9, PPC::VSH10, PPC::VSH11, PPC::VSH12, PPC::VSH13
-  };
-
-  const unsigned NumGPRs = array_lengthof(GPR);
-  const unsigned NumFPRs = 13;
-  const unsigned NumVRs  = array_lengthof(VR);
 
   SmallVector<std::pair<unsigned, SDValue>, 8> RegsToPass;
   SmallVector<TailCallArgumentInfo, 8> TailCallArguments;
@@ -4315,22 +4438,31 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
     EVT ArgVT = Outs[i].VT;
     EVT OrigVT = Outs[i].ArgVT;
 
-    /* Respect alignment of argument on the stack.  */
-    unsigned Align =
-      CalculateStackSlotAlignment(ArgVT, OrigVT, Flags, PtrByteSize);
-    ArgOffset = ((ArgOffset + Align - 1) / Align) * Align;
-
-    /* Compute GPR index associated with argument offset.  */
-    GPR_idx = (ArgOffset - LinkageSize) / PtrByteSize;
-    GPR_idx = std::min(GPR_idx, NumGPRs);
-
     // PtrOff will be used to store the current argument to the stack if a
     // register cannot be found for it.
     SDValue PtrOff;
 
-    PtrOff = DAG.getConstant(ArgOffset, StackPtr.getValueType());
+    // We re-align the argument offset for each argument, except when using the
+    // fast calling convention, when we need to make sure we do that only when
+    // we'll actually use a stack slot.
+    auto ComputePtrOff = [&]() {
+      /* Respect alignment of argument on the stack.  */
+      unsigned Align =
+        CalculateStackSlotAlignment(ArgVT, OrigVT, Flags, PtrByteSize);
+      ArgOffset = ((ArgOffset + Align - 1) / Align) * Align;
 
-    PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, StackPtr, PtrOff);
+      PtrOff = DAG.getConstant(ArgOffset, StackPtr.getValueType());
+
+      PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, StackPtr, PtrOff);
+    };
+
+    if (CallConv != CallingConv::Fast) {
+      ComputePtrOff();
+
+      /* Compute GPR index associated with argument offset.  */
+      GPR_idx = (ArgOffset - LinkageSize) / PtrByteSize;
+      GPR_idx = std::min(GPR_idx, NumGPRs);
+    }
 
     // Promote integers to 64-bit values.
     if (Arg.getValueType() == MVT::i32 || Arg.getValueType() == MVT::i1) {
@@ -4355,6 +4487,9 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
       if (Size == 0)
         continue;
 
+      if (CallConv == CallingConv::Fast)
+        ComputePtrOff();
+
       // All aggregates smaller than 8 bytes must be passed right-justified.
       if (Size==1 || Size==2 || Size==4) {
         EVT VT = (Size==1) ? MVT::i8 : ((Size==2) ? MVT::i16 : MVT::i32);
@@ -4363,7 +4498,7 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
                                         MachinePointerInfo(), VT,
                                         false, false, false, 0);
           MemOpChains.push_back(Load.getValue(1));
-          RegsToPass.push_back(std::make_pair(GPR[GPR_idx], Load));
+          RegsToPass.push_back(std::make_pair(GPR[GPR_idx++], Load));
 
           ArgOffset += PtrByteSize;
           continue;
@@ -4425,7 +4560,7 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
                                    MachinePointerInfo(),
                                    false, false, false, 0);
         MemOpChains.push_back(Load.getValue(1));
-        RegsToPass.push_back(std::make_pair(GPR[GPR_idx], Load));
+        RegsToPass.push_back(std::make_pair(GPR[GPR_idx++], Load));
 
         // Done with this argument.
         ArgOffset += PtrByteSize;
@@ -4461,13 +4596,19 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
       // passed directly.  Clang may use those instead of "byval" aggregate
       // types to avoid forcing arguments to memory unnecessarily.
       if (GPR_idx != NumGPRs) {
-        RegsToPass.push_back(std::make_pair(GPR[GPR_idx], Arg));
+        RegsToPass.push_back(std::make_pair(GPR[GPR_idx++], Arg));
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputePtrOff();
+
         LowerMemOpCallTo(DAG, MF, Chain, Arg, PtrOff, SPDiff, ArgOffset,
                          true, isTailCall, false, MemOpChains,
                          TailCallArguments, dl);
+        if (CallConv == CallingConv::Fast)
+          ArgOffset += PtrByteSize;
       }
-      ArgOffset += PtrByteSize;
+      if (CallConv != CallingConv::Fast)
+        ArgOffset += PtrByteSize;
       break;
     case MVT::f32:
     case MVT::f64: {
@@ -4481,6 +4622,7 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
       // then the parameter save area.  For now, put all arguments to vararg
       // routines always in both locations (FPR *and* GPR or stack slot).
       bool NeedGPROrStack = isVarArg || FPR_idx == NumFPRs;
+      bool NeededLoad = false;
 
       // First load the argument into the next available FPR.
       if (FPR_idx != NumFPRs)
@@ -4489,7 +4631,10 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
       // Next, load the argument into GPR or stack slot if needed.
       if (!NeedGPROrStack)
         ;
-      else if (GPR_idx != NumGPRs) {
+      else if (GPR_idx != NumGPRs && CallConv != CallingConv::Fast) {
+        // FIXME: We may want to re-enable this for CallingConv::Fast on the P8
+        // once we support fp <-> gpr moves.
+
         // In the non-vararg case, this can only ever happen in the
         // presence of f32 array types, since otherwise we never run
         // out of FPRs before running out of GPRs.
@@ -4528,8 +4673,11 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
           ArgVal = SDValue();
 
         if (ArgVal.getNode())
-          RegsToPass.push_back(std::make_pair(GPR[GPR_idx], ArgVal));
+          RegsToPass.push_back(std::make_pair(GPR[GPR_idx++], ArgVal));
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputePtrOff();
+
         // Single-precision floating-point values are mapped to the
         // second (rightmost) word of the stack doubleword.
         if (Arg.getValueType() == MVT::f32 &&
@@ -4541,14 +4689,18 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
         LowerMemOpCallTo(DAG, MF, Chain, Arg, PtrOff, SPDiff, ArgOffset,
                          true, isTailCall, false, MemOpChains,
                          TailCallArguments, dl);
+
+        NeededLoad = true;
       }
       // When passing an array of floats, the array occupies consecutive
       // space in the argument area; only round up to the next doubleword
       // at the end of the array.  Otherwise, each float takes 8 bytes.
-      ArgOffset += (Arg.getValueType() == MVT::f32 &&
-                    Flags.isInConsecutiveRegs()) ? 4 : 8;
-      if (Flags.isInConsecutiveRegsLast())
-        ArgOffset = ((ArgOffset + PtrByteSize - 1)/PtrByteSize) * PtrByteSize;
+      if (CallConv != CallingConv::Fast || NeededLoad) {
+        ArgOffset += (Arg.getValueType() == MVT::f32 &&
+                      Flags.isInConsecutiveRegs()) ? 4 : 8;
+        if (Flags.isInConsecutiveRegsLast())
+          ArgOffset = ((ArgOffset + PtrByteSize - 1)/PtrByteSize) * PtrByteSize;
+      }
       break;
     }
     case MVT::v4f32:
@@ -4607,11 +4759,18 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
 
         RegsToPass.push_back(std::make_pair(VReg, Arg));
       } else {
+        if (CallConv == CallingConv::Fast)
+          ComputePtrOff();
+
         LowerMemOpCallTo(DAG, MF, Chain, Arg, PtrOff, SPDiff, ArgOffset,
                          true, isTailCall, true, MemOpChains,
                          TailCallArguments, dl);
+        if (CallConv == CallingConv::Fast)
+          ArgOffset += 16;
       }
-      ArgOffset += 16;
+
+      if (CallConv != CallingConv::Fast)
+        ArgOffset += 16;
       break;
     }
   }
@@ -4625,21 +4784,22 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
   // Check if this is an indirect call (MTCTR/BCTRL).
   // See PrepareCall() for more information about calls through function
   // pointers in the 64-bit SVR4 ABI.
-  if (!isTailCall &&
-      !dyn_cast<GlobalAddressSDNode>(Callee) &&
-      !dyn_cast<ExternalSymbolSDNode>(Callee)) {
+  if (!isTailCall && !IsPatchPoint &&
+      !isFunctionGlobalAddress(Callee) &&
+      !isa<ExternalSymbolSDNode>(Callee)) {
     // Load r2 into a virtual register and store it to the TOC save area.
     SDValue Val = DAG.getCopyFromReg(Chain, dl, PPC::X2, MVT::i64);
     // TOC save area offset.
     unsigned TOCSaveOffset = PPCFrameLowering::getTOCSaveOffset(isELFv2ABI);
     SDValue PtrOff = DAG.getIntPtrConstant(TOCSaveOffset);
     SDValue AddPtr = DAG.getNode(ISD::ADD, dl, PtrVT, StackPtr, PtrOff);
-    Chain = DAG.getStore(Val.getValue(1), dl, Val, AddPtr, MachinePointerInfo(),
+    Chain = DAG.getStore(Val.getValue(1), dl, Val, AddPtr,
+                         MachinePointerInfo::getStack(TOCSaveOffset),
                          false, false, 0);
     // In the ELFv2 ABI, R12 must contain the address of an indirect callee.
     // This does not mean the MTCTR instruction must use R12; it's easier
     // to model this as an extra parameter, so do that.
-    if (isELFv2ABI)
+    if (isELFv2ABI && !IsPatchPoint)
       RegsToPass.push_back(std::make_pair((unsigned)PPC::X12, Callee));
   }
 
@@ -4656,20 +4816,21 @@ PPCTargetLowering::LowerCall_64SVR4(SDValue Chain, SDValue Callee,
     PrepareTailCall(DAG, InFlag, Chain, dl, true, SPDiff, NumBytes, LROp,
                     FPOp, true, TailCallArguments);
 
-  return FinishCall(CallConv, dl, isTailCall, isVarArg, DAG,
-                    RegsToPass, InFlag, Chain, Callee, SPDiff, NumBytes,
-                    Ins, InVals);
+  return FinishCall(CallConv, dl, isTailCall, isVarArg, IsPatchPoint, DAG,
+                    RegsToPass, InFlag, Chain, CallSeqStart, Callee, SPDiff,
+                    NumBytes, Ins, InVals, CS);
 }
 
 SDValue
 PPCTargetLowering::LowerCall_Darwin(SDValue Chain, SDValue Callee,
                                     CallingConv::ID CallConv, bool isVarArg,
-                                    bool isTailCall,
+                                    bool isTailCall, bool IsPatchPoint,
                                     const SmallVectorImpl<ISD::OutputArg> &Outs,
                                     const SmallVectorImpl<SDValue> &OutVals,
                                     const SmallVectorImpl<ISD::InputArg> &Ins,
                                     SDLoc dl, SelectionDAG &DAG,
-                                    SmallVectorImpl<SDValue> &InVals) const {
+                                    SmallVectorImpl<SDValue> &InVals,
+                                    ImmutableCallSite *CS) const {
 
   unsigned NumOps = Outs.size();
 
@@ -5030,8 +5191,8 @@ PPCTargetLowering::LowerCall_Darwin(SDValue Chain, SDValue Callee,
   // not mean the MTCTR instruction must use R12; it's easier to model this as
   // an extra parameter, so do that.
   if (!isTailCall &&
-      !dyn_cast<GlobalAddressSDNode>(Callee) &&
-      !dyn_cast<ExternalSymbolSDNode>(Callee) &&
+      !isFunctionGlobalAddress(Callee) &&
+      !isa<ExternalSymbolSDNode>(Callee) &&
       !isBLACompatibleAddress(Callee, DAG))
     RegsToPass.push_back(std::make_pair((unsigned)(isPPC64 ? PPC::X12 :
                                                    PPC::R12), Callee));
@@ -5049,9 +5210,9 @@ PPCTargetLowering::LowerCall_Darwin(SDValue Chain, SDValue Callee,
     PrepareTailCall(DAG, InFlag, Chain, dl, isPPC64, SPDiff, NumBytes, LROp,
                     FPOp, true, TailCallArguments);
 
-  return FinishCall(CallConv, dl, isTailCall, isVarArg, DAG,
-                    RegsToPass, InFlag, Chain, Callee, SPDiff, NumBytes,
-                    Ins, InVals);
+  return FinishCall(CallConv, dl, isTailCall, isVarArg, IsPatchPoint, DAG,
+                    RegsToPass, InFlag, Chain, CallSeqStart, Callee, SPDiff,
+                    NumBytes, Ins, InVals, CS);
 }
 
 bool
@@ -5163,7 +5324,7 @@ PPCTargetLowering::getReturnAddrFrameIndex(SelectionDAG & DAG) const {
     // Find out what the fix offset of the frame pointer save area.
     int LROffset = PPCFrameLowering::getReturnSaveOffset(isPPC64, isDarwinABI);
     // Allocate the frame index for frame pointer save area.
-    RASI = MF.getFrameInfo()->CreateFixedObject(isPPC64? 8 : 4, LROffset, true);
+    RASI = MF.getFrameInfo()->CreateFixedObject(isPPC64? 8 : 4, LROffset, false);
     // Save the result.
     FI->setReturnAddrSaveIndex(RASI);
   }
@@ -5381,9 +5542,9 @@ SDValue PPCTargetLowering::LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const {
   return Op;
 }
 
-// FIXME: Split this code up when LegalizeDAGTypes lands.
-SDValue PPCTargetLowering::LowerFP_TO_INT(SDValue Op, SelectionDAG &DAG,
-                                           SDLoc dl) const {
+void PPCTargetLowering::LowerFP_TO_INTForReuse(SDValue Op, ReuseLoadInfo &RLI,
+                                               SelectionDAG &DAG,
+                                               SDLoc dl) const {
   assert(Op.getOperand(0).getValueType().isFloatingPoint());
   SDValue Src = Op.getOperand(0);
   if (Src.getValueType() == MVT::f32)
@@ -5432,15 +5593,95 @@ SDValue PPCTargetLowering::LowerFP_TO_INT(SDValue Op, SelectionDAG &DAG,
   if (Op.getValueType() == MVT::i32 && !i32Stack) {
     FIPtr = DAG.getNode(ISD::ADD, dl, FIPtr.getValueType(), FIPtr,
                         DAG.getConstant(4, FIPtr.getValueType()));
-    MPI = MachinePointerInfo();
+    MPI = MPI.getWithOffset(4);
   }
 
-  return DAG.getLoad(Op.getValueType(), dl, Chain, FIPtr, MPI,
-                     false, false, false, 0);
+  RLI.Chain = Chain;
+  RLI.Ptr = FIPtr;
+  RLI.MPI = MPI;
+}
+
+SDValue PPCTargetLowering::LowerFP_TO_INT(SDValue Op, SelectionDAG &DAG,
+                                          SDLoc dl) const {
+  ReuseLoadInfo RLI;
+  LowerFP_TO_INTForReuse(Op, RLI, DAG, dl);
+
+  return DAG.getLoad(Op.getValueType(), dl, RLI.Chain, RLI.Ptr, RLI.MPI, false,
+                     false, RLI.IsInvariant, RLI.Alignment, RLI.AAInfo,
+                     RLI.Ranges);
+}
+
+// We're trying to insert a regular store, S, and then a load, L. If the
+// incoming value, O, is a load, we might just be able to have our load use the
+// address used by O. However, we don't know if anything else will store to
+// that address before we can load from it. To prevent this situation, we need
+// to insert our load, L, into the chain as a peer of O. To do this, we give L
+// the same chain operand as O, we create a token factor from the chain results
+// of O and L, and we replace all uses of O's chain result with that token
+// factor (see spliceIntoChain below for this last part).
+bool PPCTargetLowering::canReuseLoadAddress(SDValue Op, EVT MemVT,
+                                            ReuseLoadInfo &RLI,
+                                            SelectionDAG &DAG,
+                                            ISD::LoadExtType ET) const {
+  SDLoc dl(Op);
+  if (ET == ISD::NON_EXTLOAD &&
+      (Op.getOpcode() == ISD::FP_TO_UINT ||
+       Op.getOpcode() == ISD::FP_TO_SINT) &&
+      isOperationLegalOrCustom(Op.getOpcode(),
+                               Op.getOperand(0).getValueType())) {
+
+    LowerFP_TO_INTForReuse(Op, RLI, DAG, dl);
+    return true;
+  }
+
+  LoadSDNode *LD = dyn_cast<LoadSDNode>(Op);
+  if (!LD || LD->getExtensionType() != ET || LD->isVolatile() ||
+      LD->isNonTemporal())
+    return false;
+  if (LD->getMemoryVT() != MemVT)
+    return false;
+
+  RLI.Ptr = LD->getBasePtr();
+  if (LD->isIndexed() && LD->getOffset().getOpcode() != ISD::UNDEF) {
+    assert(LD->getAddressingMode() == ISD::PRE_INC &&
+           "Non-pre-inc AM on PPC?");
+    RLI.Ptr = DAG.getNode(ISD::ADD, dl, RLI.Ptr.getValueType(), RLI.Ptr,
+                          LD->getOffset());
+  }
+
+  RLI.Chain = LD->getChain();
+  RLI.MPI = LD->getPointerInfo();
+  RLI.IsInvariant = LD->isInvariant();
+  RLI.Alignment = LD->getAlignment();
+  RLI.AAInfo = LD->getAAInfo();
+  RLI.Ranges = LD->getRanges();
+
+  RLI.ResChain = SDValue(LD, LD->isIndexed() ? 2 : 1);
+  return true;
+}
+
+// Given the head of the old chain, ResChain, insert a token factor containing
+// it and NewResChain, and make users of ResChain now be users of that token
+// factor.
+void PPCTargetLowering::spliceIntoChain(SDValue ResChain,
+                                        SDValue NewResChain,
+                                        SelectionDAG &DAG) const {
+  if (!ResChain)
+    return;
+
+  SDLoc dl(NewResChain);
+
+  SDValue TF = DAG.getNode(ISD::TokenFactor, dl, MVT::Other,
+                           NewResChain, DAG.getUNDEF(MVT::Other));
+  assert(TF.getNode() != NewResChain.getNode() &&
+         "A new TF really is required here");
+
+  DAG.ReplaceAllUsesOfValueWith(ResChain, TF);
+  DAG.UpdateNodeOperands(TF.getNode(), ResChain, NewResChain);
 }
 
 SDValue PPCTargetLowering::LowerINT_TO_FP(SDValue Op,
-                                           SelectionDAG &DAG) const {
+                                          SelectionDAG &DAG) const {
   SDLoc dl(Op);
   // Don't handle ppc_fp128 here; let it be lowered to a libcall.
   if (Op.getValueType() != MVT::f32 && Op.getValueType() != MVT::f64)
@@ -5512,7 +5753,70 @@ SDValue PPCTargetLowering::LowerINT_TO_FP(SDValue Op,
       SINT = DAG.getNode(ISD::SELECT, dl, MVT::i64, Cond, Round, SINT);
     }
 
-    SDValue Bits = DAG.getNode(ISD::BITCAST, dl, MVT::f64, SINT);
+    ReuseLoadInfo RLI;
+    SDValue Bits;
+
+    MachineFunction &MF = DAG.getMachineFunction();
+    if (canReuseLoadAddress(SINT, MVT::i64, RLI, DAG)) {
+      Bits = DAG.getLoad(MVT::f64, dl, RLI.Chain, RLI.Ptr, RLI.MPI, false,
+                         false, RLI.IsInvariant, RLI.Alignment, RLI.AAInfo,
+                         RLI.Ranges);
+      spliceIntoChain(RLI.ResChain, Bits.getValue(1), DAG);
+    } else if (Subtarget.hasLFIWAX() &&
+               canReuseLoadAddress(SINT, MVT::i32, RLI, DAG, ISD::SEXTLOAD)) {
+      MachineMemOperand *MMO =
+        MF.getMachineMemOperand(RLI.MPI, MachineMemOperand::MOLoad, 4,
+                                RLI.Alignment, RLI.AAInfo, RLI.Ranges);
+      SDValue Ops[] = { RLI.Chain, RLI.Ptr };
+      Bits = DAG.getMemIntrinsicNode(PPCISD::LFIWAX, dl,
+                                     DAG.getVTList(MVT::f64, MVT::Other),
+                                     Ops, MVT::i32, MMO);
+      spliceIntoChain(RLI.ResChain, Bits.getValue(1), DAG);
+    } else if (Subtarget.hasFPCVT() &&
+               canReuseLoadAddress(SINT, MVT::i32, RLI, DAG, ISD::ZEXTLOAD)) {
+      MachineMemOperand *MMO =
+        MF.getMachineMemOperand(RLI.MPI, MachineMemOperand::MOLoad, 4,
+                                RLI.Alignment, RLI.AAInfo, RLI.Ranges);
+      SDValue Ops[] = { RLI.Chain, RLI.Ptr };
+      Bits = DAG.getMemIntrinsicNode(PPCISD::LFIWZX, dl,
+                                     DAG.getVTList(MVT::f64, MVT::Other),
+                                     Ops, MVT::i32, MMO);
+      spliceIntoChain(RLI.ResChain, Bits.getValue(1), DAG);
+    } else if (((Subtarget.hasLFIWAX() &&
+                 SINT.getOpcode() == ISD::SIGN_EXTEND) ||
+                (Subtarget.hasFPCVT() &&
+                 SINT.getOpcode() == ISD::ZERO_EXTEND)) &&
+               SINT.getOperand(0).getValueType() == MVT::i32) {
+      MachineFrameInfo *FrameInfo = MF.getFrameInfo();
+      EVT PtrVT = DAG.getTargetLoweringInfo().getPointerTy();
+
+      int FrameIdx = FrameInfo->CreateStackObject(4, 4, false);
+      SDValue FIdx = DAG.getFrameIndex(FrameIdx, PtrVT);
+
+      SDValue Store =
+        DAG.getStore(DAG.getEntryNode(), dl, SINT.getOperand(0), FIdx,
+                     MachinePointerInfo::getFixedStack(FrameIdx),
+                     false, false, 0);
+
+      assert(cast<StoreSDNode>(Store)->getMemoryVT() == MVT::i32 &&
+             "Expected an i32 store");
+
+      RLI.Ptr = FIdx;
+      RLI.Chain = Store;
+      RLI.MPI = MachinePointerInfo::getFixedStack(FrameIdx);
+      RLI.Alignment = 4;
+
+      MachineMemOperand *MMO =
+        MF.getMachineMemOperand(RLI.MPI, MachineMemOperand::MOLoad, 4,
+                                RLI.Alignment, RLI.AAInfo, RLI.Ranges);
+      SDValue Ops[] = { RLI.Chain, RLI.Ptr };
+      Bits = DAG.getMemIntrinsicNode(SINT.getOpcode() == ISD::ZERO_EXTEND ?
+                                     PPCISD::LFIWZX : PPCISD::LFIWAX,
+                                     dl, DAG.getVTList(MVT::f64, MVT::Other),
+                                     Ops, MVT::i32, MMO);
+    } else
+      Bits = DAG.getNode(ISD::BITCAST, dl, MVT::f64, SINT);
+
     SDValue FP = DAG.getNode(FCFOp, dl, FCFTy, Bits);
 
     if (Op.getValueType() == MVT::f32 && !Subtarget.hasFPCVT())
@@ -5533,23 +5837,36 @@ SDValue PPCTargetLowering::LowerINT_TO_FP(SDValue Op,
 
   SDValue Ld;
   if (Subtarget.hasLFIWAX() || Subtarget.hasFPCVT()) {
-    int FrameIdx = FrameInfo->CreateStackObject(4, 4, false);
-    SDValue FIdx = DAG.getFrameIndex(FrameIdx, PtrVT);
+    ReuseLoadInfo RLI;
+    bool ReusingLoad;
+    if (!(ReusingLoad = canReuseLoadAddress(Op.getOperand(0), MVT::i32, RLI,
+                                            DAG))) {
+      int FrameIdx = FrameInfo->CreateStackObject(4, 4, false);
+      SDValue FIdx = DAG.getFrameIndex(FrameIdx, PtrVT);
 
-    SDValue Store = DAG.getStore(DAG.getEntryNode(), dl, Op.getOperand(0), FIdx,
-                                 MachinePointerInfo::getFixedStack(FrameIdx),
-                                 false, false, 0);
+      SDValue Store = DAG.getStore(DAG.getEntryNode(), dl, Op.getOperand(0), FIdx,
+                                   MachinePointerInfo::getFixedStack(FrameIdx),
+                                   false, false, 0);
 
-    assert(cast<StoreSDNode>(Store)->getMemoryVT() == MVT::i32 &&
-           "Expected an i32 store");
+      assert(cast<StoreSDNode>(Store)->getMemoryVT() == MVT::i32 &&
+             "Expected an i32 store");
+
+      RLI.Ptr = FIdx;
+      RLI.Chain = Store;
+      RLI.MPI = MachinePointerInfo::getFixedStack(FrameIdx);
+      RLI.Alignment = 4;
+    }
+
     MachineMemOperand *MMO =
-      MF.getMachineMemOperand(MachinePointerInfo::getFixedStack(FrameIdx),
-                              MachineMemOperand::MOLoad, 4, 4);
-    SDValue Ops[] = { Store, FIdx };
+      MF.getMachineMemOperand(RLI.MPI, MachineMemOperand::MOLoad, 4,
+                              RLI.Alignment, RLI.AAInfo, RLI.Ranges);
+    SDValue Ops[] = { RLI.Chain, RLI.Ptr };
     Ld = DAG.getMemIntrinsicNode(Op.getOpcode() == ISD::UINT_TO_FP ?
                                    PPCISD::LFIWZX : PPCISD::LFIWAX,
                                  dl, DAG.getVTList(MVT::f64, MVT::Other),
                                  Ops, MVT::i32, MMO);
+    if (ReusingLoad)
+      spliceIntoChain(RLI.ResChain, Ld.getValue(1), DAG);
   } else {
     assert(Subtarget.isPPC64() &&
            "i32->FP without LFIWAX supported only on PPC64");
@@ -6462,7 +6779,7 @@ SDValue PPCTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   case ISD::SELECT_CC:          return LowerSELECT_CC(Op, DAG);
   case ISD::FP_TO_UINT:
   case ISD::FP_TO_SINT:         return LowerFP_TO_INT(Op, DAG,
-                                                       SDLoc(Op));
+                                                      SDLoc(Op));
   case ISD::UINT_TO_FP:
   case ISD::SINT_TO_FP:         return LowerINT_TO_FP(Op, DAG);
   case ISD::FLT_ROUNDS_:        return LowerFLT_ROUNDS_(Op, DAG);
@@ -6497,6 +6814,15 @@ void PPCTargetLowering::ReplaceNodeResults(SDNode *N,
   switch (N->getOpcode()) {
   default:
     llvm_unreachable("Do not know how to custom type legalize this operation!");
+  case ISD::READCYCLECOUNTER: {
+    SDVTList VTs = DAG.getVTList(MVT::i32, MVT::i32, MVT::Other);
+    SDValue RTB = DAG.getNode(PPCISD::READ_TIME_BASE, dl, VTs, N->getOperand(0));
+
+    Results.push_back(RTB);
+    Results.push_back(RTB.getValue(1));
+    Results.push_back(RTB.getValue(2));
+    break;
+  }
   case ISD::INTRINSIC_W_CHAIN: {
     if (cast<ConstantSDNode>(N->getOperand(1))->getZExtValue() !=
         Intrinsic::ppc_is_decremented_ctr_nonzero)
@@ -6621,9 +6947,8 @@ PPCTargetLowering::EmitAtomicBinary(MachineInstr *MI, MachineBasicBlock *BB,
 
   MachineRegisterInfo &RegInfo = F->getRegInfo();
   unsigned TmpReg = (!BinOpcode) ? incr :
-    RegInfo.createVirtualRegister(
-       is64bit ? (const TargetRegisterClass *) &PPC::G8RCRegClass :
-                 (const TargetRegisterClass *) &PPC::GPRCRegClass);
+    RegInfo.createVirtualRegister( is64bit ? &PPC::G8RCRegClass
+                                           : &PPC::GPRCRegClass);
 
   //  thisMBB:
   //   ...
@@ -6689,9 +7014,8 @@ PPCTargetLowering::EmitPartwordAtomicBinary(MachineInstr *MI,
   exitMBB->transferSuccessorsAndUpdatePHIs(BB);
 
   MachineRegisterInfo &RegInfo = F->getRegInfo();
-  const TargetRegisterClass *RC =
-    is64bit ? (const TargetRegisterClass *) &PPC::G8RCRegClass :
-              (const TargetRegisterClass *) &PPC::GPRCRegClass;
+  const TargetRegisterClass *RC = is64bit ? &PPC::G8RCRegClass
+                                          : &PPC::GPRCRegClass;
   unsigned PtrReg = RegInfo.createVirtualRegister(RC);
   unsigned Shift1Reg = RegInfo.createVirtualRegister(RC);
   unsigned ShiftReg = RegInfo.createVirtualRegister(RC);
@@ -7043,6 +7367,21 @@ PPCTargetLowering::emitEHSjLjLongJmp(MachineInstr *MI,
 MachineBasicBlock *
 PPCTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
                                                MachineBasicBlock *BB) const {
+  if (MI->getOpcode() == TargetOpcode::STACKMAP ||
+      MI->getOpcode() == TargetOpcode::PATCHPOINT) {
+    if (Subtarget.isPPC64() && Subtarget.isSVR4ABI() &&
+        MI->getOpcode() == TargetOpcode::PATCHPOINT) {
+      // Call lowering should have added an r2 operand to indicate a dependence
+      // on the TOC base pointer value. It can't however, because there is no
+      // way to mark the dependence as implicit there, and so the stackmap code
+      // will confuse it with a regular operand. Instead, add the dependence
+      // here.
+      MI->addOperand(MachineOperand::CreateReg(PPC::X2, false, true));
+    }
+
+    return emitPatchPoint(MI, BB);
+  }
+
   if (MI->getOpcode() == PPC::EH_SjLj_SetJmp32 ||
       MI->getOpcode() == PPC::EH_SjLj_SetJmp64) {
     return emitEHSjLjSetJmp(MI, BB);
@@ -7151,6 +7490,51 @@ PPCTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
             TII->get(PPC::PHI), MI->getOperand(0).getReg())
       .addReg(MI->getOperand(3).getReg()).addMBB(copy0MBB)
       .addReg(MI->getOperand(2).getReg()).addMBB(thisMBB);
+  } else if (MI->getOpcode() == PPC::ReadTB) {
+    // To read the 64-bit time-base register on a 32-bit target, we read the
+    // two halves. Should the counter have wrapped while it was being read, we
+    // need to try again.
+    // ...
+    // readLoop:
+    // mfspr Rx,TBU # load from TBU
+    // mfspr Ry,TB  # load from TB
+    // mfspr Rz,TBU # load from TBU
+    // cmpw crX,Rx,Rz # check if ‘old’=’new’
+    // bne readLoop   # branch if they're not equal
+    // ...
+
+    MachineBasicBlock *readMBB = F->CreateMachineBasicBlock(LLVM_BB);
+    MachineBasicBlock *sinkMBB = F->CreateMachineBasicBlock(LLVM_BB);
+    DebugLoc dl = MI->getDebugLoc();
+    F->insert(It, readMBB);
+    F->insert(It, sinkMBB);
+
+    // Transfer the remainder of BB and its successor edges to sinkMBB.
+    sinkMBB->splice(sinkMBB->begin(), BB,
+                    std::next(MachineBasicBlock::iterator(MI)), BB->end());
+    sinkMBB->transferSuccessorsAndUpdatePHIs(BB);
+
+    BB->addSuccessor(readMBB);
+    BB = readMBB;
+
+    MachineRegisterInfo &RegInfo = F->getRegInfo();
+    unsigned ReadAgainReg = RegInfo.createVirtualRegister(&PPC::GPRCRegClass);
+    unsigned LoReg = MI->getOperand(0).getReg();
+    unsigned HiReg = MI->getOperand(1).getReg();
+
+    BuildMI(BB, dl, TII->get(PPC::MFSPR), HiReg).addImm(269);
+    BuildMI(BB, dl, TII->get(PPC::MFSPR), LoReg).addImm(268);
+    BuildMI(BB, dl, TII->get(PPC::MFSPR), ReadAgainReg).addImm(269);
+
+    unsigned CmpReg = RegInfo.createVirtualRegister(&PPC::CRRCRegClass);
+
+    BuildMI(BB, dl, TII->get(PPC::CMPW), CmpReg)
+      .addReg(HiReg).addReg(ReadAgainReg);
+    BuildMI(BB, dl, TII->get(PPC::BCC))
+      .addImm(PPC::PRED_NE).addReg(CmpReg).addMBB(readMBB);
+
+    BB->addSuccessor(readMBB);
+    BB->addSuccessor(sinkMBB);
   }
   else if (MI->getOpcode() == PPC::ATOMIC_LOAD_ADD_I8)
     BB = EmitPartwordAtomicBinary(MI, BB, true, PPC::ADD4);
@@ -7309,9 +7693,8 @@ PPCTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
     exitMBB->transferSuccessorsAndUpdatePHIs(BB);
 
     MachineRegisterInfo &RegInfo = F->getRegInfo();
-    const TargetRegisterClass *RC =
-      is64bit ? (const TargetRegisterClass *) &PPC::G8RCRegClass :
-                (const TargetRegisterClass *) &PPC::GPRCRegClass;
+    const TargetRegisterClass *RC = is64bit ? &PPC::G8RCRegClass
+                                            : &PPC::GPRCRegClass;
     unsigned PtrReg = RegInfo.createVirtualRegister(RC);
     unsigned Shift1Reg = RegInfo.createVirtualRegister(RC);
     unsigned ShiftReg = RegInfo.createVirtualRegister(RC);
@@ -7453,7 +7836,7 @@ PPCTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
     BuildMI(*BB, MI, dl, TII->get(PPC::FADD), Dest).addReg(Src1).addReg(Src2);
 
     // Restore FPSCR value.
-    BuildMI(*BB, MI, dl, TII->get(PPC::MTFSF)).addImm(1).addReg(MFFSReg);
+    BuildMI(*BB, MI, dl, TII->get(PPC::MTFSFb)).addImm(1).addReg(MFFSReg);
   } else if (MI->getOpcode() == PPC::ANDIo_1_EQ_BIT ||
              MI->getOpcode() == PPC::ANDIo_1_GT_BIT ||
              MI->getOpcode() == PPC::ANDIo_1_EQ_BIT8 ||
@@ -7527,6 +7910,28 @@ SDValue PPCTargetLowering::getRecipEstimate(SDValue Operand,
     return DCI.DAG.getNode(PPCISD::FRE, SDLoc(Operand), VT, Operand);
   }
   return SDValue();
+}
+
+bool PPCTargetLowering::combineRepeatedFPDivisors(unsigned NumUsers) const {
+  // Note: This functionality is used only when unsafe-fp-math is enabled, and
+  // on cores with reciprocal estimates (which are used when unsafe-fp-math is
+  // enabled for division), this functionality is redundant with the default
+  // combiner logic (once the division -> reciprocal/multiply transformation
+  // has taken place). As a result, this matters more for older cores than for
+  // newer ones.
+
+  // Combine multiple FDIVs with the same divisor into multiple FMULs by the
+  // reciprocal if there are two or more FDIVs (for embedded cores with only
+  // one FP pipeline) for three or more FDIVs (for generic OOO cores).
+  switch (Subtarget.getDarwinDirective()) {
+  default:
+    return NumUsers > 2;
+  case PPC::DIR_440:
+  case PPC::DIR_A2:
+  case PPC::DIR_E500mc:
+  case PPC::DIR_E5500:
+    return NumUsers > 1;
+  }
 }
 
 static bool isConsecutiveLSLoc(SDValue Loc, EVT VT, LSBaseSDNode *Base,
@@ -8053,6 +8458,10 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
     }
   }
 
+  // The operands of a select that must be truncated when the select is
+  // promoted because the operand is actually part of the to-be-promoted set.
+  DenseMap<SDNode *, EVT> SelectTruncOp[2];
+
   // Make sure that this is a self-contained cluster of operations (which
   // is not quite the same thing as saying that everything has only one
   // use).
@@ -8067,18 +8476,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       if (User != N && !Visited.count(User))
         return SDValue();
 
-      // Make sure that we're not going to promote the non-output-value
-      // operand(s) or SELECT or SELECT_CC.
-      // FIXME: Although we could sometimes handle this, and it does occur in
-      // practice that one of the condition inputs to the select is also one of
-      // the outputs, we currently can't deal with this.
+      // If we're going to promote the non-output-value operand(s) or SELECT or
+      // SELECT_CC, record them for truncation.
       if (User->getOpcode() == ISD::SELECT) {
         if (User->getOperand(0) == Inputs[i])
-          return SDValue();
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
       } else if (User->getOpcode() == ISD::SELECT_CC) {
-        if (User->getOperand(0) == Inputs[i] ||
-            User->getOperand(1) == Inputs[i])
-          return SDValue();
+        if (User->getOperand(0) == Inputs[i])
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
+        if (User->getOperand(1) == Inputs[i])
+          SelectTruncOp[1].insert(std::make_pair(User,
+                                    User->getOperand(1).getValueType()));
       }
     }
   }
@@ -8091,18 +8501,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       if (User != N && !Visited.count(User))
         return SDValue();
 
-      // Make sure that we're not going to promote the non-output-value
-      // operand(s) or SELECT or SELECT_CC.
-      // FIXME: Although we could sometimes handle this, and it does occur in
-      // practice that one of the condition inputs to the select is also one of
-      // the outputs, we currently can't deal with this.
+      // If we're going to promote the non-output-value operand(s) or SELECT or
+      // SELECT_CC, record them for truncation.
       if (User->getOpcode() == ISD::SELECT) {
         if (User->getOperand(0) == PromOps[i])
-          return SDValue();
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
       } else if (User->getOpcode() == ISD::SELECT_CC) {
-        if (User->getOperand(0) == PromOps[i] ||
-            User->getOperand(1) == PromOps[i])
-          return SDValue();
+        if (User->getOperand(0) == PromOps[i])
+          SelectTruncOp[0].insert(std::make_pair(User,
+                                    User->getOperand(0).getValueType()));
+        if (User->getOperand(1) == PromOps[i])
+          SelectTruncOp[1].insert(std::make_pair(User,
+                                    User->getOperand(1).getValueType()));
       }
     }
   }
@@ -8183,6 +8594,19 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
       continue;
     }
 
+    // For SELECT and SELECT_CC nodes, we do a similar check for any
+    // to-be-promoted comparison inputs.
+    if (PromOp.getOpcode() == ISD::SELECT ||
+        PromOp.getOpcode() == ISD::SELECT_CC) {
+      if ((SelectTruncOp[0].count(PromOp.getNode()) &&
+           PromOp.getOperand(0).getValueType() != N->getValueType(0)) ||
+          (SelectTruncOp[1].count(PromOp.getNode()) &&
+           PromOp.getOperand(1).getValueType() != N->getValueType(0))) {
+        PromOps.insert(PromOps.begin(), PromOp);
+        continue;
+      }
+    }
+
     SmallVector<SDValue, 3> Ops(PromOp.getNode()->op_begin(),
                                 PromOp.getNode()->op_end());
 
@@ -8199,6 +8623,18 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
         Ops[C+i] = DAG.getZExtOrTrunc(Ops[C+i], dl, N->getValueType(0));
       else
         Ops[C+i] = DAG.getAnyExtOrTrunc(Ops[C+i], dl, N->getValueType(0));
+    }
+
+    // If we've promoted the comparison inputs of a SELECT or SELECT_CC,
+    // truncate them again to the original value type.
+    if (PromOp.getOpcode() == ISD::SELECT ||
+        PromOp.getOpcode() == ISD::SELECT_CC) {
+      auto SI0 = SelectTruncOp[0].find(PromOp.getNode());
+      if (SI0 != SelectTruncOp[0].end())
+        Ops[0] = DAG.getNode(ISD::TRUNCATE, dl, SI0->second, Ops[0]);
+      auto SI1 = SelectTruncOp[1].find(PromOp.getNode());
+      if (SI1 != SelectTruncOp[1].end())
+        Ops[1] = DAG.getNode(ISD::TRUNCATE, dl, SI1->second, Ops[1]);
     }
 
     DAG.ReplaceAllUsesOfValueWith(PromOp,
@@ -8225,6 +8661,174 @@ SDValue PPCTargetLowering::DAGCombineExtBoolTrunc(SDNode *N,
   return DAG.getNode(ISD::SRA, dl, N->getValueType(0), 
                      DAG.getNode(ISD::SHL, dl, N->getValueType(0),
                                  N->getOperand(0), ShiftCst), ShiftCst);
+}
+
+SDValue PPCTargetLowering::combineFPToIntToFP(SDNode *N,
+                                              DAGCombinerInfo &DCI) const {
+  assert((N->getOpcode() == ISD::SINT_TO_FP ||
+          N->getOpcode() == ISD::UINT_TO_FP) &&
+         "Need an int -> FP conversion node here");
+
+  if (!Subtarget.has64BitSupport())
+    return SDValue();
+
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  SDValue Op(N, 0);
+
+  // Don't handle ppc_fp128 here or i1 conversions.
+  if (Op.getValueType() != MVT::f32 && Op.getValueType() != MVT::f64)
+    return SDValue();
+  if (Op.getOperand(0).getValueType() == MVT::i1)
+    return SDValue();
+
+  // For i32 intermediate values, unfortunately, the conversion functions
+  // leave the upper 32 bits of the value are undefined. Within the set of
+  // scalar instructions, we have no method for zero- or sign-extending the
+  // value. Thus, we cannot handle i32 intermediate values here.
+  if (Op.getOperand(0).getValueType() == MVT::i32)
+    return SDValue();
+
+  assert((Op.getOpcode() == ISD::SINT_TO_FP || Subtarget.hasFPCVT()) &&
+         "UINT_TO_FP is supported only with FPCVT");
+
+  // If we have FCFIDS, then use it when converting to single-precision.
+  // Otherwise, convert to double-precision and then round.
+  unsigned FCFOp = (Subtarget.hasFPCVT() && Op.getValueType() == MVT::f32) ?
+                   (Op.getOpcode() == ISD::UINT_TO_FP ?
+                    PPCISD::FCFIDUS : PPCISD::FCFIDS) :
+                   (Op.getOpcode() == ISD::UINT_TO_FP ?
+                    PPCISD::FCFIDU : PPCISD::FCFID);
+  MVT      FCFTy = (Subtarget.hasFPCVT() && Op.getValueType() == MVT::f32) ?
+                   MVT::f32 : MVT::f64;
+
+  // If we're converting from a float, to an int, and back to a float again,
+  // then we don't need the store/load pair at all.
+  if ((Op.getOperand(0).getOpcode() == ISD::FP_TO_UINT &&
+       Subtarget.hasFPCVT()) ||
+      (Op.getOperand(0).getOpcode() == ISD::FP_TO_SINT)) {
+    SDValue Src = Op.getOperand(0).getOperand(0);
+    if (Src.getValueType() == MVT::f32) {
+      Src = DAG.getNode(ISD::FP_EXTEND, dl, MVT::f64, Src);
+      DCI.AddToWorklist(Src.getNode());
+    }
+
+    unsigned FCTOp =
+      Op.getOperand(0).getOpcode() == ISD::FP_TO_SINT ? PPCISD::FCTIDZ :
+                                                        PPCISD::FCTIDUZ;
+
+    SDValue Tmp = DAG.getNode(FCTOp, dl, MVT::f64, Src);
+    SDValue FP = DAG.getNode(FCFOp, dl, FCFTy, Tmp);
+
+    if (Op.getValueType() == MVT::f32 && !Subtarget.hasFPCVT()) {
+      FP = DAG.getNode(ISD::FP_ROUND, dl,
+                       MVT::f32, FP, DAG.getIntPtrConstant(0));
+      DCI.AddToWorklist(FP.getNode());
+    }
+
+    return FP;
+  }
+
+  return SDValue();
+}
+
+// expandVSXLoadForLE - Convert VSX loads (which may be intrinsics for
+// builtins) into loads with swaps.
+SDValue PPCTargetLowering::expandVSXLoadForLE(SDNode *N,
+                                              DAGCombinerInfo &DCI) const {
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  SDValue Chain;
+  SDValue Base;
+  MachineMemOperand *MMO;
+
+  switch (N->getOpcode()) {
+  default:
+    llvm_unreachable("Unexpected opcode for little endian VSX load");
+  case ISD::LOAD: {
+    LoadSDNode *LD = cast<LoadSDNode>(N);
+    Chain = LD->getChain();
+    Base = LD->getBasePtr();
+    MMO = LD->getMemOperand();
+    // If the MMO suggests this isn't a load of a full vector, leave
+    // things alone.  For a built-in, we have to make the change for
+    // correctness, so if there is a size problem that will be a bug.
+    if (MMO->getSize() < 16)
+      return SDValue();
+    break;
+  }
+  case ISD::INTRINSIC_W_CHAIN: {
+    MemIntrinsicSDNode *Intrin = cast<MemIntrinsicSDNode>(N);
+    Chain = Intrin->getChain();
+    Base = Intrin->getBasePtr();
+    MMO = Intrin->getMemOperand();
+    break;
+  }
+  }
+
+  MVT VecTy = N->getValueType(0).getSimpleVT();
+  SDValue LoadOps[] = { Chain, Base };
+  SDValue Load = DAG.getMemIntrinsicNode(PPCISD::LXVD2X, dl,
+                                         DAG.getVTList(VecTy, MVT::Other),
+                                         LoadOps, VecTy, MMO);
+  DCI.AddToWorklist(Load.getNode());
+  Chain = Load.getValue(1);
+  SDValue Swap = DAG.getNode(PPCISD::XXSWAPD, dl,
+                             DAG.getVTList(VecTy, MVT::Other), Chain, Load);
+  DCI.AddToWorklist(Swap.getNode());
+  return Swap;
+}
+
+// expandVSXStoreForLE - Convert VSX stores (which may be intrinsics for
+// builtins) into stores with swaps.
+SDValue PPCTargetLowering::expandVSXStoreForLE(SDNode *N,
+                                               DAGCombinerInfo &DCI) const {
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  SDValue Chain;
+  SDValue Base;
+  unsigned SrcOpnd;
+  MachineMemOperand *MMO;
+
+  switch (N->getOpcode()) {
+  default:
+    llvm_unreachable("Unexpected opcode for little endian VSX store");
+  case ISD::STORE: {
+    StoreSDNode *ST = cast<StoreSDNode>(N);
+    Chain = ST->getChain();
+    Base = ST->getBasePtr();
+    MMO = ST->getMemOperand();
+    SrcOpnd = 1;
+    // If the MMO suggests this isn't a store of a full vector, leave
+    // things alone.  For a built-in, we have to make the change for
+    // correctness, so if there is a size problem that will be a bug.
+    if (MMO->getSize() < 16)
+      return SDValue();
+    break;
+  }
+  case ISD::INTRINSIC_VOID: {
+    MemIntrinsicSDNode *Intrin = cast<MemIntrinsicSDNode>(N);
+    Chain = Intrin->getChain();
+    // Intrin->getBasePtr() oddly does not get what we want.
+    Base = Intrin->getOperand(3);
+    MMO = Intrin->getMemOperand();
+    SrcOpnd = 2;
+    break;
+  }
+  }
+
+  SDValue Src = N->getOperand(SrcOpnd);
+  MVT VecTy = Src.getValueType().getSimpleVT();
+  SDValue Swap = DAG.getNode(PPCISD::XXSWAPD, dl,
+                             DAG.getVTList(VecTy, MVT::Other), Chain, Src);
+  DCI.AddToWorklist(Swap.getNode());
+  Chain = Swap.getValue(1);
+  SDValue StoreOps[] = { Chain, Swap, Base };
+  SDValue Store = DAG.getMemIntrinsicNode(PPCISD::STXVD2X, dl,
+                                          DAG.getVTList(MVT::Other),
+                                          StoreOps, VecTy, MMO);
+  DCI.AddToWorklist(Store.getNode());
+  return Store;
 }
 
 SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
@@ -8262,37 +8866,9 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
   case ISD::SELECT_CC:
     return DAGCombineTruncBoolExt(N, DCI);
   case ISD::SINT_TO_FP:
-    if (TM.getSubtarget<PPCSubtarget>().has64BitSupport()) {
-      if (N->getOperand(0).getOpcode() == ISD::FP_TO_SINT) {
-        // Turn (sint_to_fp (fp_to_sint X)) -> fctidz/fcfid without load/stores.
-        // We allow the src/dst to be either f32/f64, but the intermediate
-        // type must be i64.
-        if (N->getOperand(0).getValueType() == MVT::i64 &&
-            N->getOperand(0).getOperand(0).getValueType() != MVT::ppcf128) {
-          SDValue Val = N->getOperand(0).getOperand(0);
-          if (Val.getValueType() == MVT::f32) {
-            Val = DAG.getNode(ISD::FP_EXTEND, dl, MVT::f64, Val);
-            DCI.AddToWorklist(Val.getNode());
-          }
-
-          Val = DAG.getNode(PPCISD::FCTIDZ, dl, MVT::f64, Val);
-          DCI.AddToWorklist(Val.getNode());
-          Val = DAG.getNode(PPCISD::FCFID, dl, MVT::f64, Val);
-          DCI.AddToWorklist(Val.getNode());
-          if (N->getValueType(0) == MVT::f32) {
-            Val = DAG.getNode(ISD::FP_ROUND, dl, MVT::f32, Val,
-                              DAG.getIntPtrConstant(0));
-            DCI.AddToWorklist(Val.getNode());
-          }
-          return Val;
-        } else if (N->getOperand(0).getValueType() == MVT::i32) {
-          // If the intermediate type is i32, we can avoid the load/store here
-          // too.
-        }
-      }
-    }
-    break;
-  case ISD::STORE:
+  case ISD::UINT_TO_FP:
+    return combineFPToIntToFP(N, DCI);
+  case ISD::STORE: {
     // Turn STORE (FP_TO_SINT F) -> STFIWX(FCTIWZ(F)).
     if (TM.getSubtarget<PPCSubtarget>().hasSTFIWX() &&
         !cast<StoreSDNode>(N)->isTruncatingStore() &&
@@ -8343,10 +8919,33 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
                                 Ops, cast<StoreSDNode>(N)->getMemoryVT(),
                                 cast<StoreSDNode>(N)->getMemOperand());
     }
+
+    // For little endian, VSX stores require generating xxswapd/lxvd2x.
+    EVT VT = N->getOperand(1).getValueType();
+    if (VT.isSimple()) {
+      MVT StoreVT = VT.getSimpleVT();
+      if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+          TM.getSubtarget<PPCSubtarget>().isLittleEndian() &&
+          (StoreVT == MVT::v2f64 || StoreVT == MVT::v2i64 ||
+           StoreVT == MVT::v4f32 || StoreVT == MVT::v4i32))
+        return expandVSXStoreForLE(N, DCI);
+    }
     break;
+  }
   case ISD::LOAD: {
     LoadSDNode *LD = cast<LoadSDNode>(N);
     EVT VT = LD->getValueType(0);
+
+    // For little endian, VSX loads require generating lxvd2x/xxswapd.
+    if (VT.isSimple()) {
+      MVT LoadVT = VT.getSimpleVT();
+      if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+          TM.getSubtarget<PPCSubtarget>().isLittleEndian() &&
+          (LoadVT == MVT::v2f64 || LoadVT == MVT::v2i64 ||
+           LoadVT == MVT::v4f32 || LoadVT == MVT::v4i32))
+        return expandVSXLoadForLE(N, DCI);
+    }
+
     Type *Ty = LD->getMemoryVT().getTypeForEVT(*DAG.getContext());
     unsigned ABIAlignment = getDataLayout()->getABITypeAlignment(Ty);
     if (ISD::isNON_EXTLoad(N) && VT.isVector() &&
@@ -8495,6 +9094,34 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
     }
 
     break;
+  case ISD::INTRINSIC_W_CHAIN: {
+    // For little endian, VSX loads require generating lxvd2x/xxswapd.
+    if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+        TM.getSubtarget<PPCSubtarget>().isLittleEndian()) {
+      switch (cast<ConstantSDNode>(N->getOperand(1))->getZExtValue()) {
+      default:
+        break;
+      case Intrinsic::ppc_vsx_lxvw4x:
+      case Intrinsic::ppc_vsx_lxvd2x:
+        return expandVSXLoadForLE(N, DCI);
+      }
+    }
+    break;
+  }
+  case ISD::INTRINSIC_VOID: {
+    // For little endian, VSX stores require generating xxswapd/stxvd2x.
+    if (TM.getSubtarget<PPCSubtarget>().hasVSX() &&
+        TM.getSubtarget<PPCSubtarget>().isLittleEndian()) {
+      switch (cast<ConstantSDNode>(N->getOperand(1))->getZExtValue()) {
+      default:
+        break;
+      case Intrinsic::ppc_vsx_stxvw4x:
+      case Intrinsic::ppc_vsx_stxvd2x:
+        return expandVSXStoreForLE(N, DCI);
+      }
+    }
+    break;
+  }
   case ISD::BSWAP:
     // Turn BSWAP (LOAD) -> lhbrx/lwbrx.
     if (ISD::isNON_EXTLoad(N->getOperand(0).getNode()) &&
@@ -8705,6 +9332,38 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
   return SDValue();
 }
 
+SDValue
+PPCTargetLowering::BuildSDIVPow2(SDNode *N, const APInt &Divisor,
+                                  SelectionDAG &DAG,
+                                  std::vector<SDNode *> *Created) const {
+  // fold (sdiv X, pow2)
+  EVT VT = N->getValueType(0);
+  if (VT == MVT::i64 && !Subtarget.isPPC64())
+    return SDValue();
+  if ((VT != MVT::i32 && VT != MVT::i64) ||
+      !(Divisor.isPowerOf2() || (-Divisor).isPowerOf2()))
+    return SDValue();
+
+  SDLoc DL(N);
+  SDValue N0 = N->getOperand(0);
+
+  bool IsNegPow2 = (-Divisor).isPowerOf2();
+  unsigned Lg2 = (IsNegPow2 ? -Divisor : Divisor).countTrailingZeros();
+  SDValue ShiftAmt = DAG.getConstant(Lg2, VT);
+
+  SDValue Op = DAG.getNode(PPCISD::SRA_ADDZE, DL, VT, N0, ShiftAmt);
+  if (Created)
+    Created->push_back(Op.getNode());
+
+  if (IsNegPow2) {
+    Op = DAG.getNode(ISD::SUB, DL, VT, DAG.getConstant(0, VT), Op);
+    if (Created)
+      Created->push_back(Op.getNode());
+  }
+
+  return Op;
+}
+
 //===----------------------------------------------------------------------===//
 // Inline Assembly Support
 //===----------------------------------------------------------------------===//
@@ -8746,6 +9405,40 @@ void PPCTargetLowering::computeKnownBitsForTargetNode(const SDValue Op,
   }
 }
 
+unsigned PPCTargetLowering::getPrefLoopAlignment(MachineLoop *ML) const {
+  switch (Subtarget.getDarwinDirective()) {
+  default: break;
+  case PPC::DIR_970:
+  case PPC::DIR_PWR4:
+  case PPC::DIR_PWR5:
+  case PPC::DIR_PWR5X:
+  case PPC::DIR_PWR6:
+  case PPC::DIR_PWR6X:
+  case PPC::DIR_PWR7:
+  case PPC::DIR_PWR8: {
+    if (!ML)
+      break;
+
+    const PPCInstrInfo *TII =
+      static_cast<const PPCInstrInfo *>(getTargetMachine().getSubtargetImpl()->
+                                          getInstrInfo());
+
+    // For small loops (between 5 and 8 instructions), align to a 32-byte
+    // boundary so that the entire loop fits in one instruction-cache line.
+    uint64_t LoopSize = 0;
+    for (auto I = ML->block_begin(), IE = ML->block_end(); I != IE; ++I)
+      for (auto J = (*I)->begin(), JE = (*I)->end(); J != JE; ++J)
+        LoopSize += TII->GetInstSizeInBytes(J);
+
+    if (LoopSize > 16 && LoopSize <= 32)
+      return 5;
+
+    break;
+  }
+  }
+
+  return TargetLowering::getPrefLoopAlignment(ML);
+}
 
 /// getConstraintType - Given a constraint, return the type of
 /// constraint it is for this target.
@@ -8885,6 +9578,12 @@ PPCTargetLowering::getRegForInlineAsmConstraint(const std::string &Constraint,
                           &PPC::G8RCRegClass);
   }
 
+  // GCC accepts 'cc' as an alias for 'cr0', and we need to do the same.
+  if (!R.second && StringRef("{cc}").equals_lower(Constraint)) {
+    R.first = PPC::CR0;
+    R.second = &PPC::CRRCRegClass;
+  }
+
   return R;
 }
 
@@ -8913,37 +9612,42 @@ void PPCTargetLowering::LowerAsmOperandForConstraint(SDValue Op,
   case 'P': {
     ConstantSDNode *CST = dyn_cast<ConstantSDNode>(Op);
     if (!CST) return; // Must be an immediate to match.
-    unsigned Value = CST->getZExtValue();
+    int64_t Value = CST->getSExtValue();
+    EVT TCVT = MVT::i64; // All constants taken to be 64 bits so that negative
+                         // numbers are printed as such.
     switch (Letter) {
     default: llvm_unreachable("Unknown constraint letter!");
     case 'I':  // "I" is a signed 16-bit constant.
-      if ((short)Value == (int)Value)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+      if (isInt<16>(Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'J':  // "J" is a constant with only the high-order 16 bits nonzero.
+      if (isShiftedUInt<16, 16>(Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
+      break;
     case 'L':  // "L" is a signed 16-bit constant shifted left 16 bits.
-      if ((short)Value == 0)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+      if (isShiftedInt<16, 16>(Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'K':  // "K" is a constant with only the low-order 16 bits nonzero.
-      if ((Value >> 16) == 0)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+      if (isUInt<16>(Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'M':  // "M" is a constant that is greater than 31.
       if (Value > 31)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'N':  // "N" is a positive constant that is an exact power of two.
-      if ((int)Value > 0 && isPowerOf2_32(Value))
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+      if (Value > 0 && isPowerOf2_64(Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'O':  // "O" is the constant zero.
       if (Value == 0)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     case 'P':  // "P" is a constant whose negation is a signed 16-bit constant.
-      if ((short)-Value == (int)-Value)
-        Result = DAG.getTargetConstant(Value, Op.getValueType());
+      if (isInt<16>(-Value))
+        Result = DAG.getTargetConstant(Value, TCVT);
       break;
     }
     break;
@@ -9229,6 +9933,31 @@ bool PPCTargetLowering::isTruncateFree(EVT VT1, EVT VT2) const {
   return NumBits1 == 64 && NumBits2 == 32;
 }
 
+bool PPCTargetLowering::isZExtFree(SDValue Val, EVT VT2) const {
+  // Generally speaking, zexts are not free, but they are free when they can be
+  // folded with other operations.
+  if (LoadSDNode *LD = dyn_cast<LoadSDNode>(Val)) {
+    EVT MemVT = LD->getMemoryVT();
+    if ((MemVT == MVT::i1 || MemVT == MVT::i8 || MemVT == MVT::i16 ||
+         (Subtarget.isPPC64() && MemVT == MVT::i32)) &&
+        (LD->getExtensionType() == ISD::NON_EXTLOAD ||
+         LD->getExtensionType() == ISD::ZEXTLOAD))
+      return true;
+  }
+
+  // FIXME: Add other cases...
+  //  - 32-bit shifts with a zext to i64
+  //  - zext after ctlz, bswap, etc.
+  //  - zext after and by a constant mask
+
+  return TargetLowering::isZExtFree(Val, VT2);
+}
+
+bool PPCTargetLowering::isFPExtFree(EVT VT) const {
+  assert(VT.isFloatingPoint());
+  return true;
+}
+
 bool PPCTargetLowering::isLegalICmpImmediate(int64_t Imm) const {
   return isInt<16>(Imm) || isUInt<16>(Imm);
 }
@@ -9287,6 +10016,19 @@ bool PPCTargetLowering::isFMAFasterThanFMulAndFAdd(EVT VT) const {
   }
 
   return false;
+}
+
+const MCPhysReg *
+PPCTargetLowering::getScratchRegisters(CallingConv::ID) const {
+  // LR is a callee-save register, but we must treat it as clobbered by any call
+  // site. Hence we include LR in the scratch registers, which are in turn added
+  // as implicit-defs for stackmaps and patchpoints. The same reasoning applies
+  // to CTR, which is used by any indirect call.
+  static const MCPhysReg ScratchRegs[] = {
+    PPC::X12, PPC::LR8, PPC::CTR8, 0
+  };
+
+  return ScratchRegs;
 }
 
 bool

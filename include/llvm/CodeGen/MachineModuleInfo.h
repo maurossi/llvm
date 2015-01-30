@@ -46,6 +46,13 @@
 
 namespace llvm {
 
+/// Different personality functions used by a function.
+enum class EHPersonality {
+  None,     /// No exception handling
+  Itanium,  /// An Itanium C++ EH personality like __gxx_personality_seh0
+  Win64SEH, /// x86_64 SEH, uses __C_specific_handler
+};
+
 //===----------------------------------------------------------------------===//
 // Forward declarations.
 class Constant;
@@ -66,6 +73,7 @@ struct LandingPadInfo {
   MachineBasicBlock *LandingPadBlock;    // Landing pad block.
   SmallVector<MCSymbol*, 1> BeginLabels; // Labels prior to invoke.
   SmallVector<MCSymbol*, 1> EndLabels;   // Labels after invoke.
+  SmallVector<MCSymbol*, 1> ClauseLabels; // Labels for each clause.
   MCSymbol *LandingPadLabel;             // Label at beginning of landing pad.
   const Function *Personality;           // Personality function.
   std::vector<int> TypeIds;              // List of type ids (filters negative)
@@ -161,14 +169,28 @@ class MachineModuleInfo : public ImmutablePass {
   /// to _fltused on Windows targets.
   bool UsesVAFloatArgument;
 
+  /// UsesMorestackAddr - True if the module calls the __morestack function
+  /// indirectly, as is required under the large code model on x86. This is used
+  /// to emit a definition of a symbol, __morestack_addr, containing the
+  /// address. See comments in lib/Target/X86/X86FrameLowering.cpp for more
+  /// details.
+  bool UsesMorestackAddr;
+
+  EHPersonality PersonalityTypeCache;
+
+  EHPersonality getPersonalityTypeSlow();
+
 public:
   static char ID; // Pass identification, replacement for typeid
 
   struct VariableDbgInfo {
-    TrackingVH<MDNode> Var;
-    TrackingVH<MDNode> Expr;
+    TrackingMDNodeRef Var;
+    TrackingMDNodeRef Expr;
     unsigned Slot;
     DebugLoc Loc;
+
+    VariableDbgInfo(MDNode *Var, MDNode *Expr, unsigned Slot, DebugLoc Loc)
+        : Var(Var), Expr(Expr), Slot(Slot), Loc(Loc) {}
   };
   typedef SmallVector<VariableDbgInfo, 4> VariableDbgInfoMapTy;
   VariableDbgInfoMapTy VariableDbgInfos;
@@ -229,6 +251,14 @@ public:
 
   void setUsesVAFloatArgument(bool b) {
     UsesVAFloatArgument = b;
+  }
+
+  bool usesMorestackAddr() const {
+    return UsesMorestackAddr;
+  }
+
+  void setUsesMorestackAddr(bool b) {
+    UsesMorestackAddr = b;
   }
 
   /// \brief Returns a reference to a list of cfi instructions in the current
@@ -312,6 +342,11 @@ public:
   ///
   void addCleanup(MachineBasicBlock *LandingPad);
 
+  /// Add a clause for a landing pad. Returns a new label for the clause. This
+  /// is used by EH schemes that have more than one landing pad. In this case,
+  /// each clause gets its own basic block.
+  MCSymbol *addClauseForLandingPad(MachineBasicBlock *LandingPad);
+
   /// getTypeIDFor - Return the type id for the specified typeinfo.  This is
   /// function wide.
   unsigned getTypeIDFor(const GlobalValue *TI);
@@ -389,12 +424,18 @@ public:
   /// of one is required to emit exception handling info.
   const Function *getPersonality() const;
 
+  /// Classify the personality function amongst known EH styles.
+  EHPersonality getPersonalityType() {
+    if (PersonalityTypeCache != EHPersonality::None)
+      return PersonalityTypeCache;
+    return getPersonalityTypeSlow();
+  }
+
   /// setVariableDbgInfo - Collect information used to emit debugging
   /// information of a variable.
   void setVariableDbgInfo(MDNode *Var, MDNode *Expr, unsigned Slot,
                           DebugLoc Loc) {
-    VariableDbgInfo Info = {Var, Expr, Slot, Loc};
-    VariableDbgInfos.push_back(std::move(Info));
+    VariableDbgInfos.emplace_back(Var, Expr, Slot, Loc);
   }
 
   VariableDbgInfoMapTy &getVariableDbgInfo() { return VariableDbgInfos; }

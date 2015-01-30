@@ -507,6 +507,8 @@ public:
 
   bool isFMAFasterThanFMulAndFAdd(EVT) const override { return true; }
 
+  bool enableAggressiveFMAFusion(EVT VT) const override { return true; }
+
 private:
   const NVPTXSubtarget &nvptxSubtarget; // cache the subtarget here
 
@@ -526,6 +528,8 @@ private:
 
   SDValue LowerShiftRightParts(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerShiftLeftParts(SDValue Op, SelectionDAG &DAG) const;
+
+  SDValue LowerSelect(SDValue Op, SelectionDAG &DAG) const;
 
   void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
                           SelectionDAG &DAG) const override;

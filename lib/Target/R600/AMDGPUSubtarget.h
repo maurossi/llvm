@@ -20,7 +20,6 @@
 #include "AMDGPUIntrinsicInfo.h"
 #include "AMDGPUSubtarget.h"
 #include "R600ISelLowering.h"
-#include "llvm/IR/DataLayout.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Target/TargetSubtargetInfo.h"
@@ -29,6 +28,8 @@
 #include "AMDGPUGenSubtargetInfo.inc"
 
 namespace llvm {
+
+class SIMachineFunctionInfo;
 
 class AMDGPUSubtarget : public AMDGPUGenSubtargetInfo {
 
@@ -39,7 +40,8 @@ public:
     EVERGREEN,
     NORTHERN_ISLANDS,
     SOUTHERN_ISLANDS,
-    SEA_ISLANDS
+    SEA_ISLANDS,
+    VOLCANIC_ISLANDS,
   };
 
 private:
@@ -62,16 +64,18 @@ private:
   unsigned WavefrontSize;
   bool CFALUBug;
   int LocalMemorySize;
+  bool EnableVGPRSpilling;
 
-  const DataLayout DL;
   AMDGPUFrameLowering FrameLowering;
   std::unique_ptr<AMDGPUTargetLowering> TLInfo;
   std::unique_ptr<AMDGPUInstrInfo> InstrInfo;
   InstrItineraryData InstrItins;
+  Triple TargetTriple;
 
 public:
   AMDGPUSubtarget(StringRef TT, StringRef CPU, StringRef FS, TargetMachine &TM);
-  AMDGPUSubtarget &initializeSubtargetDependencies(StringRef GPU, StringRef FS);
+  AMDGPUSubtarget &initializeSubtargetDependencies(StringRef TT, StringRef GPU,
+                                                   StringRef FS);
 
   const AMDGPUFrameLowering *getFrameLowering() const override {
     return &FrameLowering;
@@ -85,7 +89,6 @@ public:
   AMDGPUTargetLowering *getTargetLowering() const override {
     return TLInfo.get();
   }
-  const DataLayout *getDataLayout() const override { return &DL; }
   const InstrItineraryData *getInstrItineraryData() const override {
     return &InstrItins;
   }
@@ -198,6 +201,8 @@ public:
     return LocalMemorySize;
   }
 
+  unsigned getAmdKernelCodeChipID() const;
+
   bool enableMachineScheduler() const override {
     return getGeneration() <= NORTHERN_ISLANDS;
   }
@@ -217,6 +222,10 @@ public:
   bool r600ALUEncoding() const {
     return R600ALUInst;
   }
+  bool isAmdHsaOS() const {
+    return TargetTriple.getOS() == Triple::AMDHSA;
+  }
+  bool isVGPRSpillingEnabled(const SIMachineFunctionInfo *MFI) const;
 };
 
 } // End namespace llvm

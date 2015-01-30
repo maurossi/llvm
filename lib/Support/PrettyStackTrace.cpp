@@ -16,9 +16,7 @@
 #include "llvm-c/Core.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Config/config.h"     // Get autoconf configuration settings
-#include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Signals.h"
-#include "llvm/Support/ThreadLocal.h"
 #include "llvm/Support/Watchdog.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -28,7 +26,31 @@
 
 using namespace llvm;
 
-static ManagedStatic<sys::ThreadLocal<const PrettyStackTraceEntry> > PrettyStackTraceHead;
+// We need a thread local pointer to manage the stack of our stack trace
+// objects, but we *really* cannot tolerate destructors running and do not want
+// to pay any overhead of synchronizing. As a consequence, we use a raw
+// thread-local variable. Some day, we should be able to use a limited subset
+// of C++11's thread_local, but compilers aren't up for it today.
+// FIXME: This should be moved to a Compiler.h abstraction.
+#ifdef _MSC_VER
+// MSVC supports this with a __declspec.
+#define LLVM_THREAD_LOCAL __declspec(thread)
+#else
+// Clang, GCC, and all compatible compilers tend to use __thread. But we need
+// to work aronud a bug in the combination of Clang's compilation of
+// local-dynamic TLS and the ppc64 linker relocations which we do by forcing to
+// global-dynamic (called in most documents "general dynamic").
+// FIXME: Make this conditional on the Clang version once this is fixed in
+// top-of-tree.
+#if defined(__clang__) && defined(__powerpc64__)
+#define LLVM_THREAD_LOCAL __thread __attribute__((tls_model("global-dynamic")))
+#else
+#define LLVM_THREAD_LOCAL __thread
+#endif
+#endif
+
+static LLVM_THREAD_LOCAL const PrettyStackTraceEntry *PrettyStackTraceHead =
+    nullptr;
 
 static unsigned PrintStack(const PrettyStackTraceEntry *Entry, raw_ostream &OS){
   unsigned NextID = 0;
@@ -46,12 +68,12 @@ static unsigned PrintStack(const PrettyStackTraceEntry *Entry, raw_ostream &OS){
 /// PrintCurStackTrace - Print the current stack trace to the specified stream.
 static void PrintCurStackTrace(raw_ostream &OS) {
   // Don't print an empty trace.
-  if (!PrettyStackTraceHead->get()) return;
+  if (!PrettyStackTraceHead) return;
   
   // If there are pretty stack frames registered, walk and emit them.
   OS << "Stack dump:\n";
   
-  PrintStack(PrettyStackTraceHead->get(), OS);
+  PrintStack(PrettyStackTraceHead, OS);
   OS.flush();
 }
 
@@ -101,26 +123,14 @@ static void CrashHandler(void *) {
 
 PrettyStackTraceEntry::PrettyStackTraceEntry() {
   // Link ourselves.
-  NextEntry = PrettyStackTraceHead->get();
-  PrettyStackTraceHead->set(this);
+  NextEntry = PrettyStackTraceHead;
+  PrettyStackTraceHead = this;
 }
 
 PrettyStackTraceEntry::~PrettyStackTraceEntry() {
-  // Do nothing if PrettyStackTraceHead is uninitialized. This can only happen
-  // if a shutdown occurred after we created the PrettyStackTraceEntry. That
-  // does occur in the following idiom:
-  //
-  // PrettyStackTraceProgram X(...);
-  // llvm_shutdown_obj Y;
-  //
-  // Without this check, we may end up removing ourselves from the stack trace
-  // after PrettyStackTraceHead has already been destroyed.
-  if (!PrettyStackTraceHead.isConstructed())
-    return;
-  
-  assert(PrettyStackTraceHead->get() == this &&
+  assert(PrettyStackTraceHead == this &&
          "Pretty stack trace entry destruction is out of order");
-  PrettyStackTraceHead->set(getNextEntry());
+  PrettyStackTraceHead = getNextEntry();
 }
 
 void PrettyStackTraceString::print(raw_ostream &OS) const {

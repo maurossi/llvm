@@ -866,6 +866,12 @@ public:
   SDValue getIndexedStore(SDValue OrigStoe, SDLoc dl, SDValue Base,
                            SDValue Offset, ISD::MemIndexedMode AM);
 
+  SDValue getMaskedLoad(EVT VT, SDLoc dl, SDValue Chain, SDValue Ptr,
+                        SDValue Mask, SDValue Src0, EVT MemVT,
+                        MachineMemOperand *MMO, ISD::LoadExtType);
+  SDValue getMaskedStore(SDValue Chain, SDLoc dl, SDValue Val,
+                         SDValue Ptr, SDValue Mask, EVT MemVT,
+                         MachineMemOperand *MMO, bool IsTrunc);
   /// getSrcValue - Construct a node to track a Value* through the backend.
   SDValue getSrcValue(const Value *v);
 

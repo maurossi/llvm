@@ -47,7 +47,7 @@ set(CMAKE_MODULE_PATH
   )
 
 set(LLVM_VERSION_MAJOR 3)
-set(LLVM_VERSION_MINOR 6)
+set(LLVM_VERSION_MINOR 7)
 set(LLVM_VERSION_PATCH 0)
 
 if (NOT PACKAGE_VERSION)
@@ -132,9 +132,11 @@ endif()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
 
+set(LLVM_LIBDIR_SUFFIX "" CACHE STRING "Define suffix of library directory name (32/64)" )
+
 # They are used as destination of target generators.
 set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
-set(LLVM_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib)
+set(LLVM_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib${LLVM_LIBDIR_SUFFIX})
 if(WIN32 OR CYGWIN)
   # DLL platform -- put DLLs into bin.
   set(LLVM_SHLIB_OUTPUT_INTDIR ${LLVM_RUNTIME_OUTPUT_INTDIR})
@@ -151,7 +153,6 @@ set(LLVM_BINARY_DIR       ${CMAKE_CURRENT_BINARY_DIR}  ) # --prefix
 
 set(LLVM_EXAMPLES_BINARY_DIR ${LLVM_BINARY_DIR}/examples)
 set(LLVM_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
-set(LLVM_LIBDIR_SUFFIX "" CACHE STRING "Define suffix of library directory name (32/64)" )
 
 set(LLVM_ALL_TARGETS
   AArch64
@@ -324,6 +325,10 @@ option (LLVM_BUILD_EXTERNAL_COMPILER_RT
   "Build compiler-rt as an external project." OFF)
 
 option(LLVM_BUILD_LLVM_DYLIB "Build libllvm dynamic library" OFF)
+option(LLVM_DISABLE_LLVM_DYLIB_ATEXIT "Disable llvm-shlib's atexit destructors." ON)
+if(LLVM_DISABLE_LLVM_DYLIB_ATEXIT)
+  set(DISABLE_LLVM_DYLIB_ATEXIT 1)
+endif()
 
 # All options referred to from HandleLLVMOptions have to be specified
 # BEFORE this include, otherwise options will not be correctly set on
@@ -339,13 +344,19 @@ set(TARGET_TRIPLE "${LLVM_DEFAULT_TARGET_TRIPLE}")
 include(HandleLLVMOptions)
 
 # Verify that we can find a Python 2 interpreter.  Python 3 is unsupported.
-set(Python_ADDITIONAL_VERSIONS 2.7 2.6 2.5)
+# FIXME: We should support systems with only Python 3, but that requires work
+# on LLDB.
+set(Python_ADDITIONAL_VERSIONS 2.7)
 include(FindPythonInterp)
 if( NOT PYTHONINTERP_FOUND )
   message(FATAL_ERROR
 "Unable to find Python interpreter, required for builds and testing.
 
 Please install Python or specify the PYTHON_EXECUTABLE CMake variable.")
+endif()
+
+if( ${PYTHON_VERSION_STRING} VERSION_LESS 2.7 )
+  message(FATAL_ERROR "Python 2.7 or newer is required")
 endif()
 
 ######
@@ -473,8 +484,8 @@ configure_file(
 
 # They are not referenced. See set_output_directory().
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${LLVM_BINARY_DIR}/bin )
-set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LLVM_BINARY_DIR}/lib )
-set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LLVM_BINARY_DIR}/lib )
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LLVM_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
+set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LLVM_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
 
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 if (APPLE)
@@ -482,7 +493,7 @@ if (APPLE)
   set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
 else(UNIX)
   if(NOT DEFINED CMAKE_INSTALL_RPATH)
-    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib${LLVM_LIBDIR_SUFFIX}")
     if (${CMAKE_SYSTEM_NAME} MATCHES FreeBSD)
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,origin")
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
@@ -560,6 +571,12 @@ endif()
 if(LLVM_INCLUDE_TESTS)
   add_subdirectory(utils/unittest)
 endif()
+
+foreach( binding ${LLVM_BINDINGS_LIST} )
+  if( EXISTS "${LLVM_MAIN_SRC_DIR}/bindings/${binding}/CMakeLists.txt" )
+    add_subdirectory(bindings/${binding})
+  endif()
+endforeach()
 
 add_subdirectory(projects)
 

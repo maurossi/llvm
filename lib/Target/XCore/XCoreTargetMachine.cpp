@@ -28,6 +28,7 @@ XCoreTargetMachine::XCoreTargetMachine(const Target &T, StringRef TT,
                                        CodeGenOpt::Level OL)
     : LLVMTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL),
       TLOF(make_unique<XCoreTargetObjectFile>()),
+      DL("e-m:e-p:32:32-i1:8:32-i8:8:32-i16:16:32-i64:32-f64:32-a:0:32-n32"),
       Subtarget(TT, CPU, FS, *this) {
   initAsmInfo();
 }
@@ -48,7 +49,7 @@ public:
   void addIRPasses() override;
   bool addPreISel() override;
   bool addInstSelector() override;
-  bool addPreEmitPass() override;
+  void addPreEmitPass() override;
 };
 } // namespace
 
@@ -72,9 +73,8 @@ bool XCorePassConfig::addInstSelector() {
   return false;
 }
 
-bool XCorePassConfig::addPreEmitPass() {
-  addPass(createXCoreFrameToArgsOffsetEliminationPass());
-  return false;
+void XCorePassConfig::addPreEmitPass() {
+  addPass(createXCoreFrameToArgsOffsetEliminationPass(), false);
 }
 
 // Force static initialization.

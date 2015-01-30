@@ -378,6 +378,17 @@ namespace llvm {
       FNMSUB,
       FMADDSUB,
       FMSUBADD,
+      // FMA with rounding mode
+      FMADD_RND,
+      FNMADD_RND,
+      FMSUB_RND,
+      FNMSUB_RND,
+      FMADDSUB_RND,
+      FMSUBADD_RND,     
+
+      // Compress and expand
+      COMPRESS,
+      EXPAND,
 
       // Save xmm argument registers to the stack, according to %al. An operator
       // is needed so that this can be expanded with control flow.
@@ -629,6 +640,10 @@ namespace llvm {
     /// This method returns the name of a target specific DAG node.
     const char *getTargetNodeName(unsigned Opcode) const override;
 
+    bool isCheapToSpeculateCttz() const override;
+
+    bool isCheapToSpeculateCtlz() const override;
+
     /// Return the value type to use for ISD::SETCC.
     EVT getSetCCResultType(LLVMContext &Context, EVT VT) const override;
 
@@ -762,6 +777,11 @@ namespace llvm {
       return !X86ScalarSSEf64 || VT == MVT::f80;
     }
 
+    /// Return true if we believe it is correct and profitable to reduce the
+    /// load node to a smaller type.
+    bool shouldReduceLoadWidth(SDNode *Load, ISD::LoadExtType ExtTy,
+                               EVT NewVT) const override;
+
     const X86Subtarget* getSubtarget() const {
       return Subtarget;
     }
@@ -786,6 +806,10 @@ namespace llvm {
     /// to just the constant itself.
     bool shouldConvertConstantLoadToIntImm(const APInt &Imm,
                                            Type *Ty) const override;
+
+    /// Return true if EXTRACT_SUBVECTOR is cheap for this result type
+    /// with this index.
+    bool isExtractSubvectorCheap(EVT ResVT, unsigned Index) const override;
 
     /// Intel processors have a unified instruction and data cache
     const char * getClearCacheBuiltinName() const override {

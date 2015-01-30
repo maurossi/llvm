@@ -14,6 +14,7 @@
 #ifndef LLVM_LIB_CODEGEN_SELECTIONDAG_SELECTIONDAGBUILDER_H
 #define LLVM_LIB_CODEGEN_SELECTIONDAG_SELECTIONDAGBUILDER_H
 
+#include "StatepointLowering.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/CodeGen/SelectionDAG.h"
@@ -115,6 +116,10 @@ public:
   /// get simple disambiguation between loads without worrying about alias
   /// analysis.
   SmallVector<SDValue, 8> PendingLoads;
+
+  /// State used while lowering a statepoint sequence (gc_statepoint,
+  /// gc_relocate, and gc_result).  See StatepointLowering.hpp/cpp for details.
+  StatepointLoweringState StatepointLowering;
 private:
 
   /// PendingExports - CopyToReg nodes that copy values to virtual registers
@@ -417,8 +422,8 @@ private:
       assert(!shouldEmitStackProtector() && "Stack Protector Descriptor is "
              "already initialized!");
       ParentMBB = MBB;
-      SuccessMBB = AddSuccessorMBB(BB, MBB);
-      FailureMBB = AddSuccessorMBB(BB, MBB, FailureMBB);
+      SuccessMBB = AddSuccessorMBB(BB, MBB, /* IsLikely */ true);
+      FailureMBB = AddSuccessorMBB(BB, MBB, /* IsLikely */ false, FailureMBB);
       if (!Guard)
         Guard = StackProtCheckCall.getArgOperand(0);
     }
@@ -487,9 +492,10 @@ private:
 
     /// Add a successor machine basic block to ParentMBB. If the successor mbb
     /// has not been created yet (i.e. if SuccMBB = 0), then the machine basic
-    /// block will be created.
+    /// block will be created. Assign a large weight if IsLikely is true.
     MachineBasicBlock *AddSuccessorMBB(const BasicBlock *BB,
                                        MachineBasicBlock *ParentMBB,
+                                       bool IsLikely,
                                        MachineBasicBlock *SuccMBB = nullptr);
   };
 
@@ -612,6 +618,13 @@ public:
     N = NewN;
   }
 
+  void removeValue(const Value *V) {
+    // This is to support hack in lowerCallFromStatepoint
+    // Should be removed when hack is resolved
+    if (NodeMap.count(V))
+      NodeMap.erase(V);
+  }
+
   void setUnusedArgValue(const Value *V, SDValue NewN) {
     SDValue &N = UnusedArgNodeMap[V];
     assert(!N.getNode() && "Already set a value for this node!");
@@ -640,7 +653,8 @@ public:
           unsigned NumArgs,
           SDValue Callee,
           bool UseVoidTy = false,
-          MachineBasicBlock *LandingPad = nullptr);
+          MachineBasicBlock *LandingPad = nullptr,
+          bool IsPatchPoint = false);
 
   /// UpdateSplitBlock - When an MBB was split during scheduling, update the
   /// references that need to refer to the last resulting block.
@@ -673,6 +687,8 @@ private:
                                CaseRecVector& WorkList,
                                const Value* SV,
                                MachineBasicBlock *SwitchBB);
+  void splitSwitchCase(CaseRec &CR, CaseItr Pivot, CaseRecVector &WorkList,
+                       const Value *SV, MachineBasicBlock *SwitchBB);
   bool handleBitTestsSwitchCase(CaseRec& CR,
                                 CaseRecVector& WorkList,
                                 const Value* SV,
@@ -699,6 +715,8 @@ public:
   void visitJumpTable(JumpTable &JT);
   void visitJumpTableHeader(JumpTable &JT, JumpTableHeader &JTH,
                             MachineBasicBlock *SwitchBB);
+  unsigned visitLandingPadClauseBB(GlobalValue *ClauseGV,
+                                   MachineBasicBlock *LPadMBB);
 
 private:
   // These all get lowered before this pass.
@@ -756,6 +774,8 @@ private:
   void visitAlloca(const AllocaInst &I);
   void visitLoad(const LoadInst &I);
   void visitStore(const StoreInst &I);
+  void visitMaskedLoad(const CallInst &I);
+  void visitMaskedStore(const CallInst &I);
   void visitAtomicCmpXchg(const AtomicCmpXchgInst &I);
   void visitAtomicRMW(const AtomicRMWInst &I);
   void visitFence(const FenceInst &I);
@@ -783,6 +803,11 @@ private:
   void visitStackmap(const CallInst &I);
   void visitPatchpoint(ImmutableCallSite CS,
                        MachineBasicBlock *LandingPad = nullptr);
+
+  // These three are implemented in StatepointLowering.cpp
+  void visitStatepoint(const CallInst &I);
+  void visitGCRelocate(const CallInst &I);
+  void visitGCResult(const CallInst &I);
 
   void visitUserOp1(const Instruction &I) {
     llvm_unreachable("UserOp1 should not exist at instruction selection time!");

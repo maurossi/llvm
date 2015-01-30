@@ -79,8 +79,6 @@ if(WIN32)
     set(LLVM_ON_WIN32 1)
     set(LLVM_ON_UNIX 0)
   endif(CYGWIN)
-  # Maximum path length is 160 for non-unicode paths
-  set(MAXPATHLEN 160)
 else(WIN32)
   if(UNIX)
     set(LLVM_ON_WIN32 0)
@@ -90,8 +88,6 @@ else(WIN32)
     else(APPLE)
       set(LLVM_HAVE_LINK_VERSION_SCRIPT 1)
     endif(APPLE)
-    # FIXME: Maximum path length is currently set to 'safe' fixed value
-    set(MAXPATHLEN 2024)
   else(UNIX)
     MESSAGE(SEND_ERROR "Unable to determine platform")
   endif(UNIX)
@@ -107,6 +103,15 @@ if(APPLE)
   # Darwin-specific linker flags for loadable modules.
   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-flat_namespace -Wl,-undefined -Wl,suppress")
 endif()
+
+# Pass -Wl,-z,defs. This makes sure all symbols are defined. Otherwise a DSO
+# build might work on ELF but fail on MachO/COFF.
+if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR WIN32 OR
+        ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD") AND
+   NOT LLVM_USE_SANITIZER)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,defs")
+endif()
+
 
 function(append value)
   foreach(variable ${ARGN})
@@ -404,6 +409,9 @@ if(LLVM_USE_SANITIZER)
     endif()
   else()
     message(WARNING "LLVM_USE_SANITIZER is not supported on this platform.")
+  endif()
+  if (LLVM_USE_SANITIZE_COVERAGE)
+    append("-fsanitize-coverage=4" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
   endif()
 endif()
 

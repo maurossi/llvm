@@ -14,17 +14,17 @@
 #include "llvm/Object/IRObjectFile.h"
 #include "RecordStreamer.h"
 #include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/GVMaterializer.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Mangler.h"
 #include "llvm/IR/Module.h"
-#include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCTargetAsmParser.h"
 #include "llvm/MC/MCParser/MCAsmParser.h"
+#include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/MC/MCTargetAsmParser.h"
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
@@ -116,7 +116,7 @@ IRObjectFile::IRObjectFile(MemoryBufferRef Object, std::unique_ptr<Module> Mod)
 IRObjectFile::~IRObjectFile() {
  }
 
-static const GlobalValue *getGV(DataRefImpl &Symb) {
+static GlobalValue *getGV(DataRefImpl &Symb) {
   if ((Symb.p & 3) == 3)
     return nullptr;
 
@@ -181,6 +181,8 @@ void IRObjectFile::moveSymbolNext(DataRefImpl &Symb) const {
     Res = (Index << 2) | 3;
     break;
   }
+  default:
+    llvm_unreachable("unreachable case");
   }
 
   Symb.p = Res;
@@ -235,10 +237,9 @@ uint32_t IRObjectFile::getSymbolFlags(DataRefImpl Symb) const {
   return Res;
 }
 
-const GlobalValue *IRObjectFile::getSymbolGV(DataRefImpl Symb) const {
-  const GlobalValue *GV = getGV(Symb);
-  return GV;
-}
+GlobalValue *IRObjectFile::getSymbolGV(DataRefImpl Symb) { return getGV(Symb); }
+
+std::unique_ptr<Module> IRObjectFile::takeModule() { return std::move(M); }
 
 basic_symbol_iterator IRObjectFile::symbol_begin_impl() const {
   Module::const_iterator I = M->begin();
@@ -291,8 +292,8 @@ ErrorOr<MemoryBufferRef> IRObjectFile::findBitcodeInMemBuffer(MemoryBufferRef Ob
 }
 
 ErrorOr<std::unique_ptr<IRObjectFile>>
-llvm::object::IRObjectFile::createIRObjectFile(MemoryBufferRef Object,
-                                               LLVMContext &Context) {
+llvm::object::IRObjectFile::create(MemoryBufferRef Object,
+                                   LLVMContext &Context) {
   ErrorOr<MemoryBufferRef> BCOrErr = findBitcodeInMemBuffer(Object);
   if (!BCOrErr)
     return BCOrErr.getError();

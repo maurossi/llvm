@@ -225,7 +225,7 @@ void BasicTTI::getUnrollingPreferences(const Function *F, Loop *L,
   // until someone finds a case where it matters in practice.
 
   unsigned MaxOps;
-  const TargetSubtargetInfo *ST = &TM->getSubtarget<TargetSubtargetInfo>(F);
+  const TargetSubtargetInfo *ST = TM->getSubtargetImpl(*F);
   if (PartialUnrollingThreshold.getNumOccurrences() > 0)
     MaxOps = PartialUnrollingThreshold;
   else if (ST->getSchedModel().LoopMicroOpBufferSize > 0)
@@ -519,7 +519,7 @@ unsigned BasicTTI::getMemoryOpCost(unsigned Opcode, Type *Src,
       if (Opcode == Instruction::Store)
         LA = getTLI()->getTruncStoreAction(LT.second, MemVT.getSimpleVT());
       else
-        LA = getTLI()->getLoadExtAction(ISD::EXTLOAD, MemVT.getSimpleVT());
+        LA = getTLI()->getLoadExtAction(ISD::EXTLOAD, LT.second, MemVT);
     }
 
     if (LA != TargetLowering::Legal && LA != TargetLowering::Custom) {
@@ -582,6 +582,10 @@ unsigned BasicTTI::getIntrinsicInstrCost(Intrinsic::ID IID, Type *RetTy,
   case Intrinsic::lifetime_start:
   case Intrinsic::lifetime_end:
     return 0;
+  case Intrinsic::masked_store:
+    return TopTTI->getMaskedMemoryOpCost(Instruction::Store, Tys[0], 0, 0);
+  case Intrinsic::masked_load:
+    return TopTTI->getMaskedMemoryOpCost(Instruction::Load, RetTy, 0, 0);
   }
 
   const TargetLoweringBase *TLI = getTLI();

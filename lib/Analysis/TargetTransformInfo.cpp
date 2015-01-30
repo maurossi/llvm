@@ -101,6 +101,17 @@ bool TargetTransformInfo::isLegalICmpImmediate(int64_t Imm) const {
   return PrevTTI->isLegalICmpImmediate(Imm);
 }
 
+bool TargetTransformInfo::isLegalMaskedLoad(Type *DataType,
+                                            int Consecutive) const {
+  return false;
+}
+
+bool TargetTransformInfo::isLegalMaskedStore(Type *DataType,
+                                             int Consecutive) const {
+  return false;
+}
+
+
 bool TargetTransformInfo::isLegalAddressingMode(Type *Ty, GlobalValue *BaseGV,
                                                 int64_t BaseOffset,
                                                 bool HasBaseReg,
@@ -208,7 +219,13 @@ unsigned TargetTransformInfo::getMemoryOpCost(unsigned Opcode, Type *Src,
                                               unsigned Alignment,
                                               unsigned AddressSpace) const {
   return PrevTTI->getMemoryOpCost(Opcode, Src, Alignment, AddressSpace);
-  ;
+}
+
+unsigned 
+TargetTransformInfo::getMaskedMemoryOpCost(unsigned Opcode, Type *Src,
+                                              unsigned Alignment,
+                                              unsigned AddressSpace) const {
+  return PrevTTI->getMaskedMemoryOpCost(Opcode, Src, Alignment, AddressSpace);
 }
 
 unsigned
@@ -235,6 +252,16 @@ unsigned TargetTransformInfo::getReductionCost(unsigned Opcode, Type *Ty,
 unsigned TargetTransformInfo::getCostOfKeepingLiveOverCall(ArrayRef<Type*> Tys)
   const {
   return PrevTTI->getCostOfKeepingLiveOverCall(Tys);
+}
+
+Value *TargetTransformInfo::getOrCreateResultFromMemIntrinsic(
+    IntrinsicInst *Inst, Type *ExpectedType) const {
+  return PrevTTI->getOrCreateResultFromMemIntrinsic(Inst, ExpectedType);
+}
+
+bool TargetTransformInfo::getTgtMemIntrinsic(IntrinsicInst *Inst,
+                                             MemIntrinsicInfo &Info) const {
+  return PrevTTI->getTgtMemIntrinsic(Inst, Info);
 }
 
 namespace {
@@ -403,6 +430,11 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     case Intrinsic::objectsize:
     case Intrinsic::ptr_annotation:
     case Intrinsic::var_annotation:
+    case Intrinsic::experimental_gc_result_int:
+    case Intrinsic::experimental_gc_result_float:
+    case Intrinsic::experimental_gc_result_ptr:
+    case Intrinsic::experimental_gc_result:
+    case Intrinsic::experimental_gc_relocate:
       // These intrinsics don't actually represent code after lowering.
       return TCC_Free;
     }
@@ -608,6 +640,11 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     return 1;
   }
 
+  unsigned getMaskedMemoryOpCost(unsigned Opcode, Type *Src, unsigned Alignment,
+                           unsigned AddressSpace) const override {
+    return 1;
+  }
+
   unsigned getIntrinsicInstrCost(Intrinsic::ID ID, Type *RetTy,
                                  ArrayRef<Type*> Tys) const override {
     return 1;
@@ -629,6 +666,15 @@ struct NoTTI final : ImmutablePass, TargetTransformInfo {
     return 0;
   }
 
+  bool getTgtMemIntrinsic(IntrinsicInst *Inst,
+                          MemIntrinsicInfo &Info) const override {
+    return false;
+  }
+
+  Value *getOrCreateResultFromMemIntrinsic(IntrinsicInst *Inst,
+                                           Type *ExpectedType) const override {
+    return nullptr;
+  }
 };
 
 } // end anonymous namespace

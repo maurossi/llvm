@@ -52,8 +52,6 @@ namespace llvm {
       t_EmptyArray,               // No value:  []
       t_Constant,                 // Value in ConstantVal.
       t_InlineAsm,                // Value in StrVal/StrVal2/UIntVal.
-      t_MDNode,                   // Value in MDNodeVal.
-      t_MDString,                 // Value in MDStringVal.
       t_ConstantStruct,           // Value in ConstantStructElts.
       t_PackedConstantStruct      // Value in ConstantStructElts.
     } Kind;
@@ -64,8 +62,6 @@ namespace llvm {
     APSInt APSIntVal;
     APFloat APFloatVal;
     Constant *ConstantVal;
-    MDNode *MDNodeVal;
-    MDString *MDStringVal;
     Constant **ConstantStructElts;
 
     ValID() : Kind(t_LocalID), APFloatVal(0.0) {}
@@ -82,6 +78,31 @@ namespace llvm {
              "Ordering not defined for this ValID kind yet");
       return StrVal < RHS.StrVal;
     }
+  };
+
+  /// Structure to represent an optional metadata field.
+  template <class FieldTy> struct MDFieldImpl {
+    typedef MDFieldImpl ImplTy;
+    FieldTy Val;
+    bool Seen;
+
+    void assign(FieldTy Val) {
+      Seen = true;
+      this->Val = Val;
+    }
+
+    explicit MDFieldImpl(FieldTy Default) : Val(Default), Seen(false) {}
+  };
+  template <class NumTy> struct MDUnsignedField : public MDFieldImpl<NumTy> {
+    typedef typename MDUnsignedField::ImplTy ImplTy;
+    NumTy Max;
+
+    MDUnsignedField(NumTy Default = 0,
+                    NumTy Max = std::numeric_limits<NumTy>::max())
+        : ImplTy(Default), Max(Max) {}
+  };
+  struct MDField : public MDFieldImpl<Metadata *> {
+    MDField() : ImplTy(nullptr) {}
   };
 
   class LLParser {
@@ -106,7 +127,6 @@ namespace llvm {
       SMLoc Loc;
       unsigned MDKind, MDSlot;
     };
-    DenseMap<Instruction*, std::vector<MDRef> > ForwardRefInstMetadata;
 
     SmallVector<Instruction*, 64> InstsWithTBAATag;
 
@@ -115,8 +135,8 @@ namespace llvm {
     StringMap<std::pair<Type*, LocTy> > NamedTypes;
     std::vector<std::pair<Type*, LocTy> > NumberedTypes;
 
-    std::vector<TrackingVH<MDNode> > NumberedMetadata;
-    std::map<unsigned, std::pair<TrackingVH<MDNode>, LocTy> > ForwardRefMDNodes;
+    std::vector<TrackingMDNodeRef> NumberedMetadata;
+    std::map<unsigned, std::pair<TempMDTuple, LocTy>> ForwardRefMDNodes;
 
     // Global Value reference information.
     std::map<std::string, std::pair<GlobalValue*, LocTy> > ForwardRefVals;
@@ -270,14 +290,21 @@ namespace llvm {
     bool ParseNamedMetadata();
     bool ParseMDString(MDString *&Result);
     bool ParseMDNodeID(MDNode *&Result);
-    bool ParseMDNodeID(MDNode *&Result, unsigned &SlotNo);
     bool ParseUnnamedAttrGrp();
     bool ParseFnAttributeValuePairs(AttrBuilder &B,
                                     std::vector<unsigned> &FwdRefAttrGrps,
                                     bool inAttrGrp, LocTy &BuiltinLoc);
 
     // Type Parsing.
-    bool ParseType(Type *&Result, bool AllowVoid = false);
+    bool ParseType(Type *&Result, const Twine &Msg, bool AllowVoid = false);
+    bool ParseType(Type *&Result, bool AllowVoid = false) {
+      return ParseType(Result, "expected type", AllowVoid);
+    }
+    bool ParseType(Type *&Result, const Twine &Msg, LocTy &Loc,
+                   bool AllowVoid = false) {
+      Loc = Lex.getLoc();
+      return ParseType(Result, Msg, AllowVoid);
+    }
     bool ParseType(Type *&Result, LocTy &Loc, bool AllowVoid = false) {
       Loc = Lex.getLoc();
       return ParseType(Result, AllowVoid);
@@ -381,11 +408,26 @@ namespace llvm {
     bool ParseGlobalValue(Type *Ty, Constant *&V);
     bool ParseGlobalTypeAndValue(Constant *&V);
     bool ParseGlobalValueVector(SmallVectorImpl<Constant *> &Elts);
-    bool parseOptionalComdat(Comdat *&C);
-    bool ParseMetadataListValue(ValID &ID, PerFunctionState *PFS);
-    bool ParseMetadataValue(ValID &ID, PerFunctionState *PFS);
-    bool ParseMDNodeVector(SmallVectorImpl<Value*> &, PerFunctionState *PFS);
+    bool parseOptionalComdat(StringRef GlobalName, Comdat *&C);
+    bool ParseMetadataAsValue(Value *&V, PerFunctionState &PFS);
+    bool ParseValueAsMetadata(Metadata *&MD, PerFunctionState *PFS);
+    bool ParseMetadata(Metadata *&MD, PerFunctionState *PFS);
+    bool ParseMDTuple(MDNode *&MD, bool IsDistinct = false);
+    bool ParseMDNode(MDNode *&MD);
+    bool ParseMDNodeTail(MDNode *&MD);
+    bool ParseMDNodeVector(SmallVectorImpl<Metadata *> &MDs);
     bool ParseInstructionMetadata(Instruction *Inst, PerFunctionState *PFS);
+
+    bool ParseMDField(LocTy Loc, StringRef Name,
+                      MDUnsignedField<uint32_t> &Result);
+    bool ParseMDField(LocTy Loc, StringRef Name, MDField &Result);
+    template <class FieldTy> bool ParseMDField(StringRef Name, FieldTy &Result);
+    template <class ParserTy>
+    bool ParseMDFieldsImplBody(ParserTy parseField);
+    template <class ParserTy>
+    bool ParseMDFieldsImpl(ParserTy parseField, LocTy &ClosingLoc);
+    bool ParseSpecializedMDNode(MDNode *&N, bool IsDistinct = false);
+    bool ParseMDLocation(MDNode *&Result, bool IsDistinct);
 
     // Function Parsing.
     struct ArgInfo {

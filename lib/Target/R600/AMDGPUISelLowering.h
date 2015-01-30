@@ -43,12 +43,15 @@ private:
   /// \brief Split a vector store into multiple scalar stores.
   /// \returns The resulting chain.
 
-  SDValue LowerUDIVREM(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFREM(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFCEIL(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFTRUNC(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFRINT(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFNEARBYINT(SDValue Op, SelectionDAG &DAG) const;
+
+  SDValue LowerFROUND32(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerFROUND64(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerFROUND(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerFFLOOR(SDValue Op, SelectionDAG &DAG) const;
 
   SDValue LowerINT_TO_FP64(SDValue Op, SelectionDAG &DAG, bool Signed) const;
@@ -86,6 +89,7 @@ protected:
   SDValue LowerLOAD(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerSTORE(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerSDIVREM(SDValue Op, SelectionDAG &DAG) const;
+  SDValue LowerUDIVREM(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerDIVREM24(SDValue Op, SelectionDAG &DAG, bool sign) const;
   void LowerUDIVREM64(SDValue Op, SelectionDAG &DAG,
                                     SmallVectorImpl<SDValue> &Results) const;
@@ -124,8 +128,14 @@ public:
 
   bool isFPImmLegal(const APFloat &Imm, EVT VT) const override;
   bool ShouldShrinkFPConstant(EVT VT) const override;
+  bool shouldReduceLoadWidth(SDNode *Load,
+                             ISD::LoadExtType ExtType,
+                             EVT ExtVT) const override;
 
   bool isLoadBitCastBeneficial(EVT, EVT) const override;
+  bool isCheapToSpeculateCttz() const override;
+  bool isCheapToSpeculateCtlz() const override;
+
   SDValue LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                       bool isVarArg,
                       const SmallVectorImpl<ISD::OutputArg> &Outs,
@@ -142,14 +152,14 @@ public:
 
   SDValue LowerIntrinsicIABS(SDValue Op, SelectionDAG &DAG) const;
   SDValue LowerIntrinsicLRP(SDValue Op, SelectionDAG &DAG) const;
-  SDValue CombineFMinMax(SDLoc DL,
-                         EVT VT,
-                         SDValue LHS,
-                         SDValue RHS,
-                         SDValue True,
-                         SDValue False,
-                         SDValue CC,
-                         SelectionDAG &DAG) const;
+  SDValue CombineFMinMaxLegacy(SDLoc DL,
+                               EVT VT,
+                               SDValue LHS,
+                               SDValue RHS,
+                               SDValue True,
+                               SDValue False,
+                               SDValue CC,
+                               DAGCombinerInfo &DCI) const;
   SDValue CombineIMinMax(SDLoc DL,
                          EVT VT,
                          SDValue LHS,
@@ -160,6 +170,14 @@ public:
                          SelectionDAG &DAG) const;
 
   const char* getTargetNodeName(unsigned Opcode) const override;
+
+  SDValue getRsqrtEstimate(SDValue Operand,
+                           DAGCombinerInfo &DCI,
+                           unsigned &RefinementSteps,
+                           bool &UseOneConstNR) const override;
+  SDValue getRecipEstimate(SDValue Operand,
+                           DAGCombinerInfo &DCI,
+                           unsigned &RefinementSteps) const override;
 
   virtual SDNode *PostISelFolding(MachineSDNode *N,
                                   SelectionDAG &DAG) const {
@@ -231,6 +249,7 @@ enum {
   RSQ_LEGACY,
   RSQ_CLAMPED,
   LDEXP,
+  FP_CLASS,
   DOT4,
   BFE_U32, // Extract range of bits with zero extension to 32-bits.
   BFE_I32, // Extract range of bits with sign extension to 32-bits.
