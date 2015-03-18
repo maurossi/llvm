@@ -119,7 +119,7 @@ namespace llvm {
 
   /// SimplifyFDivInst - Given operands for an FDiv, see if we can
   /// fold the result.  If not, this returns null.
-  Value *SimplifyFDivInst(Value *LHS, Value *RHS,
+  Value *SimplifyFDivInst(Value *LHS, Value *RHS, FastMathFlags FMF,
                           const DataLayout *TD = nullptr,
                           const TargetLibraryInfo *TLI = nullptr,
                           const DominatorTree *DT = nullptr,
@@ -146,7 +146,7 @@ namespace llvm {
 
   /// SimplifyFRemInst - Given operands for an FRem, see if we can
   /// fold the result.  If not, this returns null.
-  Value *SimplifyFRemInst(Value *LHS, Value *RHS,
+  Value *SimplifyFRemInst(Value *LHS, Value *RHS, FastMathFlags FMF,
                           const DataLayout *TD = nullptr,
                           const TargetLibraryInfo *TLI = nullptr,
                           const DominatorTree *DT = nullptr,
@@ -277,6 +277,17 @@ namespace llvm {
                        const DominatorTree *DT = nullptr,
                        AssumptionCache *AC = nullptr,
                        const Instruction *CxtI = nullptr);
+  /// SimplifyFPBinOp - Given operands for a BinaryOperator, see if we can
+  /// fold the result.  If not, this returns null.
+  /// In contrast to SimplifyBinOp, try to use FastMathFlag when folding the
+  /// result. In case we don't need FastMathFlags, simply fall to SimplifyBinOp.
+  Value *SimplifyFPBinOp(unsigned Opcode, Value *LHS, Value *RHS,
+                         const FastMathFlags &FMF,
+                         const DataLayout *TD = nullptr,
+                         const TargetLibraryInfo *TLI = nullptr,
+                         const DominatorTree *DT = nullptr,
+                         AssumptionCache *AC = nullptr,
+                         const Instruction *CxtI = nullptr);
 
   /// \brief Given a function and iterators over arguments, see if we can fold
   /// the result.

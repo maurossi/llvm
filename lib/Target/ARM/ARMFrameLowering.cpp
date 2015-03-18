@@ -164,9 +164,13 @@ static int sizeOfSPAdjustment(const MachineInstr *MI) {
 static bool WindowsRequiresStackProbe(const MachineFunction &MF,
                                       size_t StackSizeInBytes) {
   const MachineFrameInfo *MFI = MF.getFrameInfo();
-  if (MFI->getStackProtectorIndex() > 0)
-    return StackSizeInBytes >= 4080;
-  return StackSizeInBytes >= 4096;
+  const Function *F = MF.getFunction();
+  unsigned StackProbeSize = (MFI->getStackProtectorIndex() > 0) ? 4080 : 4096;
+  if (F->hasFnAttribute("stack-probe-size"))
+    F->getFnAttribute("stack-probe-size")
+        .getValueAsString()
+        .getAsInteger(0, StackProbeSize);
+  return StackSizeInBytes >= StackProbeSize;
 }
 
 namespace {
@@ -225,7 +229,8 @@ static void emitAligningInstructions(MachineFunction &MF, ARMFunctionInfo *AFI,
                                      DebugLoc DL, const unsigned Reg,
                                      const unsigned Alignment,
                                      const bool MustBeSingleInstruction) {
-  const ARMSubtarget &AST = MF.getTarget().getSubtarget<ARMSubtarget>();
+  const ARMSubtarget &AST =
+      static_cast<const ARMSubtarget &>(MF.getSubtarget());
   const bool CanUseBFC = AST.hasV6T2Ops() || AST.hasV7Ops();
   const unsigned AlignMask = Alignment - 1;
   const unsigned NrBitsToZero = countTrailingZeros(Alignment);
@@ -282,15 +287,12 @@ void ARMFrameLowering::emitPrologue(MachineFunction &MF) const {
   MCContext &Context = MMI.getContext();
   const TargetMachine &TM = MF.getTarget();
   const MCRegisterInfo *MRI = Context.getRegisterInfo();
-  const ARMBaseRegisterInfo *RegInfo = static_cast<const ARMBaseRegisterInfo *>(
-      TM.getSubtargetImpl()->getRegisterInfo());
-  const ARMBaseInstrInfo &TII = *static_cast<const ARMBaseInstrInfo *>(
-                                    TM.getSubtargetImpl()->getInstrInfo());
+  const ARMBaseRegisterInfo *RegInfo = STI.getRegisterInfo();
+  const ARMBaseInstrInfo &TII = *STI.getInstrInfo();
   assert(!AFI->isThumb1OnlyFunction() &&
          "This emitPrologue does not support Thumb1!");
   bool isARM = !AFI->isThumbFunction();
-  unsigned Align =
-      TM.getSubtargetImpl()->getFrameLowering()->getStackAlignment();
+  unsigned Align = STI.getFrameLowering()->getStackAlignment();
   unsigned ArgRegsSaveSize = AFI->getArgRegsSaveSize(Align);
   unsigned NumBytes = MFI->getStackSize();
   const std::vector<CalleeSavedInfo> &CSI = MFI->getCalleeSavedInfo();
@@ -740,10 +742,7 @@ void ARMFrameLowering::emitEpilogue(MachineFunction &MF,
          "This emitEpilogue does not support Thumb1!");
   bool isARM = !AFI->isThumbFunction();
 
-  unsigned Align = MF.getTarget()
-                       .getSubtargetImpl()
-                       ->getFrameLowering()
-                       ->getStackAlignment();
+  unsigned Align = STI.getFrameLowering()->getStackAlignment();
   unsigned ArgRegsSaveSize = AFI->getArgRegsSaveSize(Align);
   int NumBytes = (int)MFI->getStackSize();
   unsigned FramePtr = RegInfo->getFrameRegister(MF);
@@ -1468,25 +1467,20 @@ static void checkNumAlignedDPRCS2Regs(MachineFunction &MF) {
     return;
 
   // Naked functions don't spill callee-saved registers.
-  if (MF.getFunction()->getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                                     Attribute::Naked))
+  if (MF.getFunction()->hasFnAttribute(Attribute::Naked))
     return;
 
   // We are planning to use NEON instructions vst1 / vld1.
-  if (!MF.getTarget().getSubtarget<ARMSubtarget>().hasNEON())
+  if (!static_cast<const ARMSubtarget &>(MF.getSubtarget()).hasNEON())
     return;
 
   // Don't bother if the default stack alignment is sufficiently high.
-  if (MF.getTarget()
-          .getSubtargetImpl()
-          ->getFrameLowering()
-          ->getStackAlignment() >= 8)
+  if (MF.getSubtarget().getFrameLowering()->getStackAlignment() >= 8)
     return;
 
   // Aligned spills require stack realignment.
-  const ARMBaseRegisterInfo *RegInfo = static_cast<const ARMBaseRegisterInfo *>(
-      MF.getSubtarget().getRegisterInfo());
-  if (!RegInfo->canRealignStack(MF))
+  if (!static_cast<const ARMBaseRegisterInfo *>(
+           MF.getSubtarget().getRegisterInfo())->canRealignStack(MF))
     return;
 
   // We always spill contiguous d-registers starting from d8. Count how many
@@ -1870,7 +1864,7 @@ static const uint64_t kSplitStackAvailable = 256;
 void ARMFrameLowering::adjustForSegmentedStacks(MachineFunction &MF) const {
   unsigned Opcode;
   unsigned CFIIndex;
-  const ARMSubtarget *ST = &MF.getTarget().getSubtarget<ARMSubtarget>();
+  const ARMSubtarget *ST = &MF.getSubtarget<ARMSubtarget>();
   bool Thumb = ST->isThumb();
 
   // Sadly, this currently doesn't support varargs, platforms other than

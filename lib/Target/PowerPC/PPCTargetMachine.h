@@ -24,7 +24,11 @@ namespace llvm {
 /// PPCTargetMachine - Common code between 32-bit and 64-bit PowerPC targets.
 ///
 class PPCTargetMachine : public LLVMTargetMachine {
+public:
+  enum PPCABI { PPC_ABI_UNKNOWN, PPC_ABI_ELFv1, PPC_ABI_ELFv2 };
+private:
   std::unique_ptr<TargetLoweringObjectFile> TLOF;
+  PPCABI TargetABI;
   // Calculates type size & alignment
   const DataLayout DL;
   PPCSubtarget Subtarget;
@@ -45,11 +49,16 @@ public:
   // Pass Pipeline Configuration
   TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
 
-  /// \brief Register PPC analysis passes with a pass manager.
-  void addAnalysisPasses(PassManagerBase &PM) override;
+  TargetIRAnalysis getTargetIRAnalysis() override;
+
   TargetLoweringObjectFile *getObjFileLowering() const override {
     return TLOF.get();
   }
+  bool isELFv2ABI() const { return TargetABI == PPC_ABI_ELFv2; }
+  bool isPPC64() const {
+    Triple TT(getTargetTriple());
+    return (TT.getArch() == Triple::ppc64 || TT.getArch() == Triple::ppc64le);
+  };
 };
 
 /// PPC32TargetMachine - PowerPC 32-bit target machine.

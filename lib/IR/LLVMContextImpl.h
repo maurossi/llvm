@@ -27,6 +27,7 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Metadata.h"
@@ -178,7 +179,7 @@ protected:
       : RawOps(Ops), Hash(calculateHash(Ops)) {}
 
   template <class NodeTy>
-  MDNodeOpsKey(NodeTy *N, unsigned Offset = 0)
+  MDNodeOpsKey(const NodeTy *N, unsigned Offset = 0)
       : Ops(N->op_begin() + Offset, N->op_end()), Hash(N->getHash()) {}
 
   template <class NodeTy>
@@ -207,124 +208,648 @@ public:
   unsigned getHash() const { return Hash; }
 };
 
+template <class NodeTy> struct MDNodeKeyImpl;
+template <class NodeTy> struct MDNodeInfo;
+
 /// \brief DenseMapInfo for MDTuple.
 ///
 /// Note that we don't need the is-function-local bit, since that's implicit in
 /// the operands.
-struct MDTupleInfo {
-  struct KeyTy : MDNodeOpsKey {
-    KeyTy(ArrayRef<Metadata *> Ops) : MDNodeOpsKey(Ops) {}
-    KeyTy(MDTuple *N) : MDNodeOpsKey(N) {}
+template <> struct MDNodeKeyImpl<MDTuple> : MDNodeOpsKey {
+  MDNodeKeyImpl(ArrayRef<Metadata *> Ops) : MDNodeOpsKey(Ops) {}
+  MDNodeKeyImpl(const MDTuple *N) : MDNodeOpsKey(N) {}
 
-    bool operator==(const MDTuple *RHS) const {
-      if (RHS == getEmptyKey() || RHS == getTombstoneKey())
-        return false;
-      return compareOps(RHS);
-    }
+  bool isKeyOf(const MDTuple *RHS) const { return compareOps(RHS); }
 
-    static unsigned calculateHash(MDTuple *N) {
-      return MDNodeOpsKey::calculateHash(N);
-    }
-  };
-  static inline MDTuple *getEmptyKey() {
-    return DenseMapInfo<MDTuple *>::getEmptyKey();
-  }
-  static inline MDTuple *getTombstoneKey() {
-    return DenseMapInfo<MDTuple *>::getTombstoneKey();
-  }
-  static unsigned getHashValue(const KeyTy &Key) { return Key.getHash(); }
-  static unsigned getHashValue(const MDTuple *U) { return U->getHash(); }
-  static bool isEqual(const KeyTy &LHS, const MDTuple *RHS) {
-    return LHS == RHS;
-  }
-  static bool isEqual(const MDTuple *LHS, const MDTuple *RHS) {
-    return LHS == RHS;
+  unsigned getHashValue() const { return getHash(); }
+
+  static unsigned calculateHash(MDTuple *N) {
+    return MDNodeOpsKey::calculateHash(N);
   }
 };
 
 /// \brief DenseMapInfo for MDLocation.
-struct MDLocationInfo {
-  struct KeyTy {
-    unsigned Line;
-    unsigned Column;
-    Metadata *Scope;
-    Metadata *InlinedAt;
+template <> struct MDNodeKeyImpl<MDLocation> {
+  unsigned Line;
+  unsigned Column;
+  Metadata *Scope;
+  Metadata *InlinedAt;
 
-    KeyTy(unsigned Line, unsigned Column, Metadata *Scope, Metadata *InlinedAt)
-        : Line(Line), Column(Column), Scope(Scope), InlinedAt(InlinedAt) {}
+  MDNodeKeyImpl(unsigned Line, unsigned Column, Metadata *Scope,
+                Metadata *InlinedAt)
+      : Line(Line), Column(Column), Scope(Scope), InlinedAt(InlinedAt) {}
 
-    KeyTy(const MDLocation *L)
-        : Line(L->getLine()), Column(L->getColumn()), Scope(L->getScope()),
-          InlinedAt(L->getInlinedAt()) {}
+  MDNodeKeyImpl(const MDLocation *L)
+      : Line(L->getLine()), Column(L->getColumn()), Scope(L->getScope()),
+        InlinedAt(L->getInlinedAt()) {}
 
-    bool operator==(const MDLocation *RHS) const {
-      if (RHS == getEmptyKey() || RHS == getTombstoneKey())
-        return false;
-      return Line == RHS->getLine() && Column == RHS->getColumn() &&
-             Scope == RHS->getScope() && InlinedAt == RHS->getInlinedAt();
-    }
-  };
-  static inline MDLocation *getEmptyKey() {
-    return DenseMapInfo<MDLocation *>::getEmptyKey();
+  bool isKeyOf(const MDLocation *RHS) const {
+    return Line == RHS->getLine() && Column == RHS->getColumn() &&
+           Scope == RHS->getScope() && InlinedAt == RHS->getInlinedAt();
   }
-  static inline MDLocation *getTombstoneKey() {
-    return DenseMapInfo<MDLocation *>::getTombstoneKey();
-  }
-  static unsigned getHashValue(const KeyTy &Key) {
-    return hash_combine(Key.Line, Key.Column, Key.Scope, Key.InlinedAt);
-  }
-  static unsigned getHashValue(const MDLocation *U) {
-    return getHashValue(KeyTy(U));
-  }
-  static bool isEqual(const KeyTy &LHS, const MDLocation *RHS) {
-    return LHS == RHS;
-  }
-  static bool isEqual(const MDLocation *LHS, const MDLocation *RHS) {
-    return LHS == RHS;
+  unsigned getHashValue() const {
+    return hash_combine(Line, Column, Scope, InlinedAt);
   }
 };
 
 /// \brief DenseMapInfo for GenericDebugNode.
-struct GenericDebugNodeInfo {
-  struct KeyTy : MDNodeOpsKey {
-    unsigned Tag;
-    StringRef Header;
-    KeyTy(unsigned Tag, StringRef Header, ArrayRef<Metadata *> DwarfOps)
-        : MDNodeOpsKey(DwarfOps), Tag(Tag), Header(Header) {}
-    KeyTy(GenericDebugNode *N)
-        : MDNodeOpsKey(N, 1), Tag(N->getTag()), Header(N->getHeader()) {}
+template <> struct MDNodeKeyImpl<GenericDebugNode> : MDNodeOpsKey {
+  unsigned Tag;
+  StringRef Header;
+  MDNodeKeyImpl(unsigned Tag, StringRef Header, ArrayRef<Metadata *> DwarfOps)
+      : MDNodeOpsKey(DwarfOps), Tag(Tag), Header(Header) {}
+  MDNodeKeyImpl(const GenericDebugNode *N)
+      : MDNodeOpsKey(N, 1), Tag(N->getTag()), Header(N->getHeader()) {}
 
-    bool operator==(const GenericDebugNode *RHS) const {
-      if (RHS == getEmptyKey() || RHS == getTombstoneKey())
-        return false;
-      return Tag == RHS->getTag() && Header == RHS->getHeader() &&
-             compareOps(RHS, 1);
-    }
+  bool isKeyOf(const GenericDebugNode *RHS) const {
+    return Tag == RHS->getTag() && Header == RHS->getHeader() &&
+           compareOps(RHS, 1);
+  }
 
-    static unsigned calculateHash(GenericDebugNode *N) {
-      return MDNodeOpsKey::calculateHash(N, 1);
-    }
-  };
-  static inline GenericDebugNode *getEmptyKey() {
-    return DenseMapInfo<GenericDebugNode *>::getEmptyKey();
+  unsigned getHashValue() const { return hash_combine(getHash(), Tag, Header); }
+
+  static unsigned calculateHash(GenericDebugNode *N) {
+    return MDNodeOpsKey::calculateHash(N, 1);
   }
-  static inline GenericDebugNode *getTombstoneKey() {
-    return DenseMapInfo<GenericDebugNode *>::getTombstoneKey();
+};
+
+template <> struct MDNodeKeyImpl<MDSubrange> {
+  int64_t Count;
+  int64_t Lo;
+
+  MDNodeKeyImpl(int64_t Count, int64_t Lo) : Count(Count), Lo(Lo) {}
+  MDNodeKeyImpl(const MDSubrange *N) : Count(N->getCount()), Lo(N->getLo()) {}
+
+  bool isKeyOf(const MDSubrange *RHS) const {
+    return Count == RHS->getCount() && Lo == RHS->getLo();
   }
-  static unsigned getHashValue(const KeyTy &Key) {
-    return hash_combine(Key.getHash(), Key.Tag, Key.Header);
+  unsigned getHashValue() const { return hash_combine(Count, Lo); }
+};
+
+template <> struct MDNodeKeyImpl<MDEnumerator> {
+  int64_t Value;
+  StringRef Name;
+
+  MDNodeKeyImpl(int64_t Value, StringRef Name) : Value(Value), Name(Name) {}
+  MDNodeKeyImpl(const MDEnumerator *N)
+      : Value(N->getValue()), Name(N->getName()) {}
+
+  bool isKeyOf(const MDEnumerator *RHS) const {
+    return Value == RHS->getValue() && Name == RHS->getName();
   }
-  static unsigned getHashValue(const GenericDebugNode *U) {
-    return hash_combine(U->getHash(), U->getTag(), U->getHeader());
+  unsigned getHashValue() const { return hash_combine(Value, Name); }
+};
+
+template <> struct MDNodeKeyImpl<MDBasicType> {
+  unsigned Tag;
+  StringRef Name;
+  uint64_t SizeInBits;
+  uint64_t AlignInBits;
+  unsigned Encoding;
+
+  MDNodeKeyImpl(unsigned Tag, StringRef Name, uint64_t SizeInBits,
+                uint64_t AlignInBits, unsigned Encoding)
+      : Tag(Tag), Name(Name), SizeInBits(SizeInBits), AlignInBits(AlignInBits),
+        Encoding(Encoding) {}
+  MDNodeKeyImpl(const MDBasicType *N)
+      : Tag(N->getTag()), Name(N->getName()), SizeInBits(N->getSizeInBits()),
+        AlignInBits(N->getAlignInBits()), Encoding(N->getEncoding()) {}
+
+  bool isKeyOf(const MDBasicType *RHS) const {
+    return Tag == RHS->getTag() && Name == RHS->getName() &&
+           SizeInBits == RHS->getSizeInBits() &&
+           AlignInBits == RHS->getAlignInBits() &&
+           Encoding == RHS->getEncoding();
   }
-  static bool isEqual(const KeyTy &LHS, const GenericDebugNode *RHS) {
-    return LHS == RHS;
+  unsigned getHashValue() const {
+    return hash_combine(Tag, Name, SizeInBits, AlignInBits, Encoding);
   }
-  static bool isEqual(const GenericDebugNode *LHS,
-                      const GenericDebugNode *RHS) {
+};
+
+template <> struct MDNodeKeyImpl<MDDerivedType> {
+  unsigned Tag;
+  StringRef Name;
+  Metadata *File;
+  unsigned Line;
+  Metadata *Scope;
+  Metadata *BaseType;
+  uint64_t SizeInBits;
+  uint64_t AlignInBits;
+  uint64_t OffsetInBits;
+  unsigned Flags;
+  Metadata *ExtraData;
+
+  MDNodeKeyImpl(unsigned Tag, StringRef Name, Metadata *File, unsigned Line,
+                Metadata *Scope, Metadata *BaseType, uint64_t SizeInBits,
+                uint64_t AlignInBits, uint64_t OffsetInBits, unsigned Flags,
+                Metadata *ExtraData)
+      : Tag(Tag), Name(Name), File(File), Line(Line), Scope(Scope),
+        BaseType(BaseType), SizeInBits(SizeInBits), AlignInBits(AlignInBits),
+        OffsetInBits(OffsetInBits), Flags(Flags), ExtraData(ExtraData) {}
+  MDNodeKeyImpl(const MDDerivedType *N)
+      : Tag(N->getTag()), Name(N->getName()), File(N->getFile()),
+        Line(N->getLine()), Scope(N->getScope()), BaseType(N->getBaseType()),
+        SizeInBits(N->getSizeInBits()), AlignInBits(N->getAlignInBits()),
+        OffsetInBits(N->getOffsetInBits()), Flags(N->getFlags()),
+        ExtraData(N->getExtraData()) {}
+
+  bool isKeyOf(const MDDerivedType *RHS) const {
+    return Tag == RHS->getTag() && Name == RHS->getName() &&
+           File == RHS->getFile() && Line == RHS->getLine() &&
+           Scope == RHS->getScope() && BaseType == RHS->getBaseType() &&
+           SizeInBits == RHS->getSizeInBits() &&
+           AlignInBits == RHS->getAlignInBits() &&
+           OffsetInBits == RHS->getOffsetInBits() && Flags == RHS->getFlags() &&
+           ExtraData == RHS->getExtraData();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Tag, Name, File, Line, Scope, BaseType, SizeInBits,
+                        AlignInBits, OffsetInBits, Flags, ExtraData);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDCompositeType> {
+  unsigned Tag;
+  StringRef Name;
+  Metadata *File;
+  unsigned Line;
+  Metadata *Scope;
+  Metadata *BaseType;
+  uint64_t SizeInBits;
+  uint64_t AlignInBits;
+  uint64_t OffsetInBits;
+  unsigned Flags;
+  Metadata *Elements;
+  unsigned RuntimeLang;
+  Metadata *VTableHolder;
+  Metadata *TemplateParams;
+  StringRef Identifier;
+
+  MDNodeKeyImpl(unsigned Tag, StringRef Name, Metadata *File, unsigned Line,
+                Metadata *Scope, Metadata *BaseType, uint64_t SizeInBits,
+                uint64_t AlignInBits, uint64_t OffsetInBits, unsigned Flags,
+                Metadata *Elements, unsigned RuntimeLang,
+                Metadata *VTableHolder, Metadata *TemplateParams,
+                StringRef Identifier)
+      : Tag(Tag), Name(Name), File(File), Line(Line), Scope(Scope),
+        BaseType(BaseType), SizeInBits(SizeInBits), AlignInBits(AlignInBits),
+        OffsetInBits(OffsetInBits), Flags(Flags), Elements(Elements),
+        RuntimeLang(RuntimeLang), VTableHolder(VTableHolder),
+        TemplateParams(TemplateParams), Identifier(Identifier) {}
+  MDNodeKeyImpl(const MDCompositeType *N)
+      : Tag(N->getTag()), Name(N->getName()), File(N->getFile()),
+        Line(N->getLine()), Scope(N->getScope()), BaseType(N->getBaseType()),
+        SizeInBits(N->getSizeInBits()), AlignInBits(N->getAlignInBits()),
+        OffsetInBits(N->getOffsetInBits()), Flags(N->getFlags()),
+        Elements(N->getElements()), RuntimeLang(N->getRuntimeLang()),
+        VTableHolder(N->getVTableHolder()),
+        TemplateParams(N->getTemplateParams()), Identifier(N->getIdentifier()) {
+  }
+
+  bool isKeyOf(const MDCompositeType *RHS) const {
+    return Tag == RHS->getTag() && Name == RHS->getName() &&
+           File == RHS->getFile() && Line == RHS->getLine() &&
+           Scope == RHS->getScope() && BaseType == RHS->getBaseType() &&
+           SizeInBits == RHS->getSizeInBits() &&
+           AlignInBits == RHS->getAlignInBits() &&
+           OffsetInBits == RHS->getOffsetInBits() && Flags == RHS->getFlags() &&
+           Elements == RHS->getElements() &&
+           RuntimeLang == RHS->getRuntimeLang() &&
+           VTableHolder == RHS->getVTableHolder() &&
+           TemplateParams == RHS->getTemplateParams() &&
+           Identifier == RHS->getIdentifier();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Tag, Name, File, Line, Scope, BaseType, SizeInBits,
+                        AlignInBits, OffsetInBits, Flags, Elements, RuntimeLang,
+                        VTableHolder, TemplateParams, Identifier);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDSubroutineType> {
+  unsigned Flags;
+  Metadata *TypeArray;
+
+  MDNodeKeyImpl(int64_t Flags, Metadata *TypeArray)
+      : Flags(Flags), TypeArray(TypeArray) {}
+  MDNodeKeyImpl(const MDSubroutineType *N)
+      : Flags(N->getFlags()), TypeArray(N->getTypeArray()) {}
+
+  bool isKeyOf(const MDSubroutineType *RHS) const {
+    return Flags == RHS->getFlags() && TypeArray == RHS->getTypeArray();
+  }
+  unsigned getHashValue() const { return hash_combine(Flags, TypeArray); }
+};
+
+template <> struct MDNodeKeyImpl<MDFile> {
+  StringRef Filename;
+  StringRef Directory;
+
+  MDNodeKeyImpl(StringRef Filename, StringRef Directory)
+      : Filename(Filename), Directory(Directory) {}
+  MDNodeKeyImpl(const MDFile *N)
+      : Filename(N->getFilename()), Directory(N->getDirectory()) {}
+
+  bool isKeyOf(const MDFile *RHS) const {
+    return Filename == RHS->getFilename() && Directory == RHS->getDirectory();
+  }
+  unsigned getHashValue() const { return hash_combine(Filename, Directory); }
+};
+
+template <> struct MDNodeKeyImpl<MDCompileUnit> {
+  unsigned SourceLanguage;
+  Metadata *File;
+  StringRef Producer;
+  bool IsOptimized;
+  StringRef Flags;
+  unsigned RuntimeVersion;
+  StringRef SplitDebugFilename;
+  unsigned EmissionKind;
+  Metadata *EnumTypes;
+  Metadata *RetainedTypes;
+  Metadata *Subprograms;
+  Metadata *GlobalVariables;
+  Metadata *ImportedEntities;
+
+  MDNodeKeyImpl(unsigned SourceLanguage, Metadata *File, StringRef Producer,
+                bool IsOptimized, StringRef Flags, unsigned RuntimeVersion,
+                StringRef SplitDebugFilename, unsigned EmissionKind,
+                Metadata *EnumTypes, Metadata *RetainedTypes,
+                Metadata *Subprograms, Metadata *GlobalVariables,
+                Metadata *ImportedEntities)
+      : SourceLanguage(SourceLanguage), File(File), Producer(Producer),
+        IsOptimized(IsOptimized), Flags(Flags), RuntimeVersion(RuntimeVersion),
+        SplitDebugFilename(SplitDebugFilename), EmissionKind(EmissionKind),
+        EnumTypes(EnumTypes), RetainedTypes(RetainedTypes),
+        Subprograms(Subprograms), GlobalVariables(GlobalVariables),
+        ImportedEntities(ImportedEntities) {}
+  MDNodeKeyImpl(const MDCompileUnit *N)
+      : SourceLanguage(N->getSourceLanguage()), File(N->getFile()),
+        Producer(N->getProducer()), IsOptimized(N->isOptimized()),
+        Flags(N->getFlags()), RuntimeVersion(N->getRuntimeVersion()),
+        SplitDebugFilename(N->getSplitDebugFilename()),
+        EmissionKind(N->getEmissionKind()), EnumTypes(N->getEnumTypes()),
+        RetainedTypes(N->getRetainedTypes()), Subprograms(N->getSubprograms()),
+        GlobalVariables(N->getGlobalVariables()),
+        ImportedEntities(N->getImportedEntities()) {}
+
+  bool isKeyOf(const MDCompileUnit *RHS) const {
+    return SourceLanguage == RHS->getSourceLanguage() &&
+           File == RHS->getFile() && Producer == RHS->getProducer() &&
+           IsOptimized == RHS->isOptimized() && Flags == RHS->getFlags() &&
+           RuntimeVersion == RHS->getRuntimeVersion() &&
+           SplitDebugFilename == RHS->getSplitDebugFilename() &&
+           EmissionKind == RHS->getEmissionKind() &&
+           EnumTypes == RHS->getEnumTypes() &&
+           RetainedTypes == RHS->getRetainedTypes() &&
+           Subprograms == RHS->getSubprograms() &&
+           GlobalVariables == RHS->getGlobalVariables() &&
+           ImportedEntities == RHS->getImportedEntities();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(SourceLanguage, File, Producer, IsOptimized, Flags,
+                        RuntimeVersion, SplitDebugFilename, EmissionKind,
+                        EnumTypes, RetainedTypes, Subprograms, GlobalVariables,
+                        ImportedEntities);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDSubprogram> {
+  Metadata *Scope;
+  StringRef Name;
+  StringRef LinkageName;
+  Metadata *File;
+  unsigned Line;
+  Metadata *Type;
+  bool IsLocalToUnit;
+  bool IsDefinition;
+  unsigned ScopeLine;
+  Metadata *ContainingType;
+  unsigned Virtuality;
+  unsigned VirtualIndex;
+  unsigned Flags;
+  bool IsOptimized;
+  Metadata *Function;
+  Metadata *TemplateParams;
+  Metadata *Declaration;
+  Metadata *Variables;
+
+  MDNodeKeyImpl(Metadata *Scope, StringRef Name, StringRef LinkageName,
+                Metadata *File, unsigned Line, Metadata *Type,
+                bool IsLocalToUnit, bool IsDefinition, unsigned ScopeLine,
+                Metadata *ContainingType, unsigned Virtuality,
+                unsigned VirtualIndex, unsigned Flags, bool IsOptimized,
+                Metadata *Function, Metadata *TemplateParams,
+                Metadata *Declaration, Metadata *Variables)
+      : Scope(Scope), Name(Name), LinkageName(LinkageName), File(File),
+        Line(Line), Type(Type), IsLocalToUnit(IsLocalToUnit),
+        IsDefinition(IsDefinition), ScopeLine(ScopeLine),
+        ContainingType(ContainingType), Virtuality(Virtuality),
+        VirtualIndex(VirtualIndex), Flags(Flags), IsOptimized(IsOptimized),
+        Function(Function), TemplateParams(TemplateParams),
+        Declaration(Declaration), Variables(Variables) {}
+  MDNodeKeyImpl(const MDSubprogram *N)
+      : Scope(N->getScope()), Name(N->getName()),
+        LinkageName(N->getLinkageName()), File(N->getFile()),
+        Line(N->getLine()), Type(N->getType()),
+        IsLocalToUnit(N->isLocalToUnit()), IsDefinition(N->isDefinition()),
+        ScopeLine(N->getScopeLine()), ContainingType(N->getContainingType()),
+        Virtuality(N->getVirtuality()), VirtualIndex(N->getVirtualIndex()),
+        Flags(N->getFlags()), IsOptimized(N->isOptimized()),
+        Function(N->getFunction()), TemplateParams(N->getTemplateParams()),
+        Declaration(N->getDeclaration()), Variables(N->getVariables()) {}
+
+  bool isKeyOf(const MDSubprogram *RHS) const {
+    return Scope == RHS->getScope() && Name == RHS->getName() &&
+           LinkageName == RHS->getLinkageName() && File == RHS->getFile() &&
+           Line == RHS->getLine() && Type == RHS->getType() &&
+           IsLocalToUnit == RHS->isLocalToUnit() &&
+           IsDefinition == RHS->isDefinition() &&
+           ScopeLine == RHS->getScopeLine() &&
+           ContainingType == RHS->getContainingType() &&
+           Virtuality == RHS->getVirtuality() &&
+           VirtualIndex == RHS->getVirtualIndex() && Flags == RHS->getFlags() &&
+           IsOptimized == RHS->isOptimized() &&
+           Function == RHS->getFunction() &&
+           TemplateParams == RHS->getTemplateParams() &&
+           Declaration == RHS->getDeclaration() &&
+           Variables == RHS->getVariables();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Scope, Name, LinkageName, File, Line, Type,
+                        IsLocalToUnit, IsDefinition, ScopeLine, ContainingType,
+                        Virtuality, VirtualIndex, Flags, IsOptimized, Function,
+                        TemplateParams, Declaration, Variables);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDLexicalBlock> {
+  Metadata *Scope;
+  Metadata *File;
+  unsigned Line;
+  unsigned Column;
+
+  MDNodeKeyImpl(Metadata *Scope, Metadata *File, unsigned Line, unsigned Column)
+      : Scope(Scope), File(File), Line(Line), Column(Column) {}
+  MDNodeKeyImpl(const MDLexicalBlock *N)
+      : Scope(N->getScope()), File(N->getFile()), Line(N->getLine()),
+        Column(N->getColumn()) {}
+
+  bool isKeyOf(const MDLexicalBlock *RHS) const {
+    return Scope == RHS->getScope() && File == RHS->getFile() &&
+           Line == RHS->getLine() && Column == RHS->getColumn();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Scope, File, Line, Column);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDLexicalBlockFile> {
+  Metadata *Scope;
+  Metadata *File;
+  unsigned Discriminator;
+
+  MDNodeKeyImpl(Metadata *Scope, Metadata *File, unsigned Discriminator)
+      : Scope(Scope), File(File), Discriminator(Discriminator) {}
+  MDNodeKeyImpl(const MDLexicalBlockFile *N)
+      : Scope(N->getScope()), File(N->getFile()),
+        Discriminator(N->getDiscriminator()) {}
+
+  bool isKeyOf(const MDLexicalBlockFile *RHS) const {
+    return Scope == RHS->getScope() && File == RHS->getFile() &&
+           Discriminator == RHS->getDiscriminator();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Scope, File, Discriminator);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDNamespace> {
+  Metadata *Scope;
+  Metadata *File;
+  StringRef Name;
+  unsigned Line;
+
+  MDNodeKeyImpl(Metadata *Scope, Metadata *File, StringRef Name, unsigned Line)
+      : Scope(Scope), File(File), Name(Name), Line(Line) {}
+  MDNodeKeyImpl(const MDNamespace *N)
+      : Scope(N->getScope()), File(N->getFile()), Name(N->getName()),
+        Line(N->getLine()) {}
+
+  bool isKeyOf(const MDNamespace *RHS) const {
+    return Scope == RHS->getScope() && File == RHS->getFile() &&
+           Name == RHS->getName() && Line == RHS->getLine();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Scope, File, Name, Line);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDTemplateTypeParameter> {
+  StringRef Name;
+  Metadata *Type;
+
+  MDNodeKeyImpl(StringRef Name, Metadata *Type) : Name(Name), Type(Type) {}
+  MDNodeKeyImpl(const MDTemplateTypeParameter *N)
+      : Name(N->getName()), Type(N->getType()) {}
+
+  bool isKeyOf(const MDTemplateTypeParameter *RHS) const {
+    return Name == RHS->getName() && Type == RHS->getType();
+  }
+  unsigned getHashValue() const { return hash_combine(Name, Type); }
+};
+
+template <> struct MDNodeKeyImpl<MDTemplateValueParameter> {
+  unsigned Tag;
+  StringRef Name;
+  Metadata *Type;
+  Metadata *Value;
+
+  MDNodeKeyImpl(unsigned Tag, StringRef Name, Metadata *Type, Metadata *Value)
+      : Tag(Tag), Name(Name), Type(Type), Value(Value) {}
+  MDNodeKeyImpl(const MDTemplateValueParameter *N)
+      : Tag(N->getTag()), Name(N->getName()), Type(N->getType()),
+        Value(N->getValue()) {}
+
+  bool isKeyOf(const MDTemplateValueParameter *RHS) const {
+    return Tag == RHS->getTag() && Name == RHS->getName() &&
+           Type == RHS->getType() && Value == RHS->getValue();
+  }
+  unsigned getHashValue() const { return hash_combine(Tag, Name, Type, Value); }
+};
+
+template <> struct MDNodeKeyImpl<MDGlobalVariable> {
+  Metadata *Scope;
+  StringRef Name;
+  StringRef LinkageName;
+  Metadata *File;
+  unsigned Line;
+  Metadata *Type;
+  bool IsLocalToUnit;
+  bool IsDefinition;
+  Metadata *Variable;
+  Metadata *StaticDataMemberDeclaration;
+
+  MDNodeKeyImpl(Metadata *Scope, StringRef Name, StringRef LinkageName,
+                Metadata *File, unsigned Line, Metadata *Type,
+                bool IsLocalToUnit, bool IsDefinition, Metadata *Variable,
+                Metadata *StaticDataMemberDeclaration)
+      : Scope(Scope), Name(Name), LinkageName(LinkageName), File(File),
+        Line(Line), Type(Type), IsLocalToUnit(IsLocalToUnit),
+        IsDefinition(IsDefinition), Variable(Variable),
+        StaticDataMemberDeclaration(StaticDataMemberDeclaration) {}
+  MDNodeKeyImpl(const MDGlobalVariable *N)
+      : Scope(N->getScope()), Name(N->getName()),
+        LinkageName(N->getLinkageName()), File(N->getFile()),
+        Line(N->getLine()), Type(N->getType()),
+        IsLocalToUnit(N->isLocalToUnit()), IsDefinition(N->isDefinition()),
+        Variable(N->getVariable()),
+        StaticDataMemberDeclaration(N->getStaticDataMemberDeclaration()) {}
+
+  bool isKeyOf(const MDGlobalVariable *RHS) const {
+    return Scope == RHS->getScope() && Name == RHS->getName() &&
+           LinkageName == RHS->getLinkageName() && File == RHS->getFile() &&
+           Line == RHS->getLine() && Type == RHS->getType() &&
+           IsLocalToUnit == RHS->isLocalToUnit() &&
+           IsDefinition == RHS->isDefinition() &&
+           Variable == RHS->getVariable() &&
+           StaticDataMemberDeclaration == RHS->getStaticDataMemberDeclaration();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Scope, Name, LinkageName, File, Line, Type,
+                        IsLocalToUnit, IsDefinition, Variable,
+                        StaticDataMemberDeclaration);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDLocalVariable> {
+  unsigned Tag;
+  Metadata *Scope;
+  StringRef Name;
+  Metadata *File;
+  unsigned Line;
+  Metadata *Type;
+  unsigned Arg;
+  unsigned Flags;
+  Metadata *InlinedAt;
+
+  MDNodeKeyImpl(unsigned Tag, Metadata *Scope, StringRef Name, Metadata *File,
+                unsigned Line, Metadata *Type, unsigned Arg, unsigned Flags,
+                Metadata *InlinedAt)
+      : Tag(Tag), Scope(Scope), Name(Name), File(File), Line(Line), Type(Type),
+        Arg(Arg), Flags(Flags), InlinedAt(InlinedAt) {}
+  MDNodeKeyImpl(const MDLocalVariable *N)
+      : Tag(N->getTag()), Scope(N->getScope()), Name(N->getName()),
+        File(N->getFile()), Line(N->getLine()), Type(N->getType()),
+        Arg(N->getArg()), Flags(N->getFlags()), InlinedAt(N->getInlinedAt()) {}
+
+  bool isKeyOf(const MDLocalVariable *RHS) const {
+    return Tag == RHS->getTag() && Scope == RHS->getScope() &&
+           Name == RHS->getName() && File == RHS->getFile() &&
+           Line == RHS->getLine() && Type == RHS->getType() &&
+           Arg == RHS->getArg() && Flags == RHS->getFlags() &&
+           InlinedAt == RHS->getInlinedAt();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Tag, Scope, Name, File, Line, Type, Arg, Flags,
+                        InlinedAt);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDExpression> {
+  ArrayRef<uint64_t> Elements;
+
+  MDNodeKeyImpl(ArrayRef<uint64_t> Elements) : Elements(Elements) {}
+  MDNodeKeyImpl(const MDExpression *N) : Elements(N->getElements()) {}
+
+  bool isKeyOf(const MDExpression *RHS) const {
+    return Elements == RHS->getElements();
+  }
+  unsigned getHashValue() const {
+    return hash_combine_range(Elements.begin(), Elements.end());
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDObjCProperty> {
+  StringRef Name;
+  Metadata *File;
+  unsigned Line;
+  StringRef GetterName;
+  StringRef SetterName;
+  unsigned Attributes;
+  Metadata *Type;
+
+  MDNodeKeyImpl(StringRef Name, Metadata *File, unsigned Line,
+                StringRef GetterName, StringRef SetterName, unsigned Attributes,
+                Metadata *Type)
+      : Name(Name), File(File), Line(Line), GetterName(GetterName),
+        SetterName(SetterName), Attributes(Attributes), Type(Type) {}
+  MDNodeKeyImpl(const MDObjCProperty *N)
+      : Name(N->getName()), File(N->getFile()), Line(N->getLine()),
+        GetterName(N->getGetterName()), SetterName(N->getSetterName()),
+        Attributes(N->getAttributes()), Type(N->getType()) {}
+
+  bool isKeyOf(const MDObjCProperty *RHS) const {
+    return Name == RHS->getName() && File == RHS->getFile() &&
+           Line == RHS->getLine() && GetterName == RHS->getGetterName() &&
+           SetterName == RHS->getSetterName() &&
+           Attributes == RHS->getAttributes() && Type == RHS->getType();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Name, File, Line, GetterName, SetterName, Attributes,
+                        Type);
+  }
+};
+
+template <> struct MDNodeKeyImpl<MDImportedEntity> {
+  unsigned Tag;
+  Metadata *Scope;
+  Metadata *Entity;
+  unsigned Line;
+  StringRef Name;
+
+  MDNodeKeyImpl(unsigned Tag, Metadata *Scope, Metadata *Entity, unsigned Line,
+                StringRef Name)
+      : Tag(Tag), Scope(Scope), Entity(Entity), Line(Line), Name(Name) {}
+  MDNodeKeyImpl(const MDImportedEntity *N)
+      : Tag(N->getTag()), Scope(N->getScope()), Entity(N->getEntity()),
+        Line(N->getLine()), Name(N->getName()) {}
+
+  bool isKeyOf(const MDImportedEntity *RHS) const {
+    return Tag == RHS->getTag() && Scope == RHS->getScope() &&
+           Entity == RHS->getEntity() && Line == RHS->getLine() &&
+           Name == RHS->getName();
+  }
+  unsigned getHashValue() const {
+    return hash_combine(Tag, Scope, Entity, Line, Name);
+  }
+};
+
+/// \brief DenseMapInfo for MDNode subclasses.
+template <class NodeTy> struct MDNodeInfo {
+  typedef MDNodeKeyImpl<NodeTy> KeyTy;
+  static inline NodeTy *getEmptyKey() {
+    return DenseMapInfo<NodeTy *>::getEmptyKey();
+  }
+  static inline NodeTy *getTombstoneKey() {
+    return DenseMapInfo<NodeTy *>::getTombstoneKey();
+  }
+  static unsigned getHashValue(const KeyTy &Key) { return Key.getHashValue(); }
+  static unsigned getHashValue(const NodeTy *N) {
+    return KeyTy(N).getHashValue();
+  }
+  static bool isEqual(const KeyTy &LHS, const NodeTy *RHS) {
+    if (RHS == getEmptyKey() || RHS == getTombstoneKey())
+      return false;
+    return LHS.isKeyOf(RHS);
+  }
+  static bool isEqual(const NodeTy *LHS, const NodeTy *RHS) {
     return LHS == RHS;
   }
 };
+
+#define HANDLE_MDNODE_LEAF(CLASS) typedef MDNodeInfo<CLASS> CLASS##Info;
+#include "llvm/IR/Metadata.def"
 
 class LLVMContextImpl {
 public:
@@ -356,9 +881,8 @@ public:
   DenseMap<Value *, ValueAsMetadata *> ValuesAsMetadata;
   DenseMap<Metadata *, MetadataAsValue *> MetadataAsValues;
 
-  DenseSet<MDTuple *, MDTupleInfo> MDTuples;
-  DenseSet<MDLocation *, MDLocationInfo> MDLocations;
-  DenseSet<GenericDebugNode *, GenericDebugNodeInfo> GenericDebugNodes;
+#define HANDLE_MDNODE_LEAF(CLASS) DenseSet<CLASS *, CLASS##Info> CLASS##s;
+#include "llvm/IR/Metadata.def"
 
   // MDNodes may be uniqued or not uniqued.  When they're not uniqued, they
   // aren't in the MDNodeSet, but they're still shared between objects, so no

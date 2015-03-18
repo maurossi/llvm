@@ -204,7 +204,8 @@ SectionKind TargetLoweringObjectFile::getKindForGlobal(const GlobalValue *GV,
       case 4:  return SectionKind::getMergeableConst4();
       case 8:  return SectionKind::getMergeableConst8();
       case 16: return SectionKind::getMergeableConst16();
-      default: return SectionKind::getMergeableConst();
+      default:
+        return SectionKind::getReadOnly();
       }
 
     case Constant::LocalRelocation:
@@ -267,6 +268,29 @@ SectionForGlobal(const GlobalValue *GV, SectionKind Kind, Mangler &Mang,
 
   // Use default section depending on the 'type' of global
   return SelectSectionForGlobal(GV, Kind, Mang, TM);
+}
+
+const MCSection *TargetLoweringObjectFile::getSectionForJumpTable(
+    const Function &F, Mangler &Mang, const TargetMachine &TM) const {
+  return getSectionForConstant(SectionKind::getReadOnly(), /*C=*/nullptr);
+}
+
+bool TargetLoweringObjectFile::shouldPutJumpTableInFunctionSection(
+    bool UsesLabelDifference, const Function &F) const {
+  // In PIC mode, we need to emit the jump table to the same section as the
+  // function body itself, otherwise the label differences won't make sense.
+  // FIXME: Need a better predicate for this: what about custom entries?
+  if (UsesLabelDifference)
+    return true;
+
+  // We should also do if the section name is NULL or function is declared
+  // in discardable section
+  // FIXME: this isn't the right predicate, should be based on the MCSection
+  // for the function.
+  if (F.isWeakForLinker())
+    return true;
+
+  return false;
 }
 
 /// getSectionForConstant - Given a mergable constant with the

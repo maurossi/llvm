@@ -14,10 +14,11 @@
 #include "ARMFrameLowering.h"
 #include "ARMTargetMachine.h"
 #include "ARMTargetObjectFile.h"
+#include "ARMTargetTransformInfo.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/MC/MCAsmInfo.h"
-#include "llvm/PassManager.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -179,11 +180,8 @@ ARMBaseTargetMachine::~ARMBaseTargetMachine() {}
 
 const ARMSubtarget *
 ARMBaseTargetMachine::getSubtargetImpl(const Function &F) const {
-  AttributeSet FnAttrs = F.getAttributes();
-  Attribute CPUAttr =
-      FnAttrs.getAttribute(AttributeSet::FunctionIndex, "target-cpu");
-  Attribute FSAttr =
-      FnAttrs.getAttribute(AttributeSet::FunctionIndex, "target-features");
+  Attribute CPUAttr = F.getFnAttribute("target-cpu");
+  Attribute FSAttr = F.getFnAttribute("target-features");
 
   std::string CPU = !CPUAttr.hasAttribute(Attribute::None)
                         ? CPUAttr.getValueAsString().str()
@@ -197,8 +195,7 @@ ARMBaseTargetMachine::getSubtargetImpl(const Function &F) const {
   // function before we can generate a subtarget. We also need to use
   // it as a key for the subtarget since that can be the only difference
   // between two functions.
-  Attribute SFAttr =
-      FnAttrs.getAttribute(AttributeSet::FunctionIndex, "use-soft-float");
+  Attribute SFAttr = F.getFnAttribute("use-soft-float");
   bool SoftFloat = !SFAttr.hasAttribute(Attribute::None)
                        ? SFAttr.getValueAsString() == "true"
                        : Options.UseSoftFloat;
@@ -215,12 +212,9 @@ ARMBaseTargetMachine::getSubtargetImpl(const Function &F) const {
   return I.get();
 }
 
-void ARMBaseTargetMachine::addAnalysisPasses(PassManagerBase &PM) {
-  // Add first the target-independent BasicTTI pass, then our ARM pass. This
-  // allows the ARM pass to delegate to the target independent layer when
-  // appropriate.
-  PM.add(createBasicTargetTransformInfoPass(this));
-  PM.add(createARMTargetTransformInfoPass(this));
+TargetIRAnalysis ARMBaseTargetMachine::getTargetIRAnalysis() {
+  return TargetIRAnalysis(
+      [this](Function &F) { return TargetTransformInfo(ARMTTIImpl(this, F)); });
 }
 
 
@@ -332,7 +326,12 @@ void ARMPassConfig::addIRPasses() {
 
 bool ARMPassConfig::addPreISel() {
   if (TM->getOptLevel() != CodeGenOpt::None)
-    addPass(createGlobalMergePass(TM));
+    // FIXME: This is using the thumb1 only constant value for
+    // maximal global offset for merging globals. We may want
+    // to look into using the old value for non-thumb1 code of
+    // 4095 based on the TargetMachine, but this starts to become
+    // tricky when doing code gen per function.
+    addPass(createGlobalMergePass(TM, 127));
 
   return false;
 }

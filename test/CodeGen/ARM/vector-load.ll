@@ -206,7 +206,7 @@ define <2 x i64> @load_v2i64_update_aligned4(<2 x i64>** %ptr) {
 
 define <2 x i64> @load_v2i64_update_aligned8(<2 x i64>** %ptr) {
 ;CHECK-LABEL: load_v2i64_update_aligned8:
-;CHECK: vld1.64 {{{d[0-9]+, d[0-9]+}}}, [{{r[0-9]+}}:64]!
+;CHECK: vld1.64 {{{d[0-9]+, d[0-9]+}}}, [{{r[0-9]+}}]!
 	%A = load <2 x i64>** %ptr
 	%lA = load <2 x i64>* %A, align 8
 	%inc = getelementptr <2 x i64>* %A, i32 1

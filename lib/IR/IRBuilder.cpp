@@ -231,10 +231,10 @@ CallInst *IRBuilderBase::CreateMaskedIntrinsic(unsigned Id,
 }
 
 CallInst *IRBuilderBase::CreateGCStatepoint(Value *ActualCallee,
-                                            ArrayRef<Value*> CallArgs,
-                                            ArrayRef<Value*> DeoptArgs,
-                                            ArrayRef<Value*> GCArgs,
-                                            const Twine& Name) {
+                                            ArrayRef<Value *> CallArgs,
+                                            ArrayRef<Value *> DeoptArgs,
+                                            ArrayRef<Value *> GCArgs,
+                                            const Twine &Name) {
  // Extract out the type of the callee.
  PointerType *FuncPtrType = cast<PointerType>(ActualCallee->getType());
  assert(isa<FunctionType>(FuncPtrType->getElementType()) &&
@@ -258,6 +258,17 @@ CallInst *IRBuilderBase::CreateGCStatepoint(Value *ActualCallee,
  args.insert(args.end(), GCArgs.begin(), GCArgs.end());
 
  return createCallHelper(FnStatepoint, args, this, Name);
+}
+
+CallInst *IRBuilderBase::CreateGCStatepoint(Value *ActualCallee,
+                                            ArrayRef<Use> CallArgs,
+                                            ArrayRef<Value *> DeoptArgs,
+                                            ArrayRef<Value *> GCArgs,
+                                            const Twine &Name) {
+  std::vector<Value *> VCallArgs;
+  for (auto &U : CallArgs)
+    VCallArgs.push_back(U.get());
+  return CreateGCStatepoint(ActualCallee, VCallArgs, DeoptArgs, GCArgs, Name);
 }
 
 CallInst *IRBuilderBase::CreateGCResult(Instruction *Statepoint,

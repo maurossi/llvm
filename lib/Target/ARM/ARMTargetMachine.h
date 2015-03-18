@@ -48,9 +48,10 @@ public:
   const ARMSubtarget *getSubtargetImpl() const override { return &Subtarget; }
   const ARMSubtarget *getSubtargetImpl(const Function &F) const override;
   const DataLayout *getDataLayout() const override { return &DL; }
+  bool isLittleEndian() const { return isLittle; }
 
-  /// \brief Register ARM analysis passes with a pass manager.
-  void addAnalysisPasses(PassManagerBase &PM) override;
+  /// \brief Get the TargetIRAnalysis for this target.
+  TargetIRAnalysis getTargetIRAnalysis() override;
 
   // Pass Pipeline Configuration
   TargetPassConfig *createPassConfig(PassManagerBase &PM) override;

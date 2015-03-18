@@ -83,12 +83,14 @@ void StringSaver::anchor() {}
 
 //===----------------------------------------------------------------------===//
 
+namespace {
+
 class CommandLineParser {
 public:
   // Globals for name and overview of program.  Program name is not a string to
   // avoid static ctor/dtor issues.
   std::string ProgramName;
-  const char *ProgramOverview = nullptr;
+  const char *ProgramOverview;
 
   // This collects additional help to be printed.
   std::vector<const char *> MoreHelp;
@@ -97,7 +99,12 @@ public:
   SmallVector<Option *, 4> SinkOpts;
   StringMap<Option *> OptionsMap;
 
-  Option *ConsumeAfterOpt = nullptr; // The ConsumeAfter option if it exists.
+  Option *ConsumeAfterOpt; // The ConsumeAfter option if it exists.
+
+  // This collects the different option categories that have been registered.
+  SmallPtrSet<OptionCategory *, 16> RegisteredOptionCategories;
+
+  CommandLineParser() : ProgramOverview(nullptr), ConsumeAfterOpt(nullptr) {}
 
   void ParseCommandLineOptions(int argc, const char *const *argv,
                                const char *Overview);
@@ -176,7 +183,7 @@ public:
             nullptr != ConsumeAfterOpt);
   }
 
-  void updateArgStr(Option *O, const char* NewName) {
+  void updateArgStr(Option *O, const char *NewName) {
     if (!OptionsMap.insert(std::make_pair(NewName, O)).second) {
       errs() << ProgramName << ": CommandLine Error: Option '" << O->ArgStr
              << "' registered more than once!\n";
@@ -184,7 +191,25 @@ public:
     }
     OptionsMap.erase(StringRef(O->ArgStr));
   }
+
+  void printOptionValues();
+
+  void registerCategory(OptionCategory *cat) {
+    assert(std::count_if(RegisteredOptionCategories.begin(),
+                         RegisteredOptionCategories.end(),
+                         [cat](const OptionCategory *Category) {
+                           return cat->getName() == Category->getName();
+                         }) == 0 &&
+           "Duplicate option categories");
+
+    RegisteredOptionCategories.insert(cat);
+  }
+
+private:
+  Option *LookupOption(StringRef &Arg, StringRef &Value);
 };
+
+} // namespace
 
 static ManagedStatic<CommandLineParser> GlobalParser;
 
@@ -209,22 +234,11 @@ void Option::setArgStr(const char *S) {
   ArgStr = S;
 }
 
-// This collects the different option categories that have been registered.
-typedef SmallPtrSet<OptionCategory *, 16> OptionCatSet;
-static ManagedStatic<OptionCatSet> RegisteredOptionCategories;
-
 // Initialise the general option category.
 OptionCategory llvm::cl::GeneralCategory("General options");
 
 void OptionCategory::registerCategory() {
-  assert(std::count_if(RegisteredOptionCategories->begin(),
-                       RegisteredOptionCategories->end(),
-                       [this](const OptionCategory *Category) {
-                         return getName() == Category->getName();
-                       }) == 0 &&
-         "Duplicate option categories");
-
-  RegisteredOptionCategories->insert(this);
+  GlobalParser->registerCategory(this);
 }
 
 //===----------------------------------------------------------------------===//
@@ -234,8 +248,7 @@ void OptionCategory::registerCategory() {
 /// LookupOption - Lookup the option specified by the specified option on the
 /// command line.  If there is a value specified (after an equal sign) return
 /// that as well.  This assumes that leading dashes have already been stripped.
-static Option *LookupOption(StringRef &Arg, StringRef &Value,
-                            const StringMap<Option *> &OptionsMap) {
+Option *CommandLineParser::LookupOption(StringRef &Arg, StringRef &Value) {
   // Reject all dashes.
   if (Arg.empty())
     return nullptr;
@@ -688,8 +701,7 @@ void cl::TokenizeWindowsCommandLine(StringRef Src, StringSaver &Saver,
 // It is called byte order marker but the UTF-8 BOM is actually not affected
 // by the host system's endianness.
 static bool hasUTF8ByteOrderMark(ArrayRef<char> S) {
-  return (S.size() >= 3 &&
-          S[0] == '\xef' && S[1] == '\xbb' && S[2] == '\xbf');
+  return (S.size() >= 3 && S[0] == '\xef' && S[1] == '\xbb' && S[2] == '\xbf');
 }
 
 static bool ExpandResponseFile(const char *FName, StringSaver &Saver,
@@ -828,9 +840,7 @@ void CommandLineParser::ParseCommandLineOptions(int argc,
   assert(hasOptions() && "No options specified!");
 
   // Expand response files.
-  SmallVector<const char *, 20> newArgv;
-  for (int i = 0; i != argc; ++i)
-    newArgv.push_back(argv[i]);
+  SmallVector<const char *, 20> newArgv(argv, argv + argc);
   StrDupSaver Saver;
   ExpandResponseFiles(Saver, TokenizeGNUCommandLine, newArgv);
   argv = &newArgv[0];
@@ -945,7 +955,7 @@ void CommandLineParser::ParseCommandLineOptions(int argc,
       while (!ArgName.empty() && ArgName[0] == '-')
         ArgName = ArgName.substr(1);
 
-      Handler = LookupOption(ArgName, Value, OptionsMap);
+      Handler = LookupOption(ArgName, Value);
       if (!Handler || Handler->getFormattingFlag() != cl::Positional) {
         ProvidePositionalOption(ActivePositionalArg, argv[i], i);
         continue; // We are done!
@@ -957,7 +967,7 @@ void CommandLineParser::ParseCommandLineOptions(int argc,
       while (!ArgName.empty() && ArgName[0] == '-')
         ArgName = ArgName.substr(1);
 
-      Handler = LookupOption(ArgName, Value, OptionsMap);
+      Handler = LookupOption(ArgName, Value);
 
       // Check to see if this "option" is really a prefixed or grouped argument.
       if (!Handler)
@@ -1568,8 +1578,8 @@ protected:
 
     // Collect registered option categories into vector in preparation for
     // sorting.
-    for (OptionCatSet::const_iterator I = RegisteredOptionCategories->begin(),
-                                      E = RegisteredOptionCategories->end();
+    for (auto I = GlobalParser->RegisteredOptionCategories.begin(),
+              E = GlobalParser->RegisteredOptionCategories.end();
          I != E; ++I) {
       SortedCategories.push_back(*I);
     }
@@ -1712,7 +1722,7 @@ void HelpPrinterWrapper::operator=(bool Value) {
   // Decide which printer to invoke. If more than one option category is
   // registered then it is useful to show the categorized help instead of
   // uncategorized help.
-  if (RegisteredOptionCategories->size() > 1) {
+  if (GlobalParser->RegisteredOptionCategories.size() > 1) {
     // unhide -help-list option so user can have uncategorized output if they
     // want it.
     HLOp.setHiddenFlag(NotHidden);
@@ -1723,12 +1733,14 @@ void HelpPrinterWrapper::operator=(bool Value) {
 }
 
 // Print the value of each option.
-void cl::PrintOptionValues() {
+void cl::PrintOptionValues() { GlobalParser->printOptionValues(); }
+
+void CommandLineParser::printOptionValues() {
   if (!PrintOptions && !PrintAllOptions)
     return;
 
   SmallVector<std::pair<const char *, Option *>, 128> Opts;
-  sortOpts(GlobalParser->OptionsMap, Opts, /*ShowHidden*/ true);
+  sortOpts(OptionsMap, Opts, /*ShowHidden*/ true);
 
   // Compute the maximum argument length...
   size_t MaxArgLen = 0;

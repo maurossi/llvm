@@ -130,6 +130,30 @@ int64_t DwarfUnit::getDefaultLowerBound() const {
     if (dwarf::DWARF_VERSION >= 4)
       return 1;
     break;
+
+  // The languages below have valid values only if the DWARF version >= 5.
+  case dwarf::DW_LANG_OpenCL:
+  case dwarf::DW_LANG_Go:
+  case dwarf::DW_LANG_Haskell:
+  case dwarf::DW_LANG_C_plus_plus_03:
+  case dwarf::DW_LANG_C_plus_plus_11:
+  case dwarf::DW_LANG_OCaml:
+  case dwarf::DW_LANG_Rust:
+  case dwarf::DW_LANG_C11:
+  case dwarf::DW_LANG_Swift:
+  case dwarf::DW_LANG_Dylan:
+  case dwarf::DW_LANG_C_plus_plus_14:
+    if (dwarf::DWARF_VERSION >= 5)
+      return 0;
+    break;
+
+  case dwarf::DW_LANG_Modula3:
+  case dwarf::DW_LANG_Julia:
+  case dwarf::DW_LANG_Fortran03:
+  case dwarf::DW_LANG_Fortran08:
+    if (dwarf::DWARF_VERSION >= 5)
+      return 1;
+    break;
   }
 
   return -1;
@@ -606,6 +630,7 @@ static bool isUnsignedDIType(DwarfDebug *DD, DIType Ty) {
           Encoding == dwarf::DW_ATE_unsigned_char ||
           Encoding == dwarf::DW_ATE_signed ||
           Encoding == dwarf::DW_ATE_signed_char ||
+          Encoding == dwarf::DW_ATE_float ||
           Encoding == dwarf::DW_ATE_UTF || Encoding == dwarf::DW_ATE_boolean ||
           (Ty.getTag() == dwarf::DW_TAG_unspecified_type &&
            Ty.getName() == "decltype(nullptr)")) &&
@@ -1319,7 +1344,7 @@ void DwarfUnit::applySubprogramAttributes(DISubprogram SP, DIE &SPDie,
   if (SP.isOptimized())
     addFlag(SPDie, dwarf::DW_AT_APPLE_optimized);
 
-  if (unsigned isa = Asm->getISAEncoding()) {
+  if (unsigned isa = Asm->getISAEncoding(SP.getFunction())) {
     addUInt(SPDie, dwarf::DW_AT_APPLE_isa, dwarf::DW_FORM_flag, isa);
   }
 

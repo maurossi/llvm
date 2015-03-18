@@ -15,6 +15,7 @@
 
 #include "ARMArchName.h"
 #include "ARMFPUName.h"
+#include "ARMArchExtName.h"
 #include "ARMRegisterInfo.h"
 #include "ARMUnwindOpAsm.h"
 #include "llvm/ADT/StringExtras.h"
@@ -105,6 +106,19 @@ static unsigned GetArchDefaultCPUArch(unsigned ID) {
   return 0;
 }
 
+static const char *GetArchExtName(unsigned ID) {
+  switch (ID) {
+  default:
+    llvm_unreachable("Unknown ARCH Extension kind");
+    break;
+#define ARM_ARCHEXT_NAME(NAME, ID)                                             \
+  case ARM::ID:                                                                \
+    return NAME;
+#include "ARMArchExtName.def"
+  }
+  return nullptr;
+}
+
 namespace {
 
 class ARMELFStreamer;
@@ -134,6 +148,7 @@ class ARMTargetAsmStreamer : public ARMTargetStreamer {
   void emitIntTextAttribute(unsigned Attribute, unsigned IntValue,
                             StringRef StrinValue) override;
   void emitArch(unsigned Arch) override;
+  void emitArchExtension(unsigned ArchExt) override;
   void emitObjectArch(unsigned Arch) override;
   void emitFPU(unsigned FPU) override;
   void emitInst(uint32_t Inst, char Suffix = '\0') override;
@@ -248,6 +263,9 @@ void ARMTargetAsmStreamer::emitIntTextAttribute(unsigned Attribute,
 }
 void ARMTargetAsmStreamer::emitArch(unsigned Arch) {
   OS << "\t.arch\t" << GetArchName(Arch) << "\n";
+}
+void ARMTargetAsmStreamer::emitArchExtension(unsigned ArchExt) {
+  OS << "\t.arch_extension\t" << GetArchExtName(ArchExt) << "\n";
 }
 void ARMTargetAsmStreamer::emitObjectArch(unsigned Arch) {
   OS << "\t.object_arch\t" << GetArchName(Arch) << '\n';
@@ -958,11 +976,8 @@ void ARMTargetELFStreamer::finishAttributeSection() {
   if (AttributeSection) {
     Streamer.SwitchSection(AttributeSection);
   } else {
-    AttributeSection =
-      Streamer.getContext().getELFSection(".ARM.attributes",
-                                          ELF::SHT_ARM_ATTRIBUTES,
-                                          0,
-                                          SectionKind::getMetadata());
+    AttributeSection = Streamer.getContext().getELFSection(
+        ".ARM.attributes", ELF::SHT_ARM_ATTRIBUTES, 0);
     Streamer.SwitchSection(AttributeSection);
 
     // Format version
@@ -1069,11 +1084,11 @@ inline void ARMELFStreamer::SwitchToEHSection(const char *Prefix,
   // Get .ARM.extab or .ARM.exidx section
   const MCSectionELF *EHSection = nullptr;
   if (const MCSymbol *Group = FnSection.getGroup()) {
-    EHSection = getContext().getELFSection(
-      EHSecName, Type, Flags | ELF::SHF_GROUP, Kind,
-      FnSection.getEntrySize(), Group->getName());
+    EHSection =
+        getContext().getELFSection(EHSecName, Type, Flags | ELF::SHF_GROUP,
+                                   FnSection.getEntrySize(), Group->getName());
   } else {
-    EHSection = getContext().getELFSection(EHSecName, Type, Flags, Kind);
+    EHSection = getContext().getELFSection(EHSecName, Type, Flags);
   }
   assert(EHSection && "Failed to get the required EH section");
 
@@ -1357,10 +1372,8 @@ MCStreamer *createMCAsmStreamer(MCContext &Ctx, formatted_raw_ostream &OS,
   return S;
 }
 
-MCStreamer *createARMNullStreamer(MCContext &Ctx) {
-  MCStreamer *S = llvm::createNullStreamer(Ctx);
-  new ARMTargetStreamer(*S);
-  return S;
+MCTargetStreamer *createARMNullTargetStreamer(MCStreamer &S) {
+  return new ARMTargetStreamer(S);
 }
 
 MCELFStreamer *createARMELFStreamer(MCContext &Context, MCAsmBackend &TAB,

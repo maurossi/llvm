@@ -158,6 +158,10 @@ namespace llvm {
       /// vector to a GPR.
       MMX_MOVD2W,
 
+      /// MMX_MOVW2D - Copies a GPR into the low 32-bit word of a MMX vector
+      /// and zero out the high word.
+      MMX_MOVW2D,
+
       /// PEXTRB - Extract an 8-bit value from a vector and zero extend it to
       /// i32, corresponds to X86::PEXTRB.
       PEXTRB,
@@ -197,7 +201,12 @@ namespace llvm {
 
       /// ADDSUB - Combined add and sub on an FP vector.
       ADDSUB,
-
+      //  FADD, FSUB, FMUL, FDIV, FMIN, FMAX - FP vector ops with rounding mode.
+      FADD_RND,
+      FSUB_RND,
+      FMUL_RND,
+      FDIV_RND,
+      
       // SUBUS - Integer sub with unsigned saturation.
       SUBUS,
 
@@ -384,7 +393,8 @@ namespace llvm {
       FMSUB_RND,
       FNMSUB_RND,
       FMADDSUB_RND,
-      FMSUBADD_RND,     
+      FMSUBADD_RND,
+      RNDSCALE,
 
       // Compress and expand
       COMPRESS,
@@ -554,7 +564,8 @@ namespace llvm {
   //  X86 Implementation of the TargetLowering interface
   class X86TargetLowering final : public TargetLowering {
   public:
-    explicit X86TargetLowering(const X86TargetMachine &TM);
+    explicit X86TargetLowering(const X86TargetMachine &TM,
+                               const X86Subtarget &STI);
 
     unsigned getJumpTableEncoding() const override;
 
@@ -690,9 +701,10 @@ namespace llvm {
     /// (e.g. {edx}), return the register number and the register class for the
     /// register.  This should only be used for C_Register constraints.  On
     /// error, this returns a register number of 0.
-    std::pair<unsigned, const TargetRegisterClass*>
-      getRegForInlineAsmConstraint(const std::string &Constraint,
-                                   MVT VT) const override;
+    std::pair<unsigned, const TargetRegisterClass *>
+    getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
+                                 const std::string &Constraint,
+                                 MVT VT) const override;
 
     /// Return true if the addressing mode represented
     /// by AM is legal for this target, for a load/store of the specified type.
@@ -739,6 +751,10 @@ namespace llvm {
     bool isZExtFree(EVT VT1, EVT VT2) const override;
     bool isZExtFree(SDValue Val, EVT VT2) const override;
 
+    /// Return true if folding a vector load into ExtVal (a sign, zero, or any
+    /// extend node) is profitable.
+    bool isVectorLoadExtDesirable(SDValue) const override;
+
     /// Return true if an FMA operation is faster than a pair of fmul and fadd
     /// instructions. fmuladd intrinsics will be expanded to FMAs when this
     /// method returns true, otherwise fmuladd is expanded to fmul + fadd.
@@ -781,10 +797,6 @@ namespace llvm {
     /// load node to a smaller type.
     bool shouldReduceLoadWidth(SDNode *Load, ISD::LoadExtType ExtTy,
                                EVT NewVT) const override;
-
-    const X86Subtarget* getSubtarget() const {
-      return Subtarget;
-    }
 
     /// Return true if the specified scalar FP type is computed in an SSE
     /// register, not on the X87 floating point stack.
@@ -834,26 +846,20 @@ namespace llvm {
 
     bool isNoopAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const override;
 
-    /// \brief Reset the operation actions based on target options.
-    void resetOperationActions() override;
-
     bool useLoadStackGuardNode() const override;
     /// \brief Customize the preferred legalization strategy for certain types.
     LegalizeTypeAction getPreferredVectorAction(EVT VT) const override;
 
   protected:
-    std::pair<const TargetRegisterClass*, uint8_t>
-    findRepresentativeClass(MVT VT) const override;
+    std::pair<const TargetRegisterClass *, uint8_t>
+    findRepresentativeClass(const TargetRegisterInfo *TRI,
+                            MVT VT) const override;
 
   private:
     /// Keep a pointer to the X86Subtarget around so that we can
     /// make the right decision when generating code for different targets.
     const X86Subtarget *Subtarget;
     const DataLayout *TD;
-
-    /// Used to store the TargetOptions so that we don't waste time resetting
-    /// the operation actions unless we have to.
-    TargetOptions TO;
 
     /// Select between SSE or x87 floating point ops.
     /// When SSE is available, use it for f32 operations.
@@ -954,7 +960,6 @@ namespace llvm {
     SDValue lowerEH_SJLJ_LONGJMP(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerINIT_TRAMPOLINE(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerFLT_ROUNDS_(SDValue Op, SelectionDAG &DAG) const;
-    SDValue LowerSIGN_EXTEND_INREG(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerWin64_i128OP(SDValue Op, SelectionDAG &DAG) const;
 
     SDValue

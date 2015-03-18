@@ -23,8 +23,10 @@
 #include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/Statepoint.h"
 #include "llvm/IR/ValueHandle.h"
 #include "llvm/IR/ValueSymbolTable.h"
 #include "llvm/Support/Debug.h"
@@ -496,7 +498,7 @@ static bool isDereferenceablePointer(const Value *V, const DataLayout *DL,
   // is at least as large as for the resulting pointer type, then
   // we can look through the bitcast.
   if (DL)
-    if (const BitCastInst* BC = dyn_cast<BitCastInst>(V)) {
+    if (const BitCastOperator *BC = dyn_cast<BitCastOperator>(V)) {
       Type *STy = BC->getSrcTy()->getPointerElementType(),
            *DTy = BC->getDestTy()->getPointerElementType();
       if (STy->isSized() && DTy->isSized() &&
@@ -569,6 +571,13 @@ static bool isDereferenceablePointer(const Value *V, const DataLayout *DL,
     // Indices check out; this is dereferenceable.
     return true;
   }
+
+  // For gc.relocate, look through relocations
+  if (const IntrinsicInst *I = dyn_cast<IntrinsicInst>(V))
+    if (I->getIntrinsicID() == Intrinsic::experimental_gc_relocate) {
+      GCRelocateOperands RelocateInst(I);
+      return isDereferenceablePointer(RelocateInst.derivedPtr(), DL, Visited);
+    }
 
   if (const AddrSpaceCastInst *ASC = dyn_cast<AddrSpaceCastInst>(V))
     return isDereferenceablePointer(ASC->getOperand(0), DL, Visited);

@@ -24,10 +24,10 @@
 ; CHECK:  call void @llvm.dbg.value(metadata i64 %outer.coerce1, i64 0, metadata ![[O]], metadata ![[PIECE2:[0-9]+]]),
 ; CHECK:  call void @llvm.dbg.value({{.*}}, i64 0, metadata ![[I1:[0-9]+]], metadata ![[PIECE3:[0-9]+]]),
 ; CHECK-DAG: ![[O]] = {{.*}} [ DW_TAG_arg_variable ] [outer] [line 10]
-; CHECK-DAG: ![[PIECE1]] = {{.*}} [ DW_TAG_expression ] [DW_OP_piece offset=0, size=8]
-; CHECK-DAG: ![[PIECE2]] = {{.*}} [ DW_TAG_expression ] [DW_OP_piece offset=8, size=8]
+; CHECK-DAG: ![[PIECE1]] = {{.*}} [ DW_TAG_expression ] [DW_OP_bit_piece offset=0, size=64]
+; CHECK-DAG: ![[PIECE2]] = {{.*}} [ DW_TAG_expression ] [DW_OP_bit_piece offset=64, size=64]
 ; CHECK-DAG: ![[I1]] = {{.*}} [ DW_TAG_auto_variable ] [i1] [line 11]
-; CHECK-DAG: ![[PIECE3]] = {{.*}} [ DW_TAG_expression ] [DW_OP_piece offset=0, size=4]
+; CHECK-DAG: ![[PIECE3]] = {{.*}} [ DW_TAG_expression ] [DW_OP_bit_piece offset=0, size=32]
 
 ; ModuleID = 'sroasplit-2.c'
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
@@ -73,7 +73,7 @@ attributes #2 = { nounwind }
 
 !0 = !{!"0x11\0012\00clang version 3.5.0 \000\00\000\00\001", !1, !2, !2, !3, !2, !2} ; [ DW_TAG_compile_unit ] [ DW_TAG_compile_unit ] [sroasplit-2.c] [DW_LANG_C99]
 !1 = !{!"sroasplit-2.c", !""}
-!2 = !{}
+!2 = !{!"0x102"}                                 ; [ DW_TAG_expression ]
 !3 = !{!4}
 !4 = !{!"0x2e\00foo\00foo\00\0010\000\001\000\006\00256\000\0010", !1, !5, !6, null, i32 (i64, i64)* @foo, null, null, !2} ; [ DW_TAG_subprogram ] [ DW_TAG_subprogram ] [line 10] [def] [foo]
 !5 = !{!"0x29", !1} ; [ DW_TAG_file_type ] [ DW_TAG_file_type ] [sroasplit-2.c]

@@ -354,13 +354,6 @@ protected:
 namespace llvm {
   FunctionPass *createAtomicExpandPass(const TargetMachine *TM);
 
-  /// \brief Create a basic TargetTransformInfo analysis pass.
-  ///
-  /// This pass implements the target transform info analysis using the target
-  /// independent information available to the LLVM code generator.
-  ImmutablePass *
-  createBasicTargetTransformInfoPass(const TargetMachine *TM);
-
   /// createUnreachableBlockEliminationPass - The LLVM code generator does not
   /// work well with unreachable basic blocks (what live ranges make sense for a
   /// block that cannot be reached?).  As such, a code generator should either
@@ -572,6 +565,10 @@ namespace llvm {
   /// createDwarfEHPass - This pass mulches exception handling code into a form
   /// adapted to code generation.  Required if using dwarf exception handling.
   FunctionPass *createDwarfEHPass(const TargetMachine *TM);
+
+  /// createWinEHPass - Prepares personality functions used by MSVC on Windows,
+  /// in addition to the Itanium LSDA based personalities.
+  FunctionPass *createWinEHPass(const TargetMachine *TM);
 
   /// createSjLjEHPreparePass - This pass adapts exception handling code to use
   /// the GCC-style builtin setjmp/longjmp (sjlj) to handling EH control flow.

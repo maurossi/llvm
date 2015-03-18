@@ -490,9 +490,6 @@ void DwarfDebug::beginModule() {
 
   // Tell MMI that we have debug info.
   MMI->setDebugInfoAvailability(true);
-
-  // Prime section data.
-  SectionMap[Asm->getObjFileLowering().getTextSection()];
 }
 
 void DwarfDebug::finishVariableDefinitions() {
@@ -608,53 +605,6 @@ void DwarfDebug::finalizeModuleInfo() {
     SkeletonHolder.computeSizeAndOffsets();
 }
 
-void DwarfDebug::endSections() {
-  // Filter labels by section.
-  for (const SymbolCU &SCU : ArangeLabels) {
-    if (SCU.Sym->isInSection()) {
-      // Make a note of this symbol and it's section.
-      const MCSection *Section = &SCU.Sym->getSection();
-      if (!Section->getKind().isMetadata())
-        SectionMap[Section].push_back(SCU);
-    } else {
-      // Some symbols (e.g. common/bss on mach-o) can have no section but still
-      // appear in the output. This sucks as we rely on sections to build
-      // arange spans. We can do it without, but it's icky.
-      SectionMap[nullptr].push_back(SCU);
-    }
-  }
-
-  // Build a list of sections used.
-  std::vector<const MCSection *> Sections;
-  for (const auto &it : SectionMap) {
-    const MCSection *Section = it.first;
-    Sections.push_back(Section);
-  }
-
-  // Sort the sections into order.
-  // This is only done to ensure consistent output order across different runs.
-  std::sort(Sections.begin(), Sections.end(), SectionSort);
-
-  // Add terminating symbols for each section.
-  for (unsigned ID = 0, E = Sections.size(); ID != E; ID++) {
-    const MCSection *Section = Sections[ID];
-    MCSymbol *Sym = nullptr;
-
-    if (Section) {
-      // We can't call MCSection::getLabelEndName, as it's only safe to do so
-      // if we know the section name up-front. For user-created sections, the
-      // resulting label may not be valid to use as a label. (section names can
-      // use a greater set of characters on some systems)
-      Sym = Asm->GetTempSymbol("debug_end", ID);
-      Asm->OutStreamer.SwitchSection(Section);
-      Asm->OutStreamer.EmitLabel(Sym);
-    }
-
-    // Insert a final terminator.
-    SectionMap[Section].push_back(SymbolCU(nullptr, Sym));
-  }
-}
-
 // Emit all Dwarf sections that should come after the content.
 void DwarfDebug::endModule() {
   assert(CurFn == nullptr);
@@ -665,10 +615,6 @@ void DwarfDebug::endModule() {
   // llvm.dbg.cu metadata node)
   if (!DwarfInfoSectionSym)
     return;
-
-  // End any existing sections.
-  // TODO: Does this need to happen?
-  endSections();
 
   // Finalize the debug info for the module.
   finalizeModuleInfo();
@@ -783,10 +729,9 @@ void DwarfDebug::collectVariableInfoFromMMITable(
     DIVariable DV(VI.Var);
     DIExpression Expr(VI.Expr);
     ensureAbstractVariableIsCreatedIfScoped(DV, Scope->getScopeNode());
-    ConcreteVariables.push_back(make_unique<DbgVariable>(DV, Expr, this));
-    DbgVariable *RegVar = ConcreteVariables.back().get();
-    RegVar->setFrameIndex(VI.Slot);
-    InfoHolder.addScopeVariable(Scope, RegVar);
+    auto RegVar = make_unique<DbgVariable>(DV, Expr, this, VI.Slot);
+    if (InfoHolder.addScopeVariable(Scope, RegVar.get()))
+      ConcreteVariables.push_back(std::move(RegVar));
   }
 }
 
@@ -818,12 +763,12 @@ static DebugLocEntry::Value getDebugLocValue(const MachineInstr *MI) {
 
 /// Determine whether two variable pieces overlap.
 static bool piecesOverlap(DIExpression P1, DIExpression P2) {
-  if (!P1.isVariablePiece() || !P2.isVariablePiece())
+  if (!P1.isBitPiece() || !P2.isBitPiece())
     return true;
-  unsigned l1 = P1.getPieceOffset();
-  unsigned l2 = P2.getPieceOffset();
-  unsigned r1 = l1 + P1.getPieceSize();
-  unsigned r2 = l2 + P2.getPieceSize();
+  unsigned l1 = P1.getBitPieceOffset();
+  unsigned l2 = P2.getBitPieceOffset();
+  unsigned r1 = l1 + P1.getBitPieceSize();
+  unsigned r2 = l2 + P2.getBitPieceSize();
   // True where [l1,r1[ and [r1,r2[ overlap.
   return (l1 < r2) && (l2 < r1);
 }
@@ -842,7 +787,8 @@ static bool piecesOverlap(DIExpression P1, DIExpression P2) {
 // 1 | |    [x, (reg1, piece 32, 32)] <- IsPieceOfPrevEntry
 // 2 | |    ...
 // 3   |    [clobber reg0]
-// 4        [x, (mem, piece 0, 64)] <- overlapping with both previous pieces of x.
+// 4        [x, (mem, piece 0, 64)] <- overlapping with both previous pieces of
+//                                     x.
 //
 // Output:
 //
@@ -894,7 +840,7 @@ DwarfDebug::buildLocationList(SmallVectorImpl<DebugLocEntry> &DebugLoc,
     bool couldMerge = false;
 
     // If this is a piece, it may belong to the current DebugLocEntry.
-    if (DIExpr.isVariablePiece()) {
+    if (DIExpr.isBitPiece()) {
       // Add this value to the list of open ranges.
       OpenRanges.push_back(Value);
 
@@ -950,11 +896,9 @@ DwarfDebug::collectVariableInfo(DwarfCompileUnit &TheCU, DISubprogram SP,
       continue;
 
     LexicalScope *Scope = nullptr;
-    if (MDNode *IA = DV.getInlinedAt()) {
-      DebugLoc DL = DebugLoc::getFromDILocation(IA);
-      Scope = LScopes.findInlinedScope(DebugLoc::get(
-          DL.getLine(), DL.getCol(), DV.getContext(), IA));
-    } else
+    if (MDNode *IA = DV.getInlinedAt())
+      Scope = LScopes.findInlinedScope(DV.getContext(), IA);
+    else
       Scope = LScopes.findLexicalScope(DV.getContext());
     // If variable scope is not found then skip this variable.
     if (!Scope)
@@ -1178,7 +1122,7 @@ void DwarfDebug::beginFunction(const MachineFunction *MF) {
   Asm->OutStreamer.EmitLabel(FunctionBeginSym);
 
   // Calculate history for local variables.
-  calculateDbgValueHistory(MF, Asm->TM.getSubtargetImpl()->getRegisterInfo(),
+  calculateDbgValueHistory(MF, Asm->MF->getSubtarget().getRegisterInfo(),
                            DbgValues);
 
   // Request labels for the full history.
@@ -1193,7 +1137,7 @@ void DwarfDebug::beginFunction(const MachineFunction *MF) {
     if (DIVar.isVariable() && DIVar.getTag() == dwarf::DW_TAG_arg_variable &&
         getDISubprogram(DIVar.getContext()).describes(MF->getFunction())) {
       LabelsBeforeInsn[Ranges.front().first] = FunctionBeginSym;
-      if (Ranges.front().first->getDebugExpression().isVariablePiece()) {
+      if (Ranges.front().first->getDebugExpression().isBitPiece()) {
         // Mark all non-overlapping initial pieces.
         for (auto I = Ranges.begin(); I != Ranges.end(); ++I) {
           DIExpression Piece = I->first->getDebugExpression();
@@ -1356,8 +1300,8 @@ void DwarfDebug::emitSectionLabels() {
   if (useSplitDwarf()) {
     DwarfInfoDWOSectionSym =
         emitSectionSym(Asm, TLOF.getDwarfInfoDWOSection(), "section_info_dwo");
-    DwarfTypesDWOSectionSym =
-        emitSectionSym(Asm, TLOF.getDwarfTypesDWOSection(), "section_types_dwo");
+    DwarfTypesDWOSectionSym = emitSectionSym(
+        Asm, TLOF.getDwarfTypesDWOSection(), "section_types_dwo");
   }
   DwarfAbbrevSectionSym =
       emitSectionSym(Asm, TLOF.getDwarfAbbrevSection(), "section_abbrev");
@@ -1559,7 +1503,6 @@ static dwarf::PubIndexEntryDescriptor computeIndexValue(DwarfUnit *CU,
     return dwarf::GIEK_TYPE;
   case dwarf::DW_TAG_subprogram:
     return dwarf::PubIndexEntryDescriptor(dwarf::GIEK_FUNCTION, Linkage);
-  case dwarf::DW_TAG_constant:
   case dwarf::DW_TAG_variable:
     return dwarf::PubIndexEntryDescriptor(dwarf::GIEK_VARIABLE, Linkage);
   case dwarf::DW_TAG_enumerator:
@@ -1662,21 +1605,20 @@ void DwarfDebug::emitLocPieces(ByteStreamer &Streamer,
                                const DITypeIdentifierMap &Map,
                                ArrayRef<DebugLocEntry::Value> Values) {
   assert(std::all_of(Values.begin(), Values.end(), [](DebugLocEntry::Value P) {
-        return P.isVariablePiece();
+        return P.isBitPiece();
       }) && "all values are expected to be pieces");
   assert(std::is_sorted(Values.begin(), Values.end()) &&
          "pieces are expected to be sorted");
 
   unsigned Offset = 0;
   for (auto Piece : Values) {
-    const unsigned SizeOfByte = 8;
     DIExpression Expr = Piece.getExpression();
-    unsigned PieceOffset = Expr.getPieceOffset();
-    unsigned PieceSize = Expr.getPieceSize();
+    unsigned PieceOffset = Expr.getBitPieceOffset();
+    unsigned PieceSize = Expr.getBitPieceSize();
     assert(Offset <= PieceOffset && "overlapping or duplicate pieces");
     if (Offset < PieceOffset) {
       // The DWARF spec seriously mandates pieces with no locations for gaps.
-      Asm->EmitDwarfOpPiece(Streamer, (PieceOffset-Offset)*SizeOfByte);
+      Asm->EmitDwarfOpPiece(Streamer, PieceOffset-Offset);
       Offset += PieceOffset-Offset;
     }
     Offset += PieceSize;
@@ -1684,12 +1626,12 @@ void DwarfDebug::emitLocPieces(ByteStreamer &Streamer,
 #ifndef NDEBUG
     DIVariable Var = Piece.getVariable();
     unsigned VarSize = Var.getSizeInBits(Map);
-    assert(PieceSize+PieceOffset <= VarSize/SizeOfByte
+    assert(PieceSize+PieceOffset <= VarSize
            && "piece is larger than or outside of variable");
-    assert(PieceSize*SizeOfByte != VarSize
+    assert(PieceSize != VarSize
            && "piece covers entire variable");
 #endif
-    emitDebugLocValue(Streamer, Piece, PieceOffset*SizeOfByte);
+    emitDebugLocValue(Streamer, Piece, PieceOffset);
   }
 }
 
@@ -1697,7 +1639,7 @@ void DwarfDebug::emitLocPieces(ByteStreamer &Streamer,
 void DwarfDebug::emitDebugLocEntry(ByteStreamer &Streamer,
                                    const DebugLocEntry &Entry) {
   const DebugLocEntry::Value Value = Entry.getValues()[0];
-  if (Value.isVariablePiece())
+  if (Value.isBitPiece())
     // Emit all pieces that belong to the same variable and range.
     return emitLocPieces(Streamer, TypeIdentifierMap, Entry.getValues());
 
@@ -1729,7 +1671,7 @@ void DwarfDebug::emitDebugLocValue(ByteStreamer &Streamer,
       // Complex address entry.
       if (Loc.getOffset()) {
         DwarfExpr.AddMachineRegIndirect(Loc.getReg(), Loc.getOffset());
-        DwarfExpr.AddExpression(Expr, PieceOffsetInBits);
+        DwarfExpr.AddExpression(Expr.begin(), Expr.end(), PieceOffsetInBits);
       } else
         DwarfExpr.AddMachineRegExpression(Expr, Loc.getReg(),
                                           PieceOffsetInBits);
@@ -1809,13 +1751,26 @@ struct ArangeSpan {
 // Emit a debug aranges section, containing a CU lookup for any
 // address we can tie back to a CU.
 void DwarfDebug::emitDebugARanges() {
-  // Start the dwarf aranges section.
-  Asm->OutStreamer.SwitchSection(
-      Asm->getObjFileLowering().getDwarfARangesSection());
+  // Provides a unique id per text section.
+  DenseMap<const MCSection *, SmallVector<SymbolCU, 8>> SectionMap;
 
-  typedef DenseMap<DwarfCompileUnit *, std::vector<ArangeSpan>> SpansType;
+  // Prime section data.
+  SectionMap[Asm->getObjFileLowering().getTextSection()];
 
-  SpansType Spans;
+  // Filter labels by section.
+  for (const SymbolCU &SCU : ArangeLabels) {
+    if (SCU.Sym->isInSection()) {
+      // Make a note of this symbol and it's section.
+      const MCSection *Section = &SCU.Sym->getSection();
+      if (!Section->getKind().isMetadata())
+        SectionMap[Section].push_back(SCU);
+    } else {
+      // Some symbols (e.g. common/bss on mach-o) can have no section but still
+      // appear in the output. This sucks as we rely on sections to build
+      // arange spans. We can do it without, but it's icky.
+      SectionMap[nullptr].push_back(SCU);
+    }
+  }
 
   // Build a list of sections used.
   std::vector<const MCSection *> Sections;
@@ -1828,11 +1783,44 @@ void DwarfDebug::emitDebugARanges() {
   // This is only done to ensure consistent output order across different runs.
   std::sort(Sections.begin(), Sections.end(), SectionSort);
 
-  // Build a set of address spans, sorted by CU.
+  // Add terminating symbols for each section.
+  for (unsigned ID = 0, E = Sections.size(); ID != E; ID++) {
+    const MCSection *Section = Sections[ID];
+    MCSymbol *Sym = nullptr;
+
+    if (Section) {
+      // We can't call MCSection::getLabelEndName, as it's only safe to do so
+      // if we know the section name up-front. For user-created sections, the
+      // resulting label may not be valid to use as a label. (section names can
+      // use a greater set of characters on some systems)
+      Sym = Asm->GetTempSymbol("debug_end", ID);
+      Asm->OutStreamer.SwitchSection(Section);
+      Asm->OutStreamer.EmitLabel(Sym);
+    }
+
+    // Insert a final terminator.
+    SectionMap[Section].push_back(SymbolCU(nullptr, Sym));
+  }
+
+  DenseMap<DwarfCompileUnit *, std::vector<ArangeSpan>> Spans;
+
   for (const MCSection *Section : Sections) {
     SmallVector<SymbolCU, 8> &List = SectionMap[Section];
     if (List.size() < 2)
       continue;
+
+    // If we have no section (e.g. common), just write out
+    // individual spans for each symbol.
+    if (!Section) {
+      for (const SymbolCU &Cur : List) {
+        ArangeSpan Span;
+        Span.Start = Cur.Sym;
+        Span.End = nullptr;
+        if (Cur.CU)
+          Spans[Cur.CU].push_back(Span);
+      }
+      continue;
+    }
 
     // Sort the symbols by offset within the section.
     std::sort(List.begin(), List.end(),
@@ -1849,34 +1837,26 @@ void DwarfDebug::emitDebugARanges() {
       return IA < IB;
     });
 
-    // If we have no section (e.g. common), just write out
-    // individual spans for each symbol.
-    if (!Section) {
-      for (const SymbolCU &Cur : List) {
-        ArangeSpan Span;
-        Span.Start = Cur.Sym;
-        Span.End = nullptr;
-        if (Cur.CU)
-          Spans[Cur.CU].push_back(Span);
-      }
-    } else {
-      // Build spans between each label.
-      const MCSymbol *StartSym = List[0].Sym;
-      for (size_t n = 1, e = List.size(); n < e; n++) {
-        const SymbolCU &Prev = List[n - 1];
-        const SymbolCU &Cur = List[n];
+    // Build spans between each label.
+    const MCSymbol *StartSym = List[0].Sym;
+    for (size_t n = 1, e = List.size(); n < e; n++) {
+      const SymbolCU &Prev = List[n - 1];
+      const SymbolCU &Cur = List[n];
 
-        // Try and build the longest span we can within the same CU.
-        if (Cur.CU != Prev.CU) {
-          ArangeSpan Span;
-          Span.Start = StartSym;
-          Span.End = Cur.Sym;
-          Spans[Prev.CU].push_back(Span);
-          StartSym = Cur.Sym;
-        }
+      // Try and build the longest span we can within the same CU.
+      if (Cur.CU != Prev.CU) {
+        ArangeSpan Span;
+        Span.Start = StartSym;
+        Span.End = Cur.Sym;
+        Spans[Prev.CU].push_back(Span);
+        StartSym = Cur.Sym;
       }
     }
   }
+
+  // Start the dwarf aranges section.
+  Asm->OutStreamer.SwitchSection(
+      Asm->getObjFileLowering().getDwarfARangesSection());
 
   unsigned PtrSize = Asm->getDataLayout().getPointerSize();
 

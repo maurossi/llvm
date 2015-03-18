@@ -99,6 +99,8 @@ public:
 class BitcodeReaderMDValueList {
   unsigned NumFwdRefs;
   bool AnyFwdRefs;
+  unsigned MinFwdRef;
+  unsigned MaxFwdRef;
   std::vector<TrackingMDRef> MDValuePtrs;
 
   LLVMContext &Context;
@@ -333,6 +335,10 @@ private:
     return getFnValueByID(ValNo, Ty);
   }
 
+  /// Converts alignment exponent (i.e. power of two (or zero)) to the
+  /// corresponding alignment to use. If alignment is too large, returns
+  /// a corresponding error code.
+  std::error_code parseAlignmentValue(uint64_t Exponent, unsigned &Alignment);
   std::error_code ParseAttrKind(uint64_t Code, Attribute::AttrKind *Kind);
   std::error_code ParseModule(bool Resume);
   std::error_code ParseAttributeBlock();

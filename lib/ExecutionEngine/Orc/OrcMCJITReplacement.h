@@ -22,6 +22,7 @@
 #include "llvm/Object/Archive.h"
 
 namespace llvm {
+namespace orc {
 
 class OrcMCJITReplacement : public ExecutionEngine {
 
@@ -104,11 +105,12 @@ class OrcMCJITReplacement : public ExecutionEngine {
   };
 
 private:
+
   static ExecutionEngine *
   createOrcMCJITReplacement(std::string *ErrorMsg,
                             std::unique_ptr<RTDyldMemoryManager> OrcJMM,
-                            std::unique_ptr<llvm::TargetMachine> TM) {
-    return new llvm::OrcMCJITReplacement(std::move(OrcJMM), std::move(TM));
+                            std::unique_ptr<TargetMachine> TM) {
+    return new OrcMCJITReplacement(std::move(OrcJMM), std::move(TM));
   }
 
 public:
@@ -134,9 +136,9 @@ public:
     if (!M->getDataLayout())
       M->setDataLayout(getDataLayout());
 
-    OwnedModules.push_back(std::move(M));
+    Modules.push_back(std::move(M));
     std::vector<Module *> Ms;
-    Ms.push_back(&*OwnedModules.back());
+    Ms.push_back(&*Modules.back());
     LazyEmitLayer.addModuleSet(std::move(Ms),
                                llvm::make_unique<ForwardingRTDyldMM>(*this));
   }
@@ -154,8 +156,13 @@ public:
     std::tie(Obj, Buf) = O.takeBinary();
     std::vector<std::unique_ptr<object::ObjectFile>> Objs;
     Objs.push_back(std::move(Obj));
-    ObjectLayer.addObjectSet(std::move(Objs),
-                             llvm::make_unique<ForwardingRTDyldMM>(*this));
+    auto H =
+      ObjectLayer.addObjectSet(std::move(Objs),
+                               llvm::make_unique<ForwardingRTDyldMM>(*this));
+
+    std::vector<std::unique_ptr<MemoryBuffer>> Bufs;
+    Bufs.push_back(std::move(Buf));
+    ObjectLayer.takeOwnershipOfBuffers(H, std::move(Bufs));
   }
 
   void addArchive(object::OwningBinary<object::Archive> A) override {
@@ -208,7 +215,7 @@ public:
 
 private:
   uint64_t getSymbolAddressWithoutMangling(StringRef Name) {
-    if (uint64_t Addr = LazyEmitLayer.getSymbolAddress(Name, false))
+    if (uint64_t Addr = LazyEmitLayer.findSymbol(Name, false).getAddress())
       return Addr;
     if (uint64_t Addr = MM->getSymbolAddress(Name))
       return Addr;
@@ -236,7 +243,7 @@ private:
               static_cast<object::ObjectFile *>(ChildBin.release())));
           ObjectLayer.addObjectSet(
               std::move(ObjSet), llvm::make_unique<ForwardingRTDyldMM>(*this));
-          if (uint64_t Addr = ObjectLayer.getSymbolAddress(Name, true))
+          if (uint64_t Addr = ObjectLayer.findSymbol(Name, true).getAddress())
             return Addr;
         }
       }
@@ -302,10 +309,6 @@ private:
   CompileLayerT CompileLayer;
   LazyEmitLayerT LazyEmitLayer;
 
-  // MCJIT keeps modules alive - we need to do the same for backwards
-  // compatibility.
-  std::vector<std::unique_ptr<Module>> OwnedModules;
-
   // We need to store ObjLayerT::ObjSetHandles for each of the object sets
   // that have been emitted but not yet finalized so that we can forward the
   // mapSectionAddress calls appropriately.
@@ -322,6 +325,8 @@ private:
 
   std::vector<object::OwningBinary<object::Archive>> Archives;
 };
-}
+
+} // End namespace orc.
+} // End namespace llvm.
 
 #endif // LLVM_LIB_EXECUTIONENGINE_ORC_MCJITREPLACEMENT_H

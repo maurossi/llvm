@@ -1391,8 +1391,8 @@ Instruction *InstCombiner::visitGetElementPtrInst(GetElementPtrInst &GEP) {
     if (DI == -1) {
       // All the GEPs feeding the PHI are identical. Clone one down into our
       // BB so that it can be merged with the current GEP.
-      GEP.getParent()->getInstList().insert(GEP.getParent()->getFirstNonPHI(),
-                                            NewGEP);
+      GEP.getParent()->getInstList().insert(
+          GEP.getParent()->getFirstInsertionPt(), NewGEP);
     } else {
       // All the GEPs feeding the PHI differ at a single offset. Clone a GEP
       // into the current block so it can be merged, and create a new PHI to
@@ -1408,8 +1408,8 @@ Instruction *InstCombiner::visitGetElementPtrInst(GetElementPtrInst &GEP) {
                            PN->getIncomingBlock(I));
 
       NewGEP->setOperand(DI, NewPN);
-      GEP.getParent()->getInstList().insert(GEP.getParent()->getFirstNonPHI(),
-                                            NewGEP);
+      GEP.getParent()->getInstList().insert(
+          GEP.getParent()->getFirstInsertionPt(), NewGEP);
       NewGEP->setOperand(DI, NewPN);
     }
 
@@ -2275,6 +2275,7 @@ static bool isCatchAll(EHPersonality Personality, Constant *TypeInfo) {
     return false;
   case EHPersonality::GNU_CXX:
   case EHPersonality::GNU_ObjC:
+  case EHPersonality::MSVC_X86SEH:
   case EHPersonality::MSVC_Win64SEH:
   case EHPersonality::MSVC_CXX:
     return TypeInfo->isNullValue();
@@ -2293,7 +2294,7 @@ Instruction *InstCombiner::visitLandingPadInst(LandingPadInst &LI) {
   // The logic here should be correct for any real-world personality function.
   // However if that turns out not to be true, the offending logic can always
   // be conditioned on the personality function, like the catch-all logic is.
-  EHPersonality Personality = ClassifyEHPersonality(LI.getPersonalityFn());
+  EHPersonality Personality = classifyEHPersonality(LI.getPersonalityFn());
 
   // Simplify the list of clauses, eg by removing repeated catch clauses
   // (these are often created by inlining).
@@ -2914,8 +2915,7 @@ static bool combineInstructionsOverFunction(
     TargetLibraryInfo &TLI, DominatorTree &DT, const DataLayout *DL = nullptr,
     LoopInfo *LI = nullptr) {
   // Minimizing size?
-  bool MinimizeSize = F.getAttributes().hasAttribute(
-      AttributeSet::FunctionIndex, Attribute::MinSize);
+  bool MinimizeSize = F.hasFnAttribute(Attribute::MinSize);
 
   /// Builder - This is an IRBuilder that automatically inserts new
   /// instructions into the worklist when they are created.

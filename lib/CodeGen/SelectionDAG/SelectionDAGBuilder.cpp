@@ -1956,7 +1956,7 @@ void SelectionDAGBuilder::visitBitTestCase(BitTestBlock &BB,
   SDValue ShiftOp = DAG.getCopyFromReg(getControlRoot(), getCurSDLoc(),
                                        Reg, VT);
   SDValue Cmp;
-  unsigned PopCount = CountPopulation_64(B.Mask);
+  unsigned PopCount = countPopulation(B.Mask);
   const TargetLowering &TLI = DAG.getTargetLoweringInfo();
   if (PopCount == 1) {
     // Testing for a single bit; just compare the shift count with what it
@@ -1968,7 +1968,7 @@ void SelectionDAGBuilder::visitBitTestCase(BitTestBlock &BB,
     // There is only one zero bit in the range, test for it directly.
     Cmp = DAG.getSetCC(
         getCurSDLoc(), TLI.getSetCCResultType(*DAG.getContext(), VT), ShiftOp,
-        DAG.getConstant(CountTrailingOnes_64(B.Mask), VT), ISD::SETNE);
+        DAG.getConstant(countTrailingOnes(B.Mask), VT), ISD::SETNE);
   } else {
     // Make desired shift
     SDValue SwitchVal = DAG.getNode(ISD::SHL, getCurSDLoc(), VT,
@@ -4591,11 +4591,10 @@ static SDValue ExpandPowI(SDLoc DL, SDValue LHS, SDValue RHS,
       return DAG.getConstantFP(1.0, LHS.getValueType());
 
     const Function *F = DAG.getMachineFunction().getFunction();
-    if (!F->getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                         Attribute::OptimizeForSize) ||
+    if (!F->hasFnAttribute(Attribute::OptimizeForSize) ||
         // If optimizing for size, don't insert too many multiplies.  This
         // inserts up to 5 multiplies.
-        CountPopulation_32(Val)+Log2_32(Val) < 7) {
+        countPopulation(Val) + Log2_32(Val) < 7) {
       // We use the simple binary decomposition method to generate the multiply
       // sequence.  There are more optimal ways to do this (for example,
       // powi(x,15) generates one more multiply than it should), but this has
@@ -5670,6 +5669,9 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
 
     return nullptr;
   }
+  case Intrinsic::eh_begincatch:
+  case Intrinsic::eh_endcatch:
+    llvm_unreachable("begin/end catch intrinsics not lowered in codegen");
   }
 }
 
@@ -6401,9 +6403,10 @@ static void GetRegistersForValue(SelectionDAG &DAG,
 
   // If this is a constraint for a single physreg, or a constraint for a
   // register class, find it.
-  std::pair<unsigned, const TargetRegisterClass*> PhysReg =
-    TLI.getRegForInlineAsmConstraint(OpInfo.ConstraintCode,
-                                     OpInfo.ConstraintVT);
+  std::pair<unsigned, const TargetRegisterClass *> PhysReg =
+      TLI.getRegForInlineAsmConstraint(MF.getSubtarget().getRegisterInfo(),
+                                       OpInfo.ConstraintCode,
+                                       OpInfo.ConstraintVT);
 
   unsigned NumRegs = 1;
   if (OpInfo.ConstraintVT != MVT::Other) {
@@ -6499,8 +6502,8 @@ void SelectionDAGBuilder::visitInlineAsm(ImmutableCallSite CS) {
   SDISelAsmOperandInfoVector ConstraintOperands;
 
   const TargetLowering &TLI = DAG.getTargetLoweringInfo();
-  TargetLowering::AsmOperandInfoVector
-    TargetConstraints = TLI.ParseConstraints(CS);
+  TargetLowering::AsmOperandInfoVector TargetConstraints =
+      TLI.ParseConstraints(DAG.getSubtarget().getRegisterInfo(), CS);
 
   bool hasMemory = false;
 
@@ -6592,12 +6595,13 @@ void SelectionDAGBuilder::visitInlineAsm(ImmutableCallSite CS) {
       SDISelAsmOperandInfo &Input = ConstraintOperands[OpInfo.MatchingInput];
 
       if (OpInfo.ConstraintVT != Input.ConstraintVT) {
-        std::pair<unsigned, const TargetRegisterClass*> MatchRC =
-          TLI.getRegForInlineAsmConstraint(OpInfo.ConstraintCode,
-                                            OpInfo.ConstraintVT);
-        std::pair<unsigned, const TargetRegisterClass*> InputRC =
-          TLI.getRegForInlineAsmConstraint(Input.ConstraintCode,
-                                            Input.ConstraintVT);
+	const TargetRegisterInfo *TRI = DAG.getSubtarget().getRegisterInfo();
+        std::pair<unsigned, const TargetRegisterClass *> MatchRC =
+            TLI.getRegForInlineAsmConstraint(TRI, OpInfo.ConstraintCode,
+                                             OpInfo.ConstraintVT);
+        std::pair<unsigned, const TargetRegisterClass *> InputRC =
+            TLI.getRegForInlineAsmConstraint(TRI, Input.ConstraintCode,
+                                             Input.ConstraintVT);
         if ((OpInfo.ConstraintVT.isInteger() !=
              Input.ConstraintVT.isInteger()) ||
             (MatchRC.second != InputRC.second)) {
@@ -7262,8 +7266,7 @@ void SelectionDAGBuilder::visitPatchpoint(ImmutableCallSite CS,
 
   // Push the arguments from the call instruction up to the register mask.
   SDNode::op_iterator e = HasGlue ? Call->op_end()-2 : Call->op_end()-1;
-  for (SDNode::op_iterator i = Call->op_begin()+2; i != e; ++i)
-    Ops.push_back(*i);
+  Ops.append(Call->op_begin() + 2, e);
 
   // Push live variables for the stack map.
   addStackMapLiveVars(CS, NumMetaOpers + NumArgs, Ops, *this);
@@ -7462,11 +7465,8 @@ TargetLowering::LowerCallTo(TargetLowering::CallLoweringInfo &CLI) const {
       }
       if (Args[i].isNest)
         Flags.setNest();
-      if (NeedsRegBlock) {
+      if (NeedsRegBlock)
         Flags.setInConsecutiveRegs();
-        if (Value == NumValues - 1)
-          Flags.setInConsecutiveRegsLast();
-      }
       Flags.setOrigAlign(OriginalAlignment);
 
       MVT PartVT = getRegisterType(CLI.RetTy->getContext(), VT);
@@ -7515,6 +7515,9 @@ TargetLowering::LowerCallTo(TargetLowering::CallLoweringInfo &CLI) const {
         CLI.Outs.push_back(MyFlags);
         CLI.OutVals.push_back(Parts[j]);
       }
+
+      if (NeedsRegBlock && Value == NumValues - 1)
+        CLI.Outs[CLI.Outs.size() - 1].Flags.setInConsecutiveRegsLast();
     }
   }
 
@@ -7671,7 +7674,8 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
     ISD::ArgFlagsTy Flags;
     Flags.setSRet();
     MVT RegisterVT = TLI->getRegisterType(*DAG.getContext(), ValueVTs[0]);
-    ISD::InputArg RetArg(Flags, RegisterVT, ValueVTs[0], true, 0, 0);
+    ISD::InputArg RetArg(Flags, RegisterVT, ValueVTs[0], true,
+                         ISD::InputArg::NoArgIndex, 0);
     Ins.push_back(RetArg);
   }
 
@@ -7729,11 +7733,8 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
       }
       if (F.getAttributes().hasAttribute(Idx, Attribute::Nest))
         Flags.setNest();
-      if (NeedsRegBlock) {
+      if (NeedsRegBlock)
         Flags.setInConsecutiveRegs();
-        if (Value == NumValues - 1)
-          Flags.setInConsecutiveRegsLast();
-      }
       Flags.setOrigAlign(OriginalAlignment);
 
       MVT RegisterVT = TLI->getRegisterType(*CurDAG->getContext(), VT);
@@ -7748,6 +7749,8 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
           MyFlags.Flags.setOrigAlign(1);
         Ins.push_back(MyFlags);
       }
+      if (NeedsRegBlock && Value == NumValues - 1)
+        Ins[Ins.size() - 1].Flags.setInConsecutiveRegsLast();
       PartBase += VT.getStoreSize();
     }
   }
@@ -7882,7 +7885,6 @@ void SelectionDAGISel::LowerArguments(const Function &F) {
   assert(i == InVals.size() && "Argument register count mismatch!");
 
   // Finally, if the target has anything special to do, allow it to do so.
-  // FIXME: this should insert code into the DAG!
   EmitFunctionEntryCode();
 }
 

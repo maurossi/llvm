@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "MipsOptionRecord.h"
-#include "MipsTargetStreamer.h"
 #include "MipsELFStreamer.h"
+#include "MipsTargetStreamer.h"
 #include "llvm/MC/MCSectionELF.h"
 
 using namespace llvm;
@@ -30,12 +30,11 @@ void MipsRegInfoRecord::EmitMipsOptionRecord() {
     // 1-byte long nor fixed length but it matches the value GAS emits.
     const MCSectionELF *Sec =
         Context.getELFSection(".MIPS.options", ELF::SHT_MIPS_OPTIONS,
-                              ELF::SHF_ALLOC | ELF::SHF_MIPS_NOSTRIP,
-                              SectionKind::getMetadata(), 1, "");
+                              ELF::SHF_ALLOC | ELF::SHF_MIPS_NOSTRIP, 1, "");
     MCA.getOrCreateSectionData(*Sec).setAlignment(8);
     Streamer->SwitchSection(Sec);
 
-    Streamer->EmitIntValue(1, 1);  // kind
+    Streamer->EmitIntValue(ELF::ODK_REGINFO, 1);  // kind
     Streamer->EmitIntValue(40, 1); // size
     Streamer->EmitIntValue(0, 2);  // section
     Streamer->EmitIntValue(0, 4);  // info
@@ -47,9 +46,8 @@ void MipsRegInfoRecord::EmitMipsOptionRecord() {
     Streamer->EmitIntValue(ri_cprmask[3], 4);
     Streamer->EmitIntValue(ri_gp_value, 8);
   } else {
-    const MCSectionELF *Sec =
-        Context.getELFSection(".reginfo", ELF::SHT_MIPS_REGINFO, ELF::SHF_ALLOC,
-                              SectionKind::getMetadata(), 24, "");
+    const MCSectionELF *Sec = Context.getELFSection(
+        ".reginfo", ELF::SHT_MIPS_REGINFO, ELF::SHF_ALLOC, 24, "");
     MCA.getOrCreateSectionData(*Sec)
         .setAlignment(MTS->getABI().IsN32() ? 8 : 4);
     Streamer->SwitchSection(Sec);

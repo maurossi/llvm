@@ -368,7 +368,7 @@ added in the future:
 
     The idea behind this convention is to support calls to runtime functions
     that have a hot path and a cold path. The hot path is usually a small piece
-    of code that doesn't many registers. The cold path might need to call out to
+    of code that doesn't use many registers. The cold path might need to call out to
     another function and therefore only needs to preserve the caller-saved
     registers, which haven't already been saved by the caller. The
     `PreserveMost` calling convention is very similar to the `cold` calling
@@ -521,7 +521,7 @@ Global Variables
 Global variables define regions of memory allocated at compilation time
 instead of run-time.
 
-Global variables definitions must be initialized.
+Global variable definitions must be initialized.
 
 Global variables in other translation units can also be declared, in which
 case they don't have an initializer.
@@ -588,7 +588,7 @@ iteration. The maximum alignment is ``1 << 29``.
 
 Globals can also have a :ref:`DLL storage class <dllstorageclass>`.
 
-Variables and aliasaes can have a
+Variables and aliases can have a
 :ref:`Thread Local Storage Model <tls_model>`.
 
 Syntax::
@@ -666,7 +666,7 @@ predecessors, it also cannot have any :ref:`PHI nodes <i_phi>`.
 
 LLVM allows an explicit section to be specified for functions. If the
 target supports it, it will emit functions to the section specified.
-Additionally, the function can placed in a COMDAT.
+Additionally, the function can be placed in a COMDAT.
 
 An explicit alignment may be specified for a function. If not present,
 or if the alignment is set to zero, the alignment of the function is set
@@ -674,7 +674,7 @@ by the target to whatever it feels convenient. If an explicit alignment
 is specified, the function is forced to have at least that much
 alignment. All alignments must be a power of 2.
 
-If the ``unnamed_addr`` attribute is given, the address is know to not
+If the ``unnamed_addr`` attribute is given, the address is known to not
 be significant and two identical functions can be merged.
 
 Syntax::
@@ -716,7 +716,7 @@ The linkage must be one of ``private``, ``internal``, ``linkonce``, ``weak``,
 ``linkonce_odr``, ``weak_odr``, ``external``. Note that some system linkers
 might not correctly handle dropping a weak symbol that is aliased.
 
-Alias that are not ``unnamed_addr`` are guaranteed to have the same address as
+Aliases that are not ``unnamed_addr`` are guaranteed to have the same address as
 the aliasee expression. ``unnamed_addr`` ones are only guaranteed to point
 to the same content.
 
@@ -1014,19 +1014,22 @@ Currently, only the following parameter attributes are defined:
 
 .. _gc:
 
-Garbage Collector Names
------------------------
+Garbage Collector Strategy Names
+--------------------------------
 
-Each function may specify a garbage collector name, which is simply a
+Each function may specify a garbage collector strategy name, which is simply a
 string:
 
 .. code-block:: llvm
 
     define void @f() gc "name" { ... }
 
-The compiler declares the supported values of *name*. Specifying a
-collector will cause the compiler to alter its output in order to
-support the named garbage collection algorithm.
+The supported values of *name* includes those :ref:`built in to LLVM 
+<builtin-gc-strategies>` and any provided by loaded plugins.  Specifying a GC
+strategy will cause the compiler to alter its output in order to support the 
+named garbage collection algorithm.  Note that LLVM itself does not contain a 
+garbage collector, this functionality is restricted to generating machine code
+which can interoperate with a collector provided externally.  
 
 .. _prefixdata:
 
@@ -1236,9 +1239,12 @@ example:
     normally. This produces undefined behavior at runtime if the
     function ever does dynamically return.
 ``nounwind``
-    This function attribute indicates that the function never returns
-    with an unwind or exceptional control flow. If the function does
-    unwind, its runtime behavior is undefined.
+    This function attribute indicates that the function never raises an
+    exception. If the function does raise an exception, its runtime
+    behavior is undefined. However, functions marked nounwind may still
+    trap or generate asynchronous exceptions. Exception handling schemes
+    that are recognized by LLVM to handle asynchronous exceptions, such
+    as SEH, will still provide their implementation defined semantics.
 ``optnone``
     This function attribute indicates that the function is not optimized
     by any optimization or code generator passes with the
@@ -1779,7 +1785,7 @@ Fast-Math Flags
 
 LLVM IR floating-point binary ops (:ref:`fadd <i_fadd>`,
 :ref:`fsub <i_fsub>`, :ref:`fmul <i_fmul>`, :ref:`fdiv <i_fdiv>`,
-:ref:`frem <i_frem>`) have the following flags that can set to enable
+:ref:`frem <i_frem>`) have the following flags that can be set to enable
 otherwise unsafe floating point operations
 
 ``nnan``
@@ -2978,7 +2984,7 @@ collection of memory access instructions that carry ``alias.scope`` metadata.
 Each type of metadata specifies a list of scopes where each scope has an id and
 a domain. When evaluating an aliasing query, if for some some domain, the set
 of scopes with that domain in one instruction's ``alias.scope`` list is a
-subset of (or qual to) the set of scopes for that domain in another
+subset of (or equal to) the set of scopes for that domain in another
 instruction's ``noalias`` list, then the two memory accesses are assumed not to
 alias.
 
@@ -3304,6 +3310,12 @@ the loop identifier metadata node directly:
    !0 = !{!1, !2} ; a list of loop identifiers
    !1 = !{!1} ; an identifier for the inner loop
    !2 = !{!2} ; an identifier for the outer loop
+
+'``llvm.bitsets``'
+^^^^^^^^^^^^^^^^^^
+
+The ``llvm.bitsets`` global metadata is used to implement
+:doc:`bitsets <BitSets>`.
 
 Module Flags Metadata
 =====================
@@ -7097,18 +7109,28 @@ arbitrarily complex and require, for example, memory allocation.
 Accurate Garbage Collection Intrinsics
 --------------------------------------
 
-LLVM support for `Accurate Garbage Collection <GarbageCollection.html>`_
-(GC) requires the implementation and generation of these intrinsics.
+LLVM's support for `Accurate Garbage Collection <GarbageCollection.html>`_
+(GC) requires the frontend to generate code containing appropriate intrinsic 
+calls and select an appropriate GC strategy which knows how to lower these 
+intrinsics in a manner which is appropriate for the target collector.
+
 These intrinsics allow identification of :ref:`GC roots on the
 stack <int_gcroot>`, as well as garbage collector implementations that
 require :ref:`read <int_gcread>` and :ref:`write <int_gcwrite>` barriers.
-Front-ends for type-safe garbage collected languages should generate
+Frontends for type-safe garbage collected languages should generate
 these intrinsics to make use of the LLVM garbage collectors. For more
-details, see `Accurate Garbage Collection with
-LLVM <GarbageCollection.html>`_.
+details, see `Garbage Collection with LLVM <GarbageCollection.html>`_.
 
-The garbage collection intrinsics only operate on objects in the generic
-address space (address space zero).
+Experimental Statepoint Intrinsics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+LLVM provides an second experimental set of intrinsics for describing garbage
+collection safepoints in compiled code.  These intrinsics are an alternative 
+to the ``llvm.gcroot`` intrinsics, but are compatible with the ones for 
+:ref:`read <int_gcread>` and :ref:`write <int_gcwrite>` barriers.  The 
+differences in approach are covered in the `Garbage Collection with LLVM 
+<GarbageCollection.html>`_ documentation.  The intrinsics themselves are 
+described in :doc:`Statepoints`.
 
 .. _int_gcroot:
 
@@ -9887,6 +9909,31 @@ sufficient overall improvement in code quality. For this reason,
 ``llvm.assume`` should not be used to document basic mathematical invariants
 that the optimizer can otherwise deduce or facts that are of little use to the
 optimizer.
+
+.. _bitset.test:
+
+'``llvm.bitset.test``' Intrinsic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Syntax:
+"""""""
+
+::
+
+      declare i1 @llvm.bitset.test(i8* %ptr, metadata %bitset) nounwind readnone
+
+
+Arguments:
+""""""""""
+
+The first argument is a pointer to be tested. The second argument is a
+metadata string containing the name of a :doc:`bitset <BitSets>`.
+
+Overview:
+"""""""""
+
+The ``llvm.bitset.test`` intrinsic tests whether the given pointer is a
+member of the given bitset.
 
 '``llvm.donothing``' Intrinsic
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

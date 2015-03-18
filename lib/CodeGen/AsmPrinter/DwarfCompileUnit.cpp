@@ -292,8 +292,7 @@ DIE &DwarfCompileUnit::updateSubprogramScopeDIE(DISubprogram SP) {
 
   // Only include DW_AT_frame_base in full debug info
   if (!includeMinimalInlineScopes()) {
-    const TargetRegisterInfo *RI =
-        Asm->TM.getSubtargetImpl()->getRegisterInfo();
+    const TargetRegisterInfo *RI = Asm->MF->getSubtarget().getRegisterInfo();
     MachineLocation Location(RI->getFrameRegister(*Asm->MF));
     if (RI->isPhysicalRegister(Location.getReg()))
       addAddress(*SPDie, dwarf::DW_AT_frame_base, Location);
@@ -516,15 +515,23 @@ DwarfCompileUnit::constructVariableDIEImpl(const DbgVariable &DV,
   }
 
   // .. else use frame index.
-  int FI = DV.getFrameIndex();
-  if (FI != ~0) {
+  if (DV.getFrameIndex().back() == ~0)
+    return VariableDie;
+
+  auto Expr = DV.getExpression().begin();
+  DIELoc *Loc = new (DIEValueAllocator) DIELoc();
+  DIEDwarfExpression DwarfExpr(*Asm, *this, *Loc);
+  for (auto FI : DV.getFrameIndex()) {
     unsigned FrameReg = 0;
-    const TargetFrameLowering *TFI =
-        Asm->TM.getSubtargetImpl()->getFrameLowering();
+    const TargetFrameLowering *TFI = Asm->MF->getSubtarget().getFrameLowering();
     int Offset = TFI->getFrameIndexReference(*Asm->MF, FI, FrameReg);
-    MachineLocation Location(FrameReg, Offset);
-    addVariableAddress(DV, *VariableDie, Location);
+    assert(Expr != DV.getExpression().end() &&
+           "Wrong number of expressions");
+    DwarfExpr.AddMachineRegIndirect(FrameReg, Offset);
+    DwarfExpr.AddExpression(Expr->begin(), Expr->end());
+    ++Expr;
   }
+  addBlock(*VariableDie, dwarf::DW_AT_location, Loc);
 
   return VariableDie;
 }
@@ -695,7 +702,7 @@ void DwarfCompileUnit::collectDeadVariables(DISubprogram SP) {
   for (unsigned vi = 0, ve = Variables.getNumElements(); vi != ve; ++vi) {
     DIVariable DV(Variables.getElement(vi));
     assert(DV.isVariable());
-    DbgVariable NewVar(DV, DIExpression(nullptr), DD);
+    DbgVariable NewVar(DV, DIExpression(), DD);
     auto VariableDie = constructVariableDIE(NewVar);
     applyVariableAttributes(NewVar, *VariableDie);
     SPDIE->addChild(std::move(VariableDie));
@@ -767,13 +774,14 @@ void DwarfCompileUnit::addComplexAddress(const DbgVariable &DV, DIE &Die,
                                          const MachineLocation &Location) {
   DIELoc *Loc = new (DIEValueAllocator) DIELoc();
   DIEDwarfExpression DwarfExpr(*Asm, *this, *Loc);
-  DIExpression Expr = DV.getExpression();
+  assert(DV.getExpression().size() == 1);
+  DIExpression Expr = DV.getExpression().back();
   bool ValidReg;
   if (Location.getOffset()) {
     ValidReg = DwarfExpr.AddMachineRegIndirect(Location.getReg(),
                                                Location.getOffset());
     if (ValidReg)
-      DwarfExpr.AddExpression(Expr);
+      DwarfExpr.AddExpression(Expr.begin(), Expr.end());
   } else
     ValidReg = DwarfExpr.AddMachineRegExpression(Expr, Location.getReg());
 

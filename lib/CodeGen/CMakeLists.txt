@@ -118,6 +118,11 @@ add_llvm_library(LLVMCodeGen
   TwoAddressInstructionPass.cpp
   UnreachableBlockElim.cpp
   VirtRegMap.cpp
+  WinEHPrepare.cpp
+
+  ADDITIONAL_HEADER_DIRS
+  ${LLVM_MAIN_INCLUDE_DIR}/llvm/CodeGen
+  ${LLVM_MAIN_INCLUDE_DIR}/llvm/CodeGen/PBQP
   )
 
 add_dependencies(LLVMCodeGen intrinsics_gen)

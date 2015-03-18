@@ -13,10 +13,11 @@
 #include "AArch64.h"
 #include "AArch64TargetMachine.h"
 #include "AArch64TargetObjectFile.h"
+#include "AArch64TargetTransformInfo.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/RegAllocRegistry.h"
 #include "llvm/IR/Function.h"
-#include "llvm/PassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Target/TargetOptions.h"
@@ -128,11 +129,8 @@ AArch64TargetMachine::~AArch64TargetMachine() {}
 
 const AArch64Subtarget *
 AArch64TargetMachine::getSubtargetImpl(const Function &F) const {
-  AttributeSet FnAttrs = F.getAttributes();
-  Attribute CPUAttr =
-      FnAttrs.getAttribute(AttributeSet::FunctionIndex, "target-cpu");
-  Attribute FSAttr =
-      FnAttrs.getAttribute(AttributeSet::FunctionIndex, "target-features");
+  Attribute CPUAttr = F.getFnAttribute("target-cpu");
+  Attribute FSAttr = F.getFnAttribute("target-features");
 
   std::string CPU = !CPUAttr.hasAttribute(Attribute::None)
                         ? CPUAttr.getValueAsString().str()
@@ -195,12 +193,10 @@ public:
 };
 } // namespace
 
-void AArch64TargetMachine::addAnalysisPasses(PassManagerBase &PM) {
-  // Add first the target-independent BasicTTI pass, then our AArch64 pass. This
-  // allows the AArch64 pass to delegate to the target independent layer when
-  // appropriate.
-  PM.add(createBasicTargetTransformInfoPass(this));
-  PM.add(createAArch64TargetTransformInfoPass(this));
+TargetIRAnalysis AArch64TargetMachine::getTargetIRAnalysis() {
+  return TargetIRAnalysis([this](Function &F) {
+    return TargetTransformInfo(AArch64TTIImpl(this, F));
+  });
 }
 
 TargetPassConfig *AArch64TargetMachine::createPassConfig(PassManagerBase &PM) {
@@ -240,8 +236,11 @@ bool AArch64PassConfig::addPreISel() {
   // get a chance to be merged
   if (TM->getOptLevel() != CodeGenOpt::None && EnablePromoteConstant)
     addPass(createAArch64PromoteConstantPass());
+  // FIXME: On AArch64, this depends on the type.
+  // Basically, the addressable offsets are up to 4095 * Ty.getSizeInBytes().
+  // and the offset has to be a multiple of the related size in bytes.
   if (TM->getOptLevel() != CodeGenOpt::None)
-    addPass(createGlobalMergePass(TM));
+    addPass(createGlobalMergePass(TM, 4095));
   if (TM->getOptLevel() != CodeGenOpt::None)
     addPass(createAArch64AddressTypePromotionPass());
 
@@ -253,7 +252,7 @@ bool AArch64PassConfig::addInstSelector() {
 
   // For ELF, cleanup any local-dynamic TLS accesses (i.e. combine as many
   // references to _TLS_MODULE_BASE_ as possible.
-  if (TM->getSubtarget<AArch64Subtarget>().isTargetELF() &&
+  if (Triple(TM->getTargetTriple()).isOSBinFormatELF() &&
       getOptLevel() != CodeGenOpt::None)
     addPass(createAArch64CleanupLocalDynamicTLSPass());
 
@@ -311,6 +310,6 @@ void AArch64PassConfig::addPreEmitPass() {
   // range of their destination.
   addPass(createAArch64BranchRelaxation());
   if (TM->getOptLevel() != CodeGenOpt::None && EnableCollectLOH &&
-      TM->getSubtarget<AArch64Subtarget>().isTargetMachO())
+      Triple(TM->getTargetTriple()).isOSBinFormatMachO())
     addPass(createAArch64CollectLOHPass());
 }

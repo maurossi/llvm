@@ -106,9 +106,9 @@ static void ComputePTXValueVTs(const TargetLowering &TLI, Type *Ty,
 }
 
 // NVPTXTargetLowering Constructor.
-NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM)
-    : TargetLowering(TM), nvTM(&TM),
-      nvptxSubtarget(TM.getSubtarget<NVPTXSubtarget>()) {
+NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM,
+                                         const NVPTXSubtarget &STI)
+    : TargetLowering(TM), nvTM(&TM), STI(STI) {
 
   // always lower memset, memcpy, and memmove intrinsics to load/store
   // instructions, rather
@@ -167,14 +167,14 @@ NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM)
   setOperationAction(ISD::SRA_PARTS, MVT::i64  , Custom);
   setOperationAction(ISD::SRL_PARTS, MVT::i64  , Custom);
 
-  if (nvptxSubtarget.hasROT64()) {
+  if (STI.hasROT64()) {
     setOperationAction(ISD::ROTL, MVT::i64, Legal);
     setOperationAction(ISD::ROTR, MVT::i64, Legal);
   } else {
     setOperationAction(ISD::ROTL, MVT::i64, Expand);
     setOperationAction(ISD::ROTR, MVT::i64, Expand);
   }
-  if (nvptxSubtarget.hasROT32()) {
+  if (STI.hasROT32()) {
     setOperationAction(ISD::ROTL, MVT::i32, Legal);
     setOperationAction(ISD::ROTR, MVT::i32, Legal);
   } else {
@@ -271,7 +271,7 @@ NVPTXTargetLowering::NVPTXTargetLowering(const NVPTXTargetMachine &TM)
 
   // Now deduce the information based on the above mentioned
   // actions
-  computeRegisterProperties();
+  computeRegisterProperties(STI.getRegisterInfo());
 }
 
 const char *NVPTXTargetLowering::getTargetNodeName(unsigned Opcode) const {
@@ -879,7 +879,7 @@ NVPTXTargetLowering::getPrototype(Type *retTy, const ArgListTy &Args,
                                   unsigned retAlignment,
                                   const ImmutableCallSite *CS) const {
 
-  bool isABI = (nvptxSubtarget.getSmVersion() >= 20);
+  bool isABI = (STI.getSmVersion() >= 20);
   assert(isABI && "Non-ABI compilation is not supported");
   if (!isABI)
     return "";
@@ -1044,7 +1044,7 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   Type *retTy = CLI.RetTy;
   ImmutableCallSite *CS = CLI.CS;
 
-  bool isABI = (nvptxSubtarget.getSmVersion() >= 20);
+  bool isABI = (STI.getSmVersion() >= 20);
   assert(isABI && "Non-ABI compilation is not supported");
   if (!isABI)
     return Chain;
@@ -1455,8 +1455,8 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
       EVT ObjectVT = getValueType(retTy);
       unsigned NumElts = ObjectVT.getVectorNumElements();
       EVT EltVT = ObjectVT.getVectorElementType();
-      assert(nvTM->getSubtargetImpl()->getTargetLowering()->getNumRegisters(
-                 F->getContext(), ObjectVT) == NumElts &&
+      assert(STI.getTargetLowering()->getNumRegisters(F->getContext(),
+                                                      ObjectVT) == NumElts &&
              "Vector was not scalarized");
       unsigned sz = EltVT.getSizeInBits();
       bool needTruncate = sz < 8 ? true : false;
@@ -1474,11 +1474,8 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
           LoadRetVTs.push_back(EltVT);
         LoadRetVTs.push_back(MVT::Other);
         LoadRetVTs.push_back(MVT::Glue);
-        SmallVector<SDValue, 4> LoadRetOps;
-        LoadRetOps.push_back(Chain);
-        LoadRetOps.push_back(DAG.getConstant(1, MVT::i32));
-        LoadRetOps.push_back(DAG.getConstant(0, MVT::i32));
-        LoadRetOps.push_back(InFlag);
+        SDValue LoadRetOps[] = {Chain, DAG.getConstant(1, MVT::i32),
+                                DAG.getConstant(0, MVT::i32), InFlag};
         SDValue retval = DAG.getMemIntrinsicNode(
             NVPTXISD::LoadParam, dl,
             DAG.getVTList(LoadRetVTs), LoadRetOps, EltVT, MachinePointerInfo());
@@ -1504,11 +1501,8 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
         }
         LoadRetVTs.push_back(MVT::Other);
         LoadRetVTs.push_back(MVT::Glue);
-        SmallVector<SDValue, 4> LoadRetOps;
-        LoadRetOps.push_back(Chain);
-        LoadRetOps.push_back(DAG.getConstant(1, MVT::i32));
-        LoadRetOps.push_back(DAG.getConstant(0, MVT::i32));
-        LoadRetOps.push_back(InFlag);
+        SDValue LoadRetOps[] = {Chain, DAG.getConstant(1, MVT::i32),
+                                DAG.getConstant(0, MVT::i32), InFlag};
         SDValue retval = DAG.getMemIntrinsicNode(
             NVPTXISD::LoadParamV2, dl,
             DAG.getVTList(LoadRetVTs), LoadRetOps, EltVT, MachinePointerInfo());
@@ -1550,11 +1544,8 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
           }
           LoadRetVTs.push_back(MVT::Other);
           LoadRetVTs.push_back(MVT::Glue);
-          SmallVector<SDValue, 4> LoadRetOps;
-          LoadRetOps.push_back(Chain);
-          LoadRetOps.push_back(DAG.getConstant(1, MVT::i32));
-          LoadRetOps.push_back(DAG.getConstant(Ofst, MVT::i32));
-          LoadRetOps.push_back(InFlag);
+          SDValue LoadRetOps[] = {Chain, DAG.getConstant(1, MVT::i32),
+                                  DAG.getConstant(Ofst, MVT::i32), InFlag};
           SDValue retval = DAG.getMemIntrinsicNode(
               Opc, dl, DAG.getVTList(LoadRetVTs),
               LoadRetOps, EltVT, MachinePointerInfo());
@@ -1608,11 +1599,8 @@ SDValue NVPTXTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
         LoadRetVTs.push_back(MVT::Other);
         LoadRetVTs.push_back(MVT::Glue);
 
-        SmallVector<SDValue, 4> LoadRetOps;
-        LoadRetOps.push_back(Chain);
-        LoadRetOps.push_back(DAG.getConstant(1, MVT::i32));
-        LoadRetOps.push_back(DAG.getConstant(Offsets[i], MVT::i32));
-        LoadRetOps.push_back(InFlag);
+        SDValue LoadRetOps[] = {Chain, DAG.getConstant(1, MVT::i32),
+                                DAG.getConstant(Offsets[i], MVT::i32), InFlag};
         SDValue retval = DAG.getMemIntrinsicNode(
             NVPTXISD::LoadParam, dl,
             DAG.getVTList(LoadRetVTs), LoadRetOps,
@@ -1678,7 +1666,7 @@ SDValue NVPTXTargetLowering::LowerShiftRightParts(SDValue Op,
   SDValue ShAmt  = Op.getOperand(2);
   unsigned Opc = (Op.getOpcode() == ISD::SRA_PARTS) ? ISD::SRA : ISD::SRL;
 
-  if (VTBits == 32 && nvptxSubtarget.getSmVersion() >= 35) {
+  if (VTBits == 32 && STI.getSmVersion() >= 35) {
 
     // For 32bit and sm35, we can use the funnel shift 'shf' instruction.
     // {dHi, dLo} = {aHi, aLo} >> Amt
@@ -1738,7 +1726,7 @@ SDValue NVPTXTargetLowering::LowerShiftLeftParts(SDValue Op,
   SDValue ShOpHi = Op.getOperand(1);
   SDValue ShAmt  = Op.getOperand(2);
 
-  if (VTBits == 32 && nvptxSubtarget.getSmVersion() >= 35) {
+  if (VTBits == 32 && STI.getSmVersion() >= 35) {
 
     // For 32bit and sm35, we can use the funnel shift 'shf' instruction.
     // {dHi, dLo} = {aHi, aLo} << Amt
@@ -2050,13 +2038,13 @@ SDValue NVPTXTargetLowering::LowerFormalArguments(
 
   const Function *F = MF.getFunction();
   const AttributeSet &PAL = F->getAttributes();
-  const TargetLowering *TLI = DAG.getSubtarget().getTargetLowering();
+  const TargetLowering *TLI = STI.getTargetLowering();
 
   SDValue Root = DAG.getRoot();
   std::vector<SDValue> OutChains;
 
   bool isKernel = llvm::isKernelFunction(*F);
-  bool isABI = (nvptxSubtarget.getSmVersion() >= 20);
+  bool isABI = (STI.getSmVersion() >= 20);
   assert(isABI && "Non-ABI compilation is not supported");
   if (!isABI)
     return Chain;
@@ -2354,7 +2342,7 @@ NVPTXTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   Type *RetTy = F->getReturnType();
   const DataLayout *TD = getDataLayout();
 
-  bool isABI = (nvptxSubtarget.getSmVersion() >= 20);
+  bool isABI = (STI.getSmVersion() >= 20);
   assert(isABI && "Non-ABI compilation is not supported");
   if (!isABI)
     return Chain;
@@ -3774,7 +3762,8 @@ NVPTXTargetLowering::getConstraintType(const std::string &Constraint) const {
 }
 
 std::pair<unsigned, const TargetRegisterClass *>
-NVPTXTargetLowering::getRegForInlineAsmConstraint(const std::string &Constraint,
+NVPTXTargetLowering::getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
+                                                  const std::string &Constraint,
                                                   MVT VT) const {
   if (Constraint.size() == 1) {
     switch (Constraint[0]) {
@@ -3795,7 +3784,7 @@ NVPTXTargetLowering::getRegForInlineAsmConstraint(const std::string &Constraint,
       return std::make_pair(0U, &NVPTX::Float64RegsRegClass);
     }
   }
-  return TargetLowering::getRegForInlineAsmConstraint(Constraint, VT);
+  return TargetLowering::getRegForInlineAsmConstraint(TRI, Constraint, VT);
 }
 
 /// getFunctionAlignment - Return the Log2 alignment of this function.
@@ -4217,7 +4206,7 @@ SDValue NVPTXTargetLowering::PerformDAGCombine(SDNode *N,
     default: break;
     case ISD::ADD:
     case ISD::FADD:
-      return PerformADDCombine(N, DCI, nvptxSubtarget, OptLevel);
+      return PerformADDCombine(N, DCI, STI, OptLevel);
     case ISD::MUL:
       return PerformMULCombine(N, DCI, OptLevel);
     case ISD::SHL:
@@ -4302,11 +4291,8 @@ static void ReplaceLoadVector(SDNode *N, SelectionDAG &DAG,
   }
   }
 
-  SmallVector<SDValue, 8> OtherOps;
-
   // Copy regular operands
-  for (unsigned i = 0, e = N->getNumOperands(); i != e; ++i)
-    OtherOps.push_back(N->getOperand(i));
+  SmallVector<SDValue, 8> OtherOps(N->op_begin(), N->op_end());
 
   // The select routine does not have access to the LoadSDNode instance, so
   // pass along the extension information
@@ -4419,8 +4405,7 @@ static void ReplaceINTRINSIC_W_CHAIN(SDNode *N, SelectionDAG &DAG,
       OtherOps.push_back(Chain); // Chain
                                  // Skip operand 1 (intrinsic ID)
       // Others
-      for (unsigned i = 2, e = N->getNumOperands(); i != e; ++i)
-        OtherOps.push_back(N->getOperand(i));
+      OtherOps.append(N->op_begin() + 2, N->op_end());
 
       MemIntrinsicSDNode *MemSD = cast<MemIntrinsicSDNode>(N);
 
@@ -4451,9 +4436,7 @@ static void ReplaceINTRINSIC_W_CHAIN(SDNode *N, SelectionDAG &DAG,
              "Custom handling of non-i8 ldu/ldg?");
 
       // Just copy all operands as-is
-      SmallVector<SDValue, 4> Ops;
-      for (unsigned i = 0, e = N->getNumOperands(); i != e; ++i)
-        Ops.push_back(N->getOperand(i));
+      SmallVector<SDValue, 4> Ops(N->op_begin(), N->op_end());
 
       // Force output to i16
       SDVTList LdResVTs = DAG.getVTList(MVT::i16, MVT::Other);

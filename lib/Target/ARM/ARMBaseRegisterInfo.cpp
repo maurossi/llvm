@@ -264,7 +264,7 @@ ARMBaseRegisterInfo::getRegAllocationHints(unsigned VirtReg,
 }
 
 void
-ARMBaseRegisterInfo::UpdateRegAllocHint(unsigned Reg, unsigned NewReg,
+ARMBaseRegisterInfo::updateRegAllocHint(unsigned Reg, unsigned NewReg,
                                         MachineFunction &MF) const {
   MachineRegisterInfo *MRI = &MF.getRegInfo();
   std::pair<unsigned, unsigned> Hint = MRI->getRegAllocationHint(Reg);
@@ -354,10 +354,7 @@ bool ARMBaseRegisterInfo::canRealignStack(const MachineFunction &MF) const {
     return false;
   // We may also need a base pointer if there are dynamic allocas or stack
   // pointer adjustments around calls.
-  if (MF.getTarget()
-          .getSubtargetImpl()
-          ->getFrameLowering()
-          ->hasReservedCallFrame(MF))
+  if (MF.getSubtarget().getFrameLowering()->hasReservedCallFrame(MF))
     return true;
   // A base pointer is required and allowed.  Check that it isn't too late to
   // reserve it.
@@ -368,14 +365,10 @@ bool ARMBaseRegisterInfo::
 needsStackRealignment(const MachineFunction &MF) const {
   const MachineFrameInfo *MFI = MF.getFrameInfo();
   const Function *F = MF.getFunction();
-  unsigned StackAlign = MF.getTarget()
-                            .getSubtargetImpl()
-                            ->getFrameLowering()
-                            ->getStackAlignment();
-  bool requiresRealignment =
-    ((MFI->getMaxAlignment() > StackAlign) ||
-     F->getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                     Attribute::StackAlignment));
+  unsigned StackAlign =
+      MF.getSubtarget().getFrameLowering()->getStackAlignment();
+  bool requiresRealignment = ((MFI->getMaxAlignment() > StackAlign) ||
+                              F->hasFnAttribute(Attribute::StackAlignment));
 
   return requiresRealignment && canRealignStack(MF);
 }
@@ -553,12 +546,13 @@ needsFrameBaseReg(MachineInstr *MI, int64_t Offset) const {
   //        and pick a real one.
   Offset += 128; // 128 bytes of spill slots
 
-  // If there is a frame pointer, try using it.
+  // If there's a frame pointer and the addressing mode allows it, try using it.
   // The FP is only available if there is no dynamic realignment. We
   // don't know for sure yet whether we'll need that, so we guess based
   // on whether there are any local variables that would trigger it.
   unsigned StackAlign = TFI->getStackAlignment();
-  if (TFI->hasFP(MF) &&
+  if (TFI->hasFP(MF) && 
+      (MI->getDesc().TSFlags & ARMII::AddrModeMask) != ARMII::AddrModeT1_s &&
       !((MFI->getLocalFrameMaxAlign() > StackAlign) && canRealignStack(MF))) {
     if (isFrameOffsetLegal(MI, FPOffset))
       return false;
@@ -675,7 +669,7 @@ bool ARMBaseRegisterInfo::isFrameOffsetLegal(const MachineInstr *MI,
     NumBits = 8;
     break;
   case ARMII::AddrModeT1_s:
-    NumBits = 5;
+    NumBits = 8;
     Scale = 4;
     isSigned = false;
     break;

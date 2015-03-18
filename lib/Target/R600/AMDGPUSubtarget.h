@@ -55,6 +55,7 @@ private:
   bool FP64;
   bool FP64Denormals;
   bool FP32Denormals;
+  bool FastFMAF32;
   bool CaymanISA;
   bool FlatAddressSpace;
   bool EnableIRStructurizer;
@@ -125,6 +126,10 @@ public:
 
   bool hasFP64Denormals() const {
     return FP64Denormals;
+  }
+
+  bool hasFastFMAF32() const {
+    return FastFMAF32;
   }
 
   bool hasFlatAddressSpace() const {
@@ -204,8 +209,12 @@ public:
   unsigned getAmdKernelCodeChipID() const;
 
   bool enableMachineScheduler() const override {
-    return getGeneration() <= NORTHERN_ISLANDS;
+    return true;
   }
+
+  void overrideSchedPolicy(MachineSchedPolicy &Policy,
+                           MachineInstr *begin, MachineInstr *end,
+                           unsigned NumRegionInstrs) const override;
 
   // Helper functions to simplify if statements
   bool isTargetELF() const {
@@ -226,6 +235,18 @@ public:
     return TargetTriple.getOS() == Triple::AMDHSA;
   }
   bool isVGPRSpillingEnabled(const SIMachineFunctionInfo *MFI) const;
+
+  unsigned getMaxWavesPerCU() const {
+    if (getGeneration() >= AMDGPUSubtarget::SOUTHERN_ISLANDS)
+      return 10;
+
+    // FIXME: Not sure what this is for other subtagets.
+    llvm_unreachable("do not know max waves per CU for this subtarget.");
+  }
+
+  bool enableSubRegLiveness() const override {
+    return false;
+  }
 };
 
 } // End namespace llvm

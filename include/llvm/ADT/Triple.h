@@ -202,6 +202,13 @@ public:
   Triple(const Twine &ArchStr, const Twine &VendorStr, const Twine &OSStr,
          const Twine &EnvironmentStr);
 
+  bool operator==(const Triple &Other) const {
+    return Arch == Other.Arch && SubArch == Other.SubArch &&
+           Vendor == Other.Vendor && OS == Other.OS &&
+           Environment == Other.Environment &&
+           ObjectFormat == Other.ObjectFormat;
+  }
+
   /// @}
   /// @name Normalization
   /// @{
@@ -339,6 +346,12 @@ public:
     return false;
   }
 
+  bool isOSVersionLT(const Triple &Other) const {
+    unsigned RHS[3];
+    Other.getOSVersion(RHS[0], RHS[1], RHS[2]);
+    return isOSVersionLT(RHS[0], RHS[1], RHS[2]);
+  }
+
   /// isMacOSXVersionLT - Comparison function for checking OS X version
   /// compatibility, which handles supporting skewed version numbering schemes
   /// used by the "darwin" triples.
@@ -428,7 +441,7 @@ public:
 
   /// \brief Tests whether the OS is Windows.
   bool isOSWindows() const {
-    return getOS() == Triple::Win32 || isOSCygMing();
+    return getOS() == Triple::Win32;
   }
 
   /// \brief Tests whether the OS is NaCl (Native Client)

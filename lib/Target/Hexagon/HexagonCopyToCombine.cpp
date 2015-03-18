@@ -179,18 +179,6 @@ static bool areCombinableOperations(const TargetRegisterInfo *TRI,
           LowRegInst->getOpcode() == Hexagon::TFRI_V4) &&
          "Assume individual instructions are of a combinable type");
 
-  const HexagonRegisterInfo *QRI =
-    static_cast<const HexagonRegisterInfo *>(TRI);
-
-  // V4 added some combine variations (mixed immediate and register source
-  // operands), if we are on < V4 we can only combine 2 register-to-register
-  // moves and 2 immediate-to-register moves. We also don't have
-  // constant-extenders.
-  if (!QRI->Subtarget.hasV4TOps())
-    return HighRegInst->getOpcode() == LowRegInst->getOpcode() &&
-      !isGreaterThan8BitTFRI(HighRegInst) &&
-      !isGreaterThan6BitTFRI(LowRegInst);
-
   // There is no combine of two constant extended values.
   if ((HighRegInst->getOpcode() == Hexagon::TFRI_V4 ||
        isGreaterThan8BitTFRI(HighRegInst)) &&
@@ -418,7 +406,7 @@ bool HexagonCopyToCombine::runOnMachineFunction(MachineFunction &MF) {
 
   // Get target info.
   TRI = MF.getSubtarget().getRegisterInfo();
-  TII = static_cast<const HexagonInstrInfo *>(MF.getSubtarget().getInstrInfo());
+  TII = MF.getSubtarget<HexagonSubtarget>().getInstrInfo();
 
   // Combine aggressively (for code size)
   ShouldCombineAggressively =

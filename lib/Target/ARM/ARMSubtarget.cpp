@@ -121,7 +121,7 @@ ARMSubtarget::ARMSubtarget(const std::string &TT, const std::string &CPU,
                     : !isThumb()
                           ? (ARMBaseInstrInfo *)new ARMInstrInfo(*this)
                           : (ARMBaseInstrInfo *)new Thumb2InstrInfo(*this)),
-      TLInfo(TM) {}
+      TLInfo(TM, *this) {}
 
 void ARMSubtarget::initializeEnvironment() {
   HasV4TOps = false;
@@ -349,6 +349,5 @@ bool ARMSubtarget::useMovt(const MachineFunction &MF) const {
   // immediates as it is inherently position independent, and may be out of
   // range otherwise.
   return UseMovt && (isTargetWindows() ||
-                     !MF.getFunction()->getAttributes().hasAttribute(
-                         AttributeSet::FunctionIndex, Attribute::MinSize));
+                     !MF.getFunction()->hasFnAttribute(Attribute::MinSize));
 }

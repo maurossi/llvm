@@ -88,14 +88,15 @@ public:
 int DiagnosticInfoUnsupported::KindID = 0;
 }
 
-BPFTargetLowering::BPFTargetLowering(const TargetMachine &TM)
+BPFTargetLowering::BPFTargetLowering(const TargetMachine &TM,
+                                     const BPFSubtarget &STI)
     : TargetLowering(TM) {
 
   // Set up the register classes.
   addRegisterClass(MVT::i64, &BPF::GPRRegClass);
 
   // Compute derived properties from the register classes
-  computeRegisterProperties();
+  computeRegisterProperties(STI.getRegisterInfo());
 
   setStackPointerRegisterToSaveRestore(BPF::R11);
 
@@ -539,8 +540,7 @@ BPFTargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
                                                MachineBasicBlock *BB) const {
   unsigned Opc = MI->getOpcode();
 
-  const TargetInstrInfo &TII =
-      *getTargetMachine().getSubtargetImpl()->getInstrInfo();
+  const TargetInstrInfo &TII = *BB->getParent()->getSubtarget().getInstrInfo();
   DebugLoc DL = MI->getDebugLoc();
 
   assert(Opc == BPF::Select && "Unexpected instr type to insert");

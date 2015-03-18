@@ -162,7 +162,7 @@ class TypePromotionTransaction;
     void getAnalysisUsage(AnalysisUsage &AU) const override {
       AU.addPreserved<DominatorTreeWrapperPass>();
       AU.addRequired<TargetLibraryInfoWrapperPass>();
-      AU.addRequired<TargetTransformInfo>();
+      AU.addRequired<TargetTransformInfoWrapperPass>();
     }
 
   private:
@@ -213,12 +213,11 @@ bool CodeGenPrepare::runOnFunction(Function &F) {
   if (TM)
     TLI = TM->getSubtargetImpl(F)->getTargetLowering();
   TLInfo = &getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
-  TTI = &getAnalysis<TargetTransformInfo>();
+  TTI = &getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
   DominatorTreeWrapperPass *DTWP =
       getAnalysisIfAvailable<DominatorTreeWrapperPass>();
   DT = DTWP ? &DTWP->getDomTree() : nullptr;
-  OptSize = F.getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                           Attribute::OptimizeForSize);
+  OptSize = F.hasFnAttribute(Attribute::OptimizeForSize);
 
   /// This optimization identifies DIV instructions that can be
   /// profitably bypassed and carried out with a shorter, faster divide.
@@ -1956,6 +1955,7 @@ void TypePromotionTransaction::rollback(
 /// This encapsulates the logic for matching the target-legal addressing modes.
 class AddressingModeMatcher {
   SmallVectorImpl<Instruction*> &AddrModeInsts;
+  const TargetMachine &TM;
   const TargetLowering &TLI;
 
   /// AccessTy/MemoryInst - This is the type for the access (e.g. double) and
@@ -1979,13 +1979,15 @@ class AddressingModeMatcher {
   /// always returns true.
   bool IgnoreProfitability;
 
-  AddressingModeMatcher(SmallVectorImpl<Instruction*> &AMI,
-                        const TargetLowering &T, Type *AT,
-                        Instruction *MI, ExtAddrMode &AM,
-                        const SetOfInstrs &InsertedTruncs,
+  AddressingModeMatcher(SmallVectorImpl<Instruction *> &AMI,
+                        const TargetMachine &TM, Type *AT, Instruction *MI,
+                        ExtAddrMode &AM, const SetOfInstrs &InsertedTruncs,
                         InstrToOrigTy &PromotedInsts,
                         TypePromotionTransaction &TPT)
-      : AddrModeInsts(AMI), TLI(T), AccessTy(AT), MemoryInst(MI), AddrMode(AM),
+      : AddrModeInsts(AMI), TM(TM),
+        TLI(*TM.getSubtargetImpl(*MI->getParent()->getParent())
+                 ->getTargetLowering()),
+        AccessTy(AT), MemoryInst(MI), AddrMode(AM),
         InsertedTruncs(InsertedTruncs), PromotedInsts(PromotedInsts), TPT(TPT) {
     IgnoreProfitability = false;
   }
@@ -2002,13 +2004,13 @@ public:
   static ExtAddrMode Match(Value *V, Type *AccessTy,
                            Instruction *MemoryInst,
                            SmallVectorImpl<Instruction*> &AddrModeInsts,
-                           const TargetLowering &TLI,
+                           const TargetMachine &TM,
                            const SetOfInstrs &InsertedTruncs,
                            InstrToOrigTy &PromotedInsts,
                            TypePromotionTransaction &TPT) {
     ExtAddrMode Result;
 
-    bool Success = AddressingModeMatcher(AddrModeInsts, TLI, AccessTy,
+    bool Success = AddressingModeMatcher(AddrModeInsts, TM, AccessTy,
                                          MemoryInst, Result, InsertedTruncs,
                                          PromotedInsts, TPT).MatchAddr(V, 0);
     (void)Success; assert(Success && "Couldn't select *anything*?");
@@ -2812,13 +2814,17 @@ bool AddressingModeMatcher::MatchAddr(Value *Addr, unsigned Depth) {
 /// inline asm call are due to memory operands.  If so, return true, otherwise
 /// return false.
 static bool IsOperandAMemoryOperand(CallInst *CI, InlineAsm *IA, Value *OpVal,
-                                    const TargetLowering &TLI) {
-  TargetLowering::AsmOperandInfoVector TargetConstraints = TLI.ParseConstraints(ImmutableCallSite(CI));
+                                    const TargetMachine &TM) {
+  const Function *F = CI->getParent()->getParent();
+  const TargetLowering *TLI = TM.getSubtargetImpl(*F)->getTargetLowering();
+  const TargetRegisterInfo *TRI = TM.getSubtargetImpl(*F)->getRegisterInfo();
+  TargetLowering::AsmOperandInfoVector TargetConstraints =
+      TLI->ParseConstraints(TRI, ImmutableCallSite(CI));
   for (unsigned i = 0, e = TargetConstraints.size(); i != e; ++i) {
     TargetLowering::AsmOperandInfo &OpInfo = TargetConstraints[i];
 
     // Compute the constraint code and ConstraintType to use.
-    TLI.ComputeConstraintToUse(OpInfo, SDValue());
+    TLI->ComputeConstraintToUse(OpInfo, SDValue());
 
     // If this asm operand is our Value*, and if it isn't an indirect memory
     // operand, we can't fold it!
@@ -2834,10 +2840,10 @@ static bool IsOperandAMemoryOperand(CallInst *CI, InlineAsm *IA, Value *OpVal,
 /// FindAllMemoryUses - Recursively walk all the uses of I until we find a
 /// memory use.  If we find an obviously non-foldable instruction, return true.
 /// Add the ultimately found memory instructions to MemoryUses.
-static bool FindAllMemoryUses(Instruction *I,
-                SmallVectorImpl<std::pair<Instruction*,unsigned> > &MemoryUses,
-                              SmallPtrSetImpl<Instruction*> &ConsideredInsts,
-                              const TargetLowering &TLI) {
+static bool FindAllMemoryUses(
+    Instruction *I,
+    SmallVectorImpl<std::pair<Instruction *, unsigned>> &MemoryUses,
+    SmallPtrSetImpl<Instruction *> &ConsideredInsts, const TargetMachine &TM) {
   // If we already considered this instruction, we're done.
   if (!ConsideredInsts.insert(I).second)
     return false;
@@ -2867,12 +2873,12 @@ static bool FindAllMemoryUses(Instruction *I,
       if (!IA) return true;
 
       // If this is a memory operand, we're cool, otherwise bail out.
-      if (!IsOperandAMemoryOperand(CI, IA, I, TLI))
+      if (!IsOperandAMemoryOperand(CI, IA, I, TM))
         return true;
       continue;
     }
 
-    if (FindAllMemoryUses(UserI, MemoryUses, ConsideredInsts, TLI))
+    if (FindAllMemoryUses(UserI, MemoryUses, ConsideredInsts, TM))
       return true;
   }
 
@@ -2960,7 +2966,7 @@ IsProfitableToFoldIntoAddressingMode(Instruction *I, ExtAddrMode &AMBefore,
   // uses.
   SmallVector<std::pair<Instruction*,unsigned>, 16> MemoryUses;
   SmallPtrSet<Instruction*, 16> ConsideredInsts;
-  if (FindAllMemoryUses(I, MemoryUses, ConsideredInsts, TLI))
+  if (FindAllMemoryUses(I, MemoryUses, ConsideredInsts, TM))
     return false;  // Has a non-memory, non-foldable use!
 
   // Now that we know that all uses of this instruction are part of a chain of
@@ -2985,7 +2991,7 @@ IsProfitableToFoldIntoAddressingMode(Instruction *I, ExtAddrMode &AMBefore,
     ExtAddrMode Result;
     TypePromotionTransaction::ConstRestorationPt LastKnownGood =
         TPT.getRestorationPoint();
-    AddressingModeMatcher Matcher(MatchedAddrModeInsts, TLI, AddressAccessTy,
+    AddressingModeMatcher Matcher(MatchedAddrModeInsts, TM, AddressAccessTy,
                                   MemoryInst, Result, InsertedTruncs,
                                   PromotedInsts, TPT);
     Matcher.IgnoreProfitability = true;
@@ -3068,7 +3074,7 @@ bool CodeGenPrepare::OptimizeMemoryInst(Instruction *MemoryInst, Value *Addr,
     // For non-PHIs, determine the addressing mode being computed.
     SmallVector<Instruction*, 16> NewAddrModeInsts;
     ExtAddrMode NewAddrMode = AddressingModeMatcher::Match(
-        V, AccessTy, MemoryInst, NewAddrModeInsts, *TLI, InsertedTruncsSet,
+        V, AccessTy, MemoryInst, NewAddrModeInsts, *TM, InsertedTruncsSet,
         PromotedInsts, TPT);
 
     // This check is broken into two cases with very similar code to avoid using
@@ -3369,8 +3375,10 @@ bool CodeGenPrepare::OptimizeMemoryInst(Instruction *MemoryInst, Value *Addr,
 bool CodeGenPrepare::OptimizeInlineAsmInst(CallInst *CS) {
   bool MadeChange = false;
 
+  const TargetRegisterInfo *TRI =
+      TM->getSubtargetImpl(*CS->getParent()->getParent())->getRegisterInfo();
   TargetLowering::AsmOperandInfoVector
-    TargetConstraints = TLI->ParseConstraints(CS);
+    TargetConstraints = TLI->ParseConstraints(TRI, CS);
   unsigned ArgNo = 0;
   for (unsigned i = 0, e = TargetConstraints.size(); i != e; ++i) {
     TargetLowering::AsmOperandInfo &OpInfo = TargetConstraints[i];
@@ -4125,148 +4133,6 @@ void VectorPromoteHelper::promoteImpl(Instruction *ToBePromoted) {
   Transition->setOperand(getTransitionOriginalValueIdx(), ToBePromoted);
 }
 
-// See if we can speculate calls to intrinsic cttz/ctlz.
-//
-// Example:
-// entry:
-//   ...
-//   %cmp = icmp eq i64 %val, 0
-//   br i1 %cmp, label %end.bb, label %then.bb
-//
-// then.bb:
-//   %c = tail call i64 @llvm.cttz.i64(i64 %val, i1 true)
-//   br label %EndBB
-//
-// end.bb:
-//   %cond = phi i64 [ %c, %then.bb ], [ 64, %entry ]
-//
-// ==>
-//
-// entry:
-//   ...
-//   %c = tail call i64 @llvm.cttz.i64(i64 %val, i1 false)
-//
-static bool OptimizeBranchInst(BranchInst *BrInst, const TargetLowering &TLI) {
-  assert(BrInst->isConditional() && "Expected a conditional branch!");
-  BasicBlock *ThenBB = BrInst->getSuccessor(1);
-  BasicBlock *EndBB = BrInst->getSuccessor(0);
-
-  // See if ThenBB contains only one instruction (excluding the
-  // terminator and DbgInfoIntrinsic calls).
-  IntrinsicInst *II = nullptr;
-  CastInst *CI = nullptr;
-  for (BasicBlock::iterator I = ThenBB->begin(),
-                            E = std::prev(ThenBB->end()); I != E; ++I) {
-    // Skip debug info.
-    if (isa<DbgInfoIntrinsic>(I))
-      continue;
-
-    // Check if this is a zero extension or a truncate of a previously
-    // matched call to intrinsic cttz/ctlz.
-    if (II) {
-      // Early exit if we already found a "free" zero extend/truncate.
-      if (CI)
-        return false;
-
-      Type *SrcTy = II->getType();
-      Type *DestTy = I->getType();
-      Value *V;
- 
-      if (match(cast<Instruction>(I), m_ZExt(m_Value(V))) && V == II) {
-        // Speculate this zero extend only if it is "free" for the target.
-        if (TLI.isZExtFree(SrcTy, DestTy)) {
-          CI = cast<CastInst>(I);
-          continue;
-        }
-      } else if (match(cast<Instruction>(I), m_Trunc(m_Value(V))) && V == II) {
-        // Speculate this truncate only if it is "free" for the target.
-        if (TLI.isTruncateFree(SrcTy, DestTy)) {
-          CI = cast<CastInst>(I);
-          continue;
-        }
-      } else {
-        // Avoid speculating more than one instruction.
-        return false;
-      }
-    }
-
-    // See if this is a call to intrinsic cttz/ctlz.
-    if (match(cast<Instruction>(I), m_Intrinsic<Intrinsic::cttz>())) {
-      // Avoid speculating expensive intrinsic calls.
-      if (!TLI.isCheapToSpeculateCttz())
-        return false;
-    }
-    else if (match(cast<Instruction>(I), m_Intrinsic<Intrinsic::ctlz>())) {
-      // Avoid speculating expensive intrinsic calls.
-      if (!TLI.isCheapToSpeculateCtlz())
-        return false;
-    } else
-      return false;
-    
-    II = cast<IntrinsicInst>(I);
-  }
-
-  // Look for PHI nodes with 'II' as the incoming value from 'ThenBB'.
-  BasicBlock *EntryBB = BrInst->getParent();
-  for (BasicBlock::iterator I = EndBB->begin();
-       PHINode *PN = dyn_cast<PHINode>(I); ++I) {
-    Value *ThenV = PN->getIncomingValueForBlock(ThenBB);
-    Value *OrigV = PN->getIncomingValueForBlock(EntryBB);
-
-    if (!OrigV)
-      return false;
-
-    if (ThenV != II && (!CI || ThenV != CI))
-      return false;
-    
-    if (ConstantInt *CInt = dyn_cast<ConstantInt>(OrigV)) {
-      unsigned BitWidth = II->getType()->getIntegerBitWidth();
-
-      // Don't try to simplify this phi node if 'ThenV' is a cttz/ctlz
-      // intrinsic call, but 'OrigV' is not equal to the 'size-of' in bits
-      // of the value in input to the cttz/ctlz.
-      if (CInt->getValue() != BitWidth)
-        return false;
-
-      // Hoist the call to cttz/ctlz from ThenBB into EntryBB.
-      EntryBB->getInstList().splice(BrInst, ThenBB->getInstList(),
-                                    ThenBB->begin(), std::prev(ThenBB->end()));
- 
-      // Update PN setting ThenV as the incoming value from both 'EntryBB'
-      // and 'ThenBB'. Eventually, method 'OptimizeInst' will fold this
-      // phi node if all the incoming values are the same.
-      PN->setIncomingValue(PN->getBasicBlockIndex(EntryBB), ThenV);
-      PN->setIncomingValue(PN->getBasicBlockIndex(ThenBB), ThenV);
-
-      // Clear the 'undef on zero' flag of the cttz/ctlz intrinsic call.
-      if (cast<ConstantInt>(II->getArgOperand(1))->isOne()) {
-        Type *Ty = II->getArgOperand(0)->getType();
-        Value *Args[] = { II->getArgOperand(0),
-                          ConstantInt::getFalse(II->getContext()) };
-        Module *M = EntryBB->getParent()->getParent();
-        Value *IF = Intrinsic::getDeclaration(M, II->getIntrinsicID(), Ty);
-        IRBuilder<> Builder(II);
-        Instruction *NewI = Builder.CreateCall(IF, Args);
-
-        // Replace the old call to cttz/ctlz.
-        II->replaceAllUsesWith(NewI);
-        II->eraseFromParent();
-      }
- 
-      // Update BrInst condition so that the branch to EndBB is always taken.
-      // Later on, method 'ConstantFoldTerminator' will simplify this branch
-      // replacing it with a direct branch to 'EndBB'.
-      // As a side effect, CodeGenPrepare will attempt to simplify the control
-      // flow graph by deleting basic block 'ThenBB' and merging 'EntryBB' into
-      // 'EndBB' (calling method 'EliminateFallThrough').
-      BrInst->setCondition(ConstantInt::getTrue(BrInst->getContext()));
-      return true;
-    }
-  }
-
-  return false;
-}
-
 /// Some targets can do store(extractelement) with one instruction.
 /// Try to push the extractelement towards the stores when the target
 /// has this feature and this is profitable.
@@ -4418,34 +4284,6 @@ bool CodeGenPrepare::OptimizeInst(Instruction *I, bool& ModifiedDT) {
 
   if (isa<ExtractElementInst>(I))
     return OptimizeExtractElementInst(I);
-
-  if (BranchInst *BI = dyn_cast<BranchInst>(I)) {
-    if (TLI && BI->isConditional() && BI->getCondition()->hasOneUse()) {
-      // Check if the branch condition compares a value agaist zero.
-      if (ICmpInst *ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
-        if (ICI->getPredicate() == ICmpInst::ICMP_EQ &&
-            match(ICI->getOperand(1), m_Zero())) {
-          BasicBlock *ThenBB = BI->getSuccessor(1);
-          BasicBlock *EndBB = BI->getSuccessor(0);
-
-          // Check if ThenBB is only reachable from this basic block; also,
-          // check if EndBB has more than one predecessor.
-          if (ThenBB->getSinglePredecessor() &&
-              !EndBB->getSinglePredecessor()) {
-            TerminatorInst *TI = ThenBB->getTerminator();
-
-            if (TI->getNumSuccessors() == 1 && TI->getSuccessor(0) == EndBB &&
-                // Try to speculate calls to intrinsic cttz/ctlz from 'ThenBB'.
-                OptimizeBranchInst(BI, *TLI)) {
-              ModifiedDT = true;
-              return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
 
   return false;
 }

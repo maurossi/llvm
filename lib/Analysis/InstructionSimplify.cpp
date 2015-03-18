@@ -61,6 +61,8 @@ struct Query {
 static Value *SimplifyAndInst(Value *, Value *, const Query &, unsigned);
 static Value *SimplifyBinOp(unsigned, Value *, Value *, const Query &,
                             unsigned);
+static Value *SimplifyFPBinOp(unsigned, Value *, Value *, const FastMathFlags &,
+                              const Query &, unsigned);
 static Value *SimplifyCmpInst(unsigned, Value *, Value *, const Query &,
                               unsigned);
 static Value *SimplifyOrInst(Value *, Value *, const Query &, unsigned);
@@ -1116,8 +1118,8 @@ Value *llvm::SimplifyUDivInst(Value *Op0, Value *Op1, const DataLayout *DL,
                             RecursionLimit);
 }
 
-static Value *SimplifyFDivInst(Value *Op0, Value *Op1, const Query &Q,
-                               unsigned) {
+static Value *SimplifyFDivInst(Value *Op0, Value *Op1, FastMathFlags FMF,
+                               const Query &Q, unsigned) {
   // undef / X -> undef    (the undef could be a snan).
   if (match(Op0, m_Undef()))
     return Op0;
@@ -1126,14 +1128,21 @@ static Value *SimplifyFDivInst(Value *Op0, Value *Op1, const Query &Q,
   if (match(Op1, m_Undef()))
     return Op1;
 
+  // 0 / X -> 0
+  // Requires that NaNs are off (X could be zero) and signed zeroes are
+  // ignored (X could be positive or negative, so the output sign is unknown).
+  if (FMF.noNaNs() && FMF.noSignedZeros() && match(Op0, m_AnyZero()))
+    return Op0;
+
   return nullptr;
 }
 
-Value *llvm::SimplifyFDivInst(Value *Op0, Value *Op1, const DataLayout *DL,
+Value *llvm::SimplifyFDivInst(Value *Op0, Value *Op1, FastMathFlags FMF,
+                              const DataLayout *DL,
                               const TargetLibraryInfo *TLI,
                               const DominatorTree *DT, AssumptionCache *AC,
                               const Instruction *CxtI) {
-  return ::SimplifyFDivInst(Op0, Op1, Query(DL, TLI, DT, AC, CxtI),
+  return ::SimplifyFDivInst(Op0, Op1, FMF, Query(DL, TLI, DT, AC, CxtI),
                             RecursionLimit);
 }
 
@@ -1234,8 +1243,8 @@ Value *llvm::SimplifyURemInst(Value *Op0, Value *Op1, const DataLayout *DL,
                             RecursionLimit);
 }
 
-static Value *SimplifyFRemInst(Value *Op0, Value *Op1, const Query &,
-                               unsigned) {
+static Value *SimplifyFRemInst(Value *Op0, Value *Op1, FastMathFlags FMF,
+                               const Query &, unsigned) {
   // undef % X -> undef    (the undef could be a snan).
   if (match(Op0, m_Undef()))
     return Op0;
@@ -1244,14 +1253,21 @@ static Value *SimplifyFRemInst(Value *Op0, Value *Op1, const Query &,
   if (match(Op1, m_Undef()))
     return Op1;
 
+  // 0 % X -> 0
+  // Requires that NaNs are off (X could be zero) and signed zeroes are
+  // ignored (X could be positive or negative, so the output sign is unknown).
+  if (FMF.noNaNs() && FMF.noSignedZeros() && match(Op0, m_AnyZero()))
+    return Op0;
+
   return nullptr;
 }
 
-Value *llvm::SimplifyFRemInst(Value *Op0, Value *Op1, const DataLayout *DL,
+Value *llvm::SimplifyFRemInst(Value *Op0, Value *Op1, FastMathFlags FMF,
+                              const DataLayout *DL,
                               const TargetLibraryInfo *TLI,
                               const DominatorTree *DT, AssumptionCache *AC,
                               const Instruction *CxtI) {
-  return ::SimplifyFRemInst(Op0, Op1, Query(DL, TLI, DT, AC, CxtI),
+  return ::SimplifyFRemInst(Op0, Op1, FMF, Query(DL, TLI, DT, AC, CxtI),
                             RecursionLimit);
 }
 
@@ -3050,57 +3066,56 @@ static Value *SimplifyFCmpInst(unsigned Predicate, Value *LHS, Value *RHS,
   }
 
   // Handle fcmp with constant RHS
-  if (Constant *RHSC = dyn_cast<Constant>(RHS)) {
+  if (ConstantFP *CFP = dyn_cast<ConstantFP>(RHS)) {
     // If the constant is a nan, see if we can fold the comparison based on it.
-    if (ConstantFP *CFP = dyn_cast<ConstantFP>(RHSC)) {
-      if (CFP->getValueAPF().isNaN()) {
-        if (FCmpInst::isOrdered(Pred))   // True "if ordered and foo"
-          return ConstantInt::getFalse(CFP->getContext());
-        assert(FCmpInst::isUnordered(Pred) &&
-               "Comparison must be either ordered or unordered!");
-        // True if unordered.
-        return ConstantInt::getTrue(CFP->getContext());
-      }
-      // Check whether the constant is an infinity.
-      if (CFP->getValueAPF().isInfinity()) {
-        if (CFP->getValueAPF().isNegative()) {
-          switch (Pred) {
-          case FCmpInst::FCMP_OLT:
-            // No value is ordered and less than negative infinity.
-            return ConstantInt::getFalse(CFP->getContext());
-          case FCmpInst::FCMP_UGE:
-            // All values are unordered with or at least negative infinity.
-            return ConstantInt::getTrue(CFP->getContext());
-          default:
-            break;
-          }
-        } else {
-          switch (Pred) {
-          case FCmpInst::FCMP_OGT:
-            // No value is ordered and greater than infinity.
-            return ConstantInt::getFalse(CFP->getContext());
-          case FCmpInst::FCMP_ULE:
-            // All values are unordered with and at most infinity.
-            return ConstantInt::getTrue(CFP->getContext());
-          default:
-            break;
-          }
-        }
-      }
-      if (CFP->getValueAPF().isZero()) {
+    if (CFP->getValueAPF().isNaN()) {
+      if (FCmpInst::isOrdered(Pred)) // True "if ordered and foo"
+        return ConstantInt::getFalse(CFP->getContext());
+      assert(FCmpInst::isUnordered(Pred) &&
+             "Comparison must be either ordered or unordered!");
+      // True if unordered.
+      return ConstantInt::getTrue(CFP->getContext());
+    }
+    // Check whether the constant is an infinity.
+    if (CFP->getValueAPF().isInfinity()) {
+      if (CFP->getValueAPF().isNegative()) {
         switch (Pred) {
-        case FCmpInst::FCMP_UGE:
-          if (CannotBeOrderedLessThanZero(LHS)) 
-            return ConstantInt::getTrue(CFP->getContext());
-          break;
         case FCmpInst::FCMP_OLT:
-          if (CannotBeOrderedLessThanZero(LHS)) 
-            return ConstantInt::getFalse(CFP->getContext());
-          break;
+          // No value is ordered and less than negative infinity.
+          return ConstantInt::getFalse(CFP->getContext());
+        case FCmpInst::FCMP_UGE:
+          // All values are unordered with or at least negative infinity.
+          return ConstantInt::getTrue(CFP->getContext());
         default:
           break;
         }
-     }
+      } else {
+        switch (Pred) {
+        case FCmpInst::FCMP_OGT:
+          // No value is ordered and greater than infinity.
+          return ConstantInt::getFalse(CFP->getContext());
+        case FCmpInst::FCMP_ULE:
+          // All values are unordered with and at most infinity.
+          return ConstantInt::getTrue(CFP->getContext());
+        default:
+          break;
+        }
+      }
+    }
+    if (CFP->getValueAPF().isZero()) {
+      switch (Pred) {
+      case FCmpInst::FCMP_UGE:
+        if (CannotBeOrderedLessThanZero(LHS))
+          return ConstantInt::getTrue(CFP->getContext());
+        break;
+      case FCmpInst::FCMP_OLT:
+        // X < 0
+        if (CannotBeOrderedLessThanZero(LHS))
+          return ConstantInt::getFalse(CFP->getContext());
+        break;
+      default:
+        break;
+      }
     }
   }
 
@@ -3422,10 +3437,12 @@ static Value *SimplifyBinOp(unsigned Opcode, Value *LHS, Value *RHS,
     return SimplifyFMulInst (LHS, RHS, FastMathFlags(), Q, MaxRecurse);
   case Instruction::SDiv: return SimplifySDivInst(LHS, RHS, Q, MaxRecurse);
   case Instruction::UDiv: return SimplifyUDivInst(LHS, RHS, Q, MaxRecurse);
-  case Instruction::FDiv: return SimplifyFDivInst(LHS, RHS, Q, MaxRecurse);
+  case Instruction::FDiv:
+      return SimplifyFDivInst(LHS, RHS, FastMathFlags(), Q, MaxRecurse);
   case Instruction::SRem: return SimplifySRemInst(LHS, RHS, Q, MaxRecurse);
   case Instruction::URem: return SimplifyURemInst(LHS, RHS, Q, MaxRecurse);
-  case Instruction::FRem: return SimplifyFRemInst(LHS, RHS, Q, MaxRecurse);
+  case Instruction::FRem:
+      return SimplifyFRemInst(LHS, RHS, FastMathFlags(), Q, MaxRecurse);
   case Instruction::Shl:
     return SimplifyShlInst(LHS, RHS, /*isNSW*/false, /*isNUW*/false,
                            Q, MaxRecurse);
@@ -3465,12 +3482,40 @@ static Value *SimplifyBinOp(unsigned Opcode, Value *LHS, Value *RHS,
   }
 }
 
+/// SimplifyFPBinOp - Given operands for a BinaryOperator, see if we can
+/// fold the result.  If not, this returns null.
+/// In contrast to SimplifyBinOp, try to use FastMathFlag when folding the
+/// result. In case we don't need FastMathFlags, simply fall to SimplifyBinOp.
+static Value *SimplifyFPBinOp(unsigned Opcode, Value *LHS, Value *RHS,
+                              const FastMathFlags &FMF, const Query &Q,
+                              unsigned MaxRecurse) {
+  switch (Opcode) {
+  case Instruction::FAdd:
+    return SimplifyFAddInst(LHS, RHS, FMF, Q, MaxRecurse);
+  case Instruction::FSub:
+    return SimplifyFSubInst(LHS, RHS, FMF, Q, MaxRecurse);
+  case Instruction::FMul:
+    return SimplifyFMulInst(LHS, RHS, FMF, Q, MaxRecurse);
+  default:
+    return SimplifyBinOp(Opcode, LHS, RHS, Q, MaxRecurse);
+  }
+}
+
 Value *llvm::SimplifyBinOp(unsigned Opcode, Value *LHS, Value *RHS,
                            const DataLayout *DL, const TargetLibraryInfo *TLI,
                            const DominatorTree *DT, AssumptionCache *AC,
                            const Instruction *CxtI) {
   return ::SimplifyBinOp(Opcode, LHS, RHS, Query(DL, TLI, DT, AC, CxtI),
                          RecursionLimit);
+}
+
+Value *llvm::SimplifyFPBinOp(unsigned Opcode, Value *LHS, Value *RHS,
+                             const FastMathFlags &FMF, const DataLayout *DL,
+                             const TargetLibraryInfo *TLI,
+                             const DominatorTree *DT, AssumptionCache *AC,
+                             const Instruction *CxtI) {
+  return ::SimplifyFPBinOp(Opcode, LHS, RHS, FMF, Query(DL, TLI, DT, AC, CxtI),
+                           RecursionLimit);
 }
 
 /// SimplifyCmpInst - Given operands for a CmpInst, see if we can
@@ -3622,8 +3667,8 @@ Value *llvm::SimplifyInstruction(Instruction *I, const DataLayout *DL,
                               AC, I);
     break;
   case Instruction::FDiv:
-    Result = SimplifyFDivInst(I->getOperand(0), I->getOperand(1), DL, TLI, DT,
-                              AC, I);
+    Result = SimplifyFDivInst(I->getOperand(0), I->getOperand(1),
+                              I->getFastMathFlags(), DL, TLI, DT, AC, I);
     break;
   case Instruction::SRem:
     Result = SimplifySRemInst(I->getOperand(0), I->getOperand(1), DL, TLI, DT,
@@ -3634,8 +3679,8 @@ Value *llvm::SimplifyInstruction(Instruction *I, const DataLayout *DL,
                               AC, I);
     break;
   case Instruction::FRem:
-    Result = SimplifyFRemInst(I->getOperand(0), I->getOperand(1), DL, TLI, DT,
-                              AC, I);
+    Result = SimplifyFRemInst(I->getOperand(0), I->getOperand(1),
+                              I->getFastMathFlags(), DL, TLI, DT, AC, I);
     break;
   case Instruction::Shl:
     Result = SimplifyShlInst(I->getOperand(0), I->getOperand(1),

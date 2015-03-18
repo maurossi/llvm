@@ -61,9 +61,7 @@ add_llvm_tool_subdirectory(yaml2obj)
 
 add_llvm_tool_subdirectory(llvm-go)
 
-if(MSVC)
-  add_llvm_tool_subdirectory(llvm-pdbdump)
-endif()
+add_llvm_tool_subdirectory(llvm-pdbdump)
 
 if(NOT CYGWIN AND LLVM_ENABLE_PIC)
   add_llvm_tool_subdirectory(lto)

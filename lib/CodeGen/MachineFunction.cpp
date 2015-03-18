@@ -67,17 +67,14 @@ MachineFunction::MachineFunction(const Function *F, const TargetMachine &TM,
                        STI->getFrameLowering()->isStackRealignable(),
                        !F->hasFnAttribute("no-realign-stack"));
 
-  if (Fn->getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                       Attribute::StackAlignment))
-    FrameInfo->ensureMaxAlignment(Fn->getAttributes().
-                                getStackAlignment(AttributeSet::FunctionIndex));
+  if (Fn->hasFnAttribute(Attribute::StackAlignment))
+    FrameInfo->ensureMaxAlignment(Fn->getFnStackAlignment());
 
   ConstantPool = new (Allocator) MachineConstantPool(TM);
   Alignment = STI->getTargetLowering()->getMinFunctionAlignment();
 
   // FIXME: Shouldn't use pref alignment if explicit alignment is set on Fn.
-  if (!Fn->getAttributes().hasAttribute(AttributeSet::FunctionIndex,
-                                        Attribute::OptimizeForSize))
+  if (!Fn->hasFnAttribute(Attribute::OptimizeForSize))
     Alignment = std::max(Alignment,
                          STI->getTargetLowering()->getPrefFunctionAlignment());
 
@@ -842,13 +839,13 @@ MachineConstantPoolEntry::getSectionKind(const DataLayout *DL) const {
   switch (getRelocationInfo()) {
   default:
     llvm_unreachable("Unknown section kind");
-  case 2:
+  case Constant::GlobalRelocations:
     Kind = SectionKind::getReadOnlyWithRel();
     break;
-  case 1:
+  case Constant::LocalRelocation:
     Kind = SectionKind::getReadOnlyWithRelLocal();
     break;
-  case 0:
+  case Constant::NoRelocation:
     switch (DL->getTypeAllocSize(getType())) {
     case 4:
       Kind = SectionKind::getMergeableConst4();
@@ -860,7 +857,7 @@ MachineConstantPoolEntry::getSectionKind(const DataLayout *DL) const {
       Kind = SectionKind::getMergeableConst16();
       break;
     default:
-      Kind = SectionKind::getMergeableConst();
+      Kind = SectionKind::getReadOnly();
       break;
     }
   }

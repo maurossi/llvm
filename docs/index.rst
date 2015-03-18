@@ -244,6 +244,7 @@ For API clients and LLVM developers.
    CoverageMappingFormat
    Statepoints
    MergeFunctions
+   BitSets
 
 :doc:`WritingAnLLVMPass`
    Information on how to write LLVM transformations and analyses.
@@ -342,6 +343,9 @@ For API clients and LLVM developers.
 
 :doc:`MergeFunctions`
   Describes functions merging optimization.
+
+:doc:`InAlloca`
+  Description of the ``inalloca`` argument attribute.
 
 Development Process Documentation
 =================================

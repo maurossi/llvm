@@ -110,7 +110,7 @@ protected:
                               const SmallVectorImpl<ISD::InputArg> &Ins) const;
 
 public:
-  AMDGPUTargetLowering(TargetMachine &TM);
+  AMDGPUTargetLowering(TargetMachine &TM, const AMDGPUSubtarget &STI);
 
   bool isFAbsFree(EVT VT) const override;
   bool isFNegFree(EVT VT) const override;
@@ -218,7 +218,6 @@ enum {
   DWORDADDR,
   FRACT,
   CLAMP,
-  MAD, // Multiply + add with same result as the separate operations.
 
   // SIN_HW, COS_HW - f32 for SI, 1 ULP max error, valid from -100 pi to 100 pi.
   // Denormals handled on some parts.

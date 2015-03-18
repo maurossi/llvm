@@ -14,9 +14,10 @@
 #include "llvm-c/TargetMachine.h"
 #include "llvm-c/Core.h"
 #include "llvm-c/Target.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Module.h"
-#include "llvm/PassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormattedStream.h"
@@ -178,7 +179,7 @@ LLVMTargetDataRef LLVMGetTargetMachineData(LLVMTargetMachineRef T) {
 
 void LLVMSetTargetMachineAsmVerbosity(LLVMTargetMachineRef T,
                                       LLVMBool VerboseAsm) {
-  unwrap(T)->setAsmVerbosityDefault(VerboseAsm);
+  unwrap(T)->Options.MCOptions.AsmVerbose = VerboseAsm;
 }
 
 static LLVMBool LLVMTargetMachineEmit(LLVMTargetMachineRef T, LLVMModuleRef M,
@@ -186,7 +187,7 @@ static LLVMBool LLVMTargetMachineEmit(LLVMTargetMachineRef T, LLVMModuleRef M,
   TargetMachine* TM = unwrap(T);
   Module* Mod = unwrap(M);
 
-  PassManager pass;
+  legacy::PassManager pass;
 
   std::string error;
 
@@ -255,5 +256,6 @@ char *LLVMGetDefaultTargetTriple(void) {
 }
 
 void LLVMAddAnalysisPasses(LLVMTargetMachineRef T, LLVMPassManagerRef PM) {
-  unwrap(T)->addAnalysisPasses(*unwrap(PM));
+  unwrap(PM)->add(
+      createTargetTransformInfoWrapperPass(unwrap(T)->getTargetIRAnalysis()));
 }

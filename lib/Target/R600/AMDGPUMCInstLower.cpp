@@ -92,12 +92,12 @@ void AMDGPUMCInstLower::lower(const MachineInstr *MI, MCInst &OutMI) const {
 }
 
 void AMDGPUAsmPrinter::EmitInstruction(const MachineInstr *MI) {
-  AMDGPUMCInstLower MCInstLowering(OutContext,
-                               MF->getTarget().getSubtarget<AMDGPUSubtarget>());
+  const AMDGPUSubtarget &STI = MF->getSubtarget<AMDGPUSubtarget>();
+  AMDGPUMCInstLower MCInstLowering(OutContext, STI);
 
 #ifdef _DEBUG
   StringRef Err;
-  if (!TM.getSubtargetImpl()->getInstrInfo()->verifyInstruction(MI, Err)) {
+  if (!STI.getInstrInfo()->verifyInstruction(MI, Err)) {
     errs() << "Warning: Illegal instruction detected: " << Err << "\n";
     MI->dump();
   }
@@ -115,15 +115,15 @@ void AMDGPUAsmPrinter::EmitInstruction(const MachineInstr *MI) {
     MCInstLowering.lower(MI, TmpInst);
     EmitToStreamer(OutStreamer, TmpInst);
 
-    if (DisasmEnabled) {
+    if (STI.dumpCode()) {
       // Disassemble instruction/operands to text.
       DisasmLines.resize(DisasmLines.size() + 1);
       std::string &DisasmLine = DisasmLines.back();
       raw_string_ostream DisasmStream(DisasmLine);
 
       AMDGPUInstPrinter InstPrinter(*TM.getMCAsmInfo(),
-                                    *TM.getSubtargetImpl()->getInstrInfo(),
-                                    *TM.getSubtargetImpl()->getRegisterInfo());
+                                    *MF->getSubtarget().getInstrInfo(),
+                                    *MF->getSubtarget().getRegisterInfo());
       InstPrinter.printInst(&TmpInst, DisasmStream, StringRef());
 
       // Disassemble instruction/operands to hex representation.
@@ -134,7 +134,7 @@ void AMDGPUAsmPrinter::EmitInstruction(const MachineInstr *MI) {
       MCObjectStreamer &ObjStreamer = (MCObjectStreamer &)OutStreamer;
       MCCodeEmitter &InstEmitter = ObjStreamer.getAssembler().getEmitter();
       InstEmitter.EncodeInstruction(TmpInst, CodeStream, Fixups,
-                                    TM.getSubtarget<MCSubtargetInfo>());
+                                    MF->getSubtarget<MCSubtargetInfo>());
       CodeStream.flush();
 
       HexLines.resize(HexLines.size() + 1);

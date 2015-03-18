@@ -30,9 +30,9 @@
 
 using namespace llvm;
 
-R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
-    AMDGPUTargetLowering(TM),
-    Gen(TM.getSubtarget<AMDGPUSubtarget>().getGeneration()) {
+R600TargetLowering::R600TargetLowering(TargetMachine &TM,
+                                       const AMDGPUSubtarget &STI)
+    : AMDGPUTargetLowering(TM, STI), Gen(STI.getGeneration()) {
   addRegisterClass(MVT::v4f32, &AMDGPU::R600_Reg128RegClass);
   addRegisterClass(MVT::f32, &AMDGPU::R600_Reg32RegClass);
   addRegisterClass(MVT::v4i32, &AMDGPU::R600_Reg128RegClass);
@@ -40,7 +40,7 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
   addRegisterClass(MVT::v2f32, &AMDGPU::R600_Reg64RegClass);
   addRegisterClass(MVT::v2i32, &AMDGPU::R600_Reg64RegClass);
 
-  computeRegisterProperties();
+  computeRegisterProperties(STI.getRegisterInfo());
 
   // Set condition code actions
   setCondCodeAction(ISD::SETO,   MVT::f32, Expand);
@@ -197,7 +197,7 @@ MachineBasicBlock * R600TargetLowering::EmitInstrWithCustomInserter(
   MachineRegisterInfo &MRI = MF->getRegInfo();
   MachineBasicBlock::iterator I = *MI;
   const R600InstrInfo *TII =
-      static_cast<const R600InstrInfo *>(MF->getSubtarget().getInstrInfo());
+      static_cast<const R600InstrInfo *>(Subtarget->getInstrInfo());
 
   switch (MI->getOpcode()) {
   default:
@@ -652,9 +652,8 @@ SDValue R600TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const 
       int ijb = cast<ConstantSDNode>(Op.getOperand(2))->getSExtValue();
       MachineSDNode *interp;
       if (ijb < 0) {
-        const MachineFunction &MF = DAG.getMachineFunction();
-        const R600InstrInfo *TII = static_cast<const R600InstrInfo *>(
-            MF.getSubtarget().getInstrInfo());
+        const R600InstrInfo *TII =
+            static_cast<const R600InstrInfo *>(Subtarget->getInstrInfo());
         interp = DAG.getMachineNode(AMDGPU::INTERP_VEC_LOAD, DL,
             MVT::v4f32, DAG.getTargetConstant(slot / 4 , MVT::i32));
         return DAG.getTargetExtractSubreg(
@@ -1381,8 +1380,8 @@ SDValue R600TargetLowering::LowerSTORE(SDValue Op, SelectionDAG &DAG) const {
   // Lowering for indirect addressing
 
   const MachineFunction &MF = DAG.getMachineFunction();
-  const AMDGPUFrameLowering *TFL = static_cast<const AMDGPUFrameLowering *>(
-      getTargetMachine().getSubtargetImpl()->getFrameLowering());
+  const AMDGPUFrameLowering *TFL =
+      static_cast<const AMDGPUFrameLowering *>(Subtarget->getFrameLowering());
   unsigned StackWidth = TFL->getStackWidth(MF);
 
   Ptr = stackPtrToRegIndex(Ptr, StackWidth, DAG);
@@ -1579,8 +1578,8 @@ SDValue R600TargetLowering::LowerLOAD(SDValue Op, SelectionDAG &DAG) const
 
   // Lowering for indirect addressing
   const MachineFunction &MF = DAG.getMachineFunction();
-  const AMDGPUFrameLowering *TFL = static_cast<const AMDGPUFrameLowering *>(
-      getTargetMachine().getSubtargetImpl()->getFrameLowering());
+  const AMDGPUFrameLowering *TFL =
+      static_cast<const AMDGPUFrameLowering *>(Subtarget->getFrameLowering());
   unsigned StackWidth = TFL->getStackWidth(MF);
 
   Ptr = stackPtrToRegIndex(Ptr, StackWidth, DAG);
@@ -1694,7 +1693,7 @@ SDValue R600TargetLowering::LowerFormalArguments(
     // XXX - I think PartOffset should give you this, but it seems to give the
     // size of the register which isn't useful.
 
-    unsigned ValBase = ArgLocs[In.OrigArgIndex].getLocMemOffset();
+    unsigned ValBase = ArgLocs[In.getOrigArgIndex()].getLocMemOffset();
     unsigned PartOffset = VA.getLocMemOffset();
     unsigned Offset = 36 + VA.getLocMemOffset();
 
@@ -2184,9 +2183,7 @@ SDNode *R600TargetLowering::PostISelFolding(MachineSDNode *Node,
   unsigned Opcode = Node->getMachineOpcode();
   SDValue FakeOp;
 
-  std::vector<SDValue> Ops;
-  for (const SDUse &I : Node->ops())
-    Ops.push_back(I);
+  std::vector<SDValue> Ops(Node->op_begin(), Node->op_end());
 
   if (Opcode == AMDGPU::DOT_4) {
     int OperandIdx[] = {
@@ -2248,10 +2245,7 @@ SDNode *R600TargetLowering::PostISelFolding(MachineSDNode *Node,
         AMDGPU::OpName::clamp);
     if (ClampIdx < 0)
       return Node;
-    std::vector<SDValue> Ops;
-    unsigned NumOp = Src.getNumOperands();
-    for(unsigned i = 0; i < NumOp; ++i)
-          Ops.push_back(Src.getOperand(i));
+    std::vector<SDValue> Ops(Src->op_begin(), Src->op_end());
     Ops[ClampIdx - 1] = DAG.getTargetConstant(1, MVT::i32);
     return DAG.getMachineNode(Src.getMachineOpcode(), SDLoc(Node),
         Node->getVTList(), Ops);

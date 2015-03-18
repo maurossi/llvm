@@ -42,11 +42,15 @@ using namespace llvm;
 cl::opt<bool> ANDIGlueBug("expose-ppc-andi-glue-bug",
 cl::desc("expose the ANDI glue bug on PPC"), cl::Hidden);
 
-cl::opt<bool> UseBitPermRewriter("ppc-use-bit-perm-rewriter", cl::init(true),
-  cl::desc("use aggressive ppc isel for bit permutations"), cl::Hidden);
-cl::opt<bool> BPermRewriterNoMasking("ppc-bit-perm-rewriter-stress-rotates",
-  cl::desc("stress rotate selection in aggressive ppc isel for "
-           "bit permutations"), cl::Hidden);
+static cl::opt<bool>
+    UseBitPermRewriter("ppc-use-bit-perm-rewriter", cl::init(true),
+                       cl::desc("use aggressive ppc isel for bit permutations"),
+                       cl::Hidden);
+static cl::opt<bool> BPermRewriterNoMasking(
+    "ppc-bit-perm-rewriter-stress-rotates",
+    cl::desc("stress rotate selection in aggressive ppc isel for "
+             "bit permutations"),
+    cl::Hidden);
 
 namespace llvm {
   void initializePPCDAGToDAGISelPass(PassRegistry&);
@@ -59,22 +63,20 @@ namespace {
   ///
   class PPCDAGToDAGISel : public SelectionDAGISel {
     const PPCTargetMachine &TM;
-    const PPCTargetLowering *PPCLowering;
     const PPCSubtarget *PPCSubTarget;
+    const PPCTargetLowering *PPCLowering;
     unsigned GlobalBaseReg;
   public:
     explicit PPCDAGToDAGISel(PPCTargetMachine &tm)
-        : SelectionDAGISel(tm), TM(tm),
-          PPCLowering(TM.getSubtargetImpl()->getTargetLowering()),
-          PPCSubTarget(TM.getSubtargetImpl()) {
+        : SelectionDAGISel(tm), TM(tm) {
       initializePPCDAGToDAGISelPass(*PassRegistry::getPassRegistry());
     }
 
     bool runOnMachineFunction(MachineFunction &MF) override {
       // Make sure we re-emit a set of the global base reg if necessary
       GlobalBaseReg = 0;
-      PPCLowering = TM.getSubtargetImpl()->getTargetLowering();
-      PPCSubTarget = TM.getSubtargetImpl();
+      PPCSubTarget = &MF.getSubtarget<PPCSubtarget>();
+      PPCLowering = PPCSubTarget->getTargetLowering();
       SelectionDAGISel::runOnMachineFunction(MF);
 
       if (!PPCSubTarget->isSVR4ABI())
@@ -188,7 +190,7 @@ namespace {
                                       std::vector<SDValue> &OutOps) override {
       // We need to make sure that this one operand does not end up in r0
       // (because we might end up lowering this as 0(%op)).
-      const TargetRegisterInfo *TRI = TM.getSubtargetImpl()->getRegisterInfo();
+      const TargetRegisterInfo *TRI = PPCSubTarget->getRegisterInfo();
       const TargetRegisterClass *TRC = TRI->getPointerRegClass(*MF, /*Kind=*/1);
       SDValue RC = CurDAG->getTargetConstant(TRC->getID(), MVT::i32);
       SDValue NewOp =
@@ -221,6 +223,8 @@ private:
 
     bool AllUsersSelectZero(SDNode *N);
     void SwapAllSelectUsers(SDNode *N);
+
+    SDNode *transferMemOperands(SDNode *N, SDNode *Result);
   };
 }
 
@@ -258,7 +262,7 @@ void PPCDAGToDAGISel::InsertVRSaveCode(MachineFunction &Fn) {
   unsigned InVRSAVE = RegInfo->createVirtualRegister(&PPC::GPRCRegClass);
   unsigned UpdatedVRSAVE = RegInfo->createVirtualRegister(&PPC::GPRCRegClass);
 
-  const TargetInstrInfo &TII = *TM.getSubtargetImpl()->getInstrInfo();
+  const TargetInstrInfo &TII = *PPCSubTarget->getInstrInfo();
   MachineBasicBlock &EntryBB = *Fn.begin();
   DebugLoc dl;
   // Emit the following code into the entry block:
@@ -294,7 +298,7 @@ void PPCDAGToDAGISel::InsertVRSaveCode(MachineFunction &Fn) {
 ///
 SDNode *PPCDAGToDAGISel::getGlobalBaseReg() {
   if (!GlobalBaseReg) {
-    const TargetInstrInfo &TII = *TM.getSubtargetImpl()->getInstrInfo();
+    const TargetInstrInfo &TII = *PPCSubTarget->getInstrInfo();
     // Insert the set of GlobalBaseReg into the first MBB of the function
     MachineBasicBlock &FirstMBB = MF->front();
     MachineBasicBlock::iterator MBBI = FirstMBB.begin();
@@ -313,7 +317,7 @@ SDNode *PPCDAGToDAGISel::getGlobalBaseReg() {
           BuildMI(FirstMBB, MBBI, dl, TII.get(PPC::MFLR), GlobalBaseReg);
           unsigned TempReg = RegInfo->createVirtualRegister(&PPC::GPRCRegClass);
           BuildMI(FirstMBB, MBBI, dl,
-                  TII.get(PPC::UpdateGBR)).addReg(GlobalBaseReg)
+                  TII.get(PPC::UpdateGBR), GlobalBaseReg)
                   .addReg(TempReg, RegState::Define).addReg(GlobalBaseReg);
           MF->getInfo<PPCFunctionInfo>()->setUsesPICBase(true);
         }
@@ -2291,6 +2295,9 @@ SDNode *PPCDAGToDAGISel::SelectSETCC(SDNode *N) {
   // Altivec Vector compare instructions do not set any CR register by default and
   // vector compare operations return the same type as the operands.
   if (LHS.getValueType().isVector()) {
+    if (PPCSubTarget->hasQPX())
+      return nullptr;
+
     EVT VecVT = LHS.getValueType();
     bool Swap, Negate;
     unsigned int VCmpInst = getVCmpInst(VecVT.getSimpleVT(), CC,
@@ -2335,6 +2342,14 @@ SDNode *PPCDAGToDAGISel::SelectSETCC(SDNode *N) {
   SDValue Tmp =
     SDValue(CurDAG->getMachineNode(PPC::RLWINM, dl, MVT::i32, Ops), 0);
   return CurDAG->SelectNodeTo(N, PPC::XORI, MVT::i32, Tmp, getI32Imm(1));
+}
+
+SDNode *PPCDAGToDAGISel::transferMemOperands(SDNode *N, SDNode *Result) {
+  // Transfer memoperands.
+  MachineSDNode::mmo_iterator MemOp = MF->allocateMemRefsArray(1);
+  MemOp[0] = cast<MemSDNode>(N)->getMemOperand();
+  cast<MachineSDNode>(Result)->setMemRefs(MemOp, MemOp + 1);
+  return Result;
 }
 
 
@@ -2455,9 +2470,10 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
       SDValue Chain = LD->getChain();
       SDValue Base = LD->getBasePtr();
       SDValue Ops[] = { Offset, Base, Chain };
-      return CurDAG->getMachineNode(Opcode, dl, LD->getValueType(0),
-                                    PPCLowering->getPointerTy(),
-                                    MVT::Other, Ops);
+      return transferMemOperands(N, CurDAG->getMachineNode(Opcode, dl,
+                                      LD->getValueType(0),
+                                      PPCLowering->getPointerTy(),
+                                      MVT::Other, Ops));
     } else {
       unsigned Opcode;
       bool isSExt = LD->getExtensionType() == ISD::SEXTLOAD;
@@ -2466,6 +2482,8 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
         assert((!isSExt || LoadedVT == MVT::i16) && "Invalid sext update load");
         switch (LoadedVT.getSimpleVT().SimpleTy) {
           default: llvm_unreachable("Invalid PPC load type!");
+          case MVT::v4f64: Opcode = PPC::QVLFDUX; break; // QPX
+          case MVT::v4f32: Opcode = PPC::QVLFSUX; break; // QPX
           case MVT::f64: Opcode = PPC::LFDUX; break;
           case MVT::f32: Opcode = PPC::LFSUX; break;
           case MVT::i32: Opcode = PPC::LWZUX; break;
@@ -2490,9 +2508,10 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
       SDValue Chain = LD->getChain();
       SDValue Base = LD->getBasePtr();
       SDValue Ops[] = { Base, Offset, Chain };
-      return CurDAG->getMachineNode(Opcode, dl, LD->getValueType(0),
-                                    PPCLowering->getPointerTy(),
-                                    MVT::Other, Ops);
+      return transferMemOperands(N, CurDAG->getMachineNode(Opcode, dl,
+                                      LD->getValueType(0),
+                                      PPCLowering->getPointerTy(),
+                                      MVT::Other, Ops));
     }
   }
 
@@ -2521,7 +2540,7 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
     if (isInt64Immediate(N->getOperand(1).getNode(), Imm64) &&
         isMask_64(Imm64)) {
       SDValue Val = N->getOperand(0);
-      MB = 64 - CountTrailingOnes_64(Imm64);
+      MB = 64 - countTrailingOnes(Imm64);
       SH = 0;
 
       // If the operand is a logical right shift, we can fold it into this
@@ -2709,6 +2728,12 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
         SelectCCOp = PPC::SELECT_CC_VSFRC;
       else
         SelectCCOp = PPC::SELECT_CC_F8;
+    else if (PPCSubTarget->hasQPX() && N->getValueType(0) == MVT::v4f64)
+      SelectCCOp = PPC::SELECT_CC_QFRC;
+    else if (PPCSubTarget->hasQPX() && N->getValueType(0) == MVT::v4f32)
+      SelectCCOp = PPC::SELECT_CC_QSRC;
+    else if (PPCSubTarget->hasQPX() && N->getValueType(0) == MVT::v4i1)
+      SelectCCOp = PPC::SELECT_CC_QBRC;
     else if (N->getValueType(0) == MVT::v2f64 ||
              N->getValueType(0) == MVT::v2i64)
       SelectCCOp = PPC::SELECT_CC_VSRC;
@@ -2838,8 +2863,8 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
             "Only supported for 64-bit ABI and 32-bit SVR4");
     if (PPCSubTarget->isSVR4ABI() && !PPCSubTarget->isPPC64()) {
       SDValue GA = N->getOperand(0);
-      return CurDAG->getMachineNode(PPC::LWZtoc, dl, MVT::i32, GA,
-                                    N->getOperand(1));
+      return transferMemOperands(N, CurDAG->getMachineNode(PPC::LWZtoc, dl,
+                                      MVT::i32, GA, N->getOperand(1)));
     }
 
     // For medium and large code model, we generate two instructions as
@@ -2859,12 +2884,12 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
     SDValue GA = N->getOperand(0);
     SDValue TOCbase = N->getOperand(1);
     SDNode *Tmp = CurDAG->getMachineNode(PPC::ADDIStocHA, dl, MVT::i64,
-                                        TOCbase, GA);
+                                         TOCbase, GA);
 
     if (isa<JumpTableSDNode>(GA) || isa<BlockAddressSDNode>(GA) ||
         CModel == CodeModel::Large)
-      return CurDAG->getMachineNode(PPC::LDtocL, dl, MVT::i64, GA,
-                                    SDValue(Tmp, 0));
+      return transferMemOperands(N, CurDAG->getMachineNode(PPC::LDtocL, dl,
+                                      MVT::i64, GA, SDValue(Tmp, 0)));
 
     if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(GA)) {
       const GlobalValue *GValue = G->getGlobal();
@@ -2872,8 +2897,8 @@ SDNode *PPCDAGToDAGISel::Select(SDNode *N) {
            (GValue->isDeclaration() || GValue->isWeakForLinker())) ||
           GValue->isDeclaration() || GValue->hasCommonLinkage() ||
           GValue->hasAvailableExternallyLinkage())
-        return CurDAG->getMachineNode(PPC::LDtocL, dl, MVT::i64, GA,
-                                      SDValue(Tmp, 0));
+        return transferMemOperands(N, CurDAG->getMachineNode(PPC::LDtocL, dl,
+                                        MVT::i64, GA, SDValue(Tmp, 0)));
     }
 
     return CurDAG->getMachineNode(PPC::ADDItocL, dl, MVT::i64,
@@ -3404,6 +3429,9 @@ void PPCDAGToDAGISel::PeepholeCROps() {
       case PPC::SELECT_I8:
       case PPC::SELECT_F4:
       case PPC::SELECT_F8:
+      case PPC::SELECT_QFRC:
+      case PPC::SELECT_QSRC:
+      case PPC::SELECT_QBRC:
       case PPC::SELECT_VRRC:
       case PPC::SELECT_VSFRC:
       case PPC::SELECT_VSRC: {
@@ -3711,6 +3739,9 @@ void PPCDAGToDAGISel::PeepholeCROps() {
       case PPC::SELECT_I8:
       case PPC::SELECT_F4:
       case PPC::SELECT_F8:
+      case PPC::SELECT_QFRC:
+      case PPC::SELECT_QSRC:
+      case PPC::SELECT_QBRC:
       case PPC::SELECT_VRRC:
       case PPC::SELECT_VSFRC:
       case PPC::SELECT_VSRC:

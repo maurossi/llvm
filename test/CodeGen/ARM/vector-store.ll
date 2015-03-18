@@ -205,7 +205,7 @@ define void @store_v2i64_update_aligned4(<2 x i64>** %ptr, <2 x i64> %val) {
 
 define void @store_v2i64_update_aligned8(<2 x i64>** %ptr, <2 x i64> %val) {
 ;CHECK-LABEL: store_v2i64_update_aligned8:
-;CHECK: vst1.64 {{{d[0-9]+, d[0-9]+}}}, [{{r[0-9]+}}:64]!
+;CHECK: vst1.64 {{{d[0-9]+, d[0-9]+}}}, [{{r[0-9]+}}]!
 	%A = load <2 x i64>** %ptr
 	store  <2 x i64> %val, <2 x i64>* %A, align 8
 	%inc = getelementptr <2 x i64>* %A, i32 1

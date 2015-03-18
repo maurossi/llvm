@@ -1,3 +1,5 @@
+list(APPEND LLVM_COMMON_DEPENDS intrinsics_gen)
+
 add_llvm_library(LLVMTarget
   Target.cpp
   TargetIntrinsicInfo.cpp
@@ -5,9 +7,10 @@ add_llvm_library(LLVMTarget
   TargetMachine.cpp
   TargetMachineC.cpp
   TargetSubtargetInfo.cpp
-  )
 
-list(APPEND LLVM_COMMON_DEPENDS intrinsics_gen)
+  ADDITIONAL_HEADER_DIRS
+  ${LLVM_MAIN_INCLUDE_DIR}/llvm/Target
+  )
 
 foreach(t ${LLVM_TARGETS_TO_BUILD})
   message(STATUS "Targeting ${t}")

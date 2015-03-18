@@ -49,6 +49,7 @@ namespace {
 
       (void) llvm::createAAEvalPass();
       (void) llvm::createAggressiveDCEPass();
+      (void) llvm::createBitTrackingDCEPass();
       (void) llvm::createAliasAnalysisCounterPass();
       (void) llvm::createAliasDebugger();
       (void) llvm::createArgumentPromotionPass();
@@ -167,6 +168,8 @@ namespace {
       (void) llvm::createScalarizerPass();
       (void) llvm::createSeparateConstOffsetFromGEPPass();
       (void) llvm::createRewriteSymbolsPass();
+      (void) llvm::createStraightLineStrengthReducePass();
+      (void) llvm::createMemDerefPrinter();
 
       (void)new llvm::IntervalPartition();
       (void)new llvm::ScalarEvolution();

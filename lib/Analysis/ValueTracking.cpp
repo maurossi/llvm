@@ -2000,8 +2000,11 @@ bool llvm::CannotBeNegativeZero(const Value *V, unsigned Depth) {
   if (const ConstantFP *CFP = dyn_cast<ConstantFP>(V))
     return !CFP->getValueAPF().isNegZero();
 
+  // FIXME: Magic number! At the least, this should be given a name because it's
+  // used similarly in CannotBeOrderedLessThanZero(). A better fix may be to
+  // expose it as a parameter, so it can be used for testing / experimenting.
   if (Depth == 6)
-    return 1;  // Limit search depth.
+    return false;  // Limit search depth.
 
   const Operator *I = dyn_cast<Operator>(V);
   if (!I) return false;
@@ -2048,6 +2051,9 @@ bool llvm::CannotBeOrderedLessThanZero(const Value *V, unsigned Depth) {
   if (const ConstantFP *CFP = dyn_cast<ConstantFP>(V))
     return !CFP->getValueAPF().isNegative() || CFP->getValueAPF().isZero();
 
+  // FIXME: Magic number! At the least, this should be given a name because it's
+  // used similarly in CannotBeNegativeZero(). A better fix may be to
+  // expose it as a parameter, so it can be used for testing / experimenting.
   if (Depth == 6)
     return false;  // Limit search depth.
 
@@ -2121,26 +2127,16 @@ Value *llvm::isBytewiseValue(Value *V) {
     // Don't handle long double formats, which have strange constraints.
   }
 
-  // We can handle constant integers that are power of two in size and a
-  // multiple of 8 bits.
+  // We can handle constant integers that are multiple of 8 bits.
   if (ConstantInt *CI = dyn_cast<ConstantInt>(V)) {
-    unsigned Width = CI->getBitWidth();
-    if (isPowerOf2_32(Width) && Width > 8) {
-      // We can handle this value if the recursive binary decomposition is the
-      // same at all levels.
-      APInt Val = CI->getValue();
-      APInt Val2;
-      while (Val.getBitWidth() != 8) {
-        unsigned NextWidth = Val.getBitWidth()/2;
-        Val2  = Val.lshr(NextWidth);
-        Val2 = Val2.trunc(Val.getBitWidth()/2);
-        Val = Val.trunc(Val.getBitWidth()/2);
+    if (CI->getBitWidth() % 8 == 0) {
+      assert(CI->getBitWidth() > 8 && "8 bits should be handled above!");
 
-        // If the top/bottom halves aren't the same, reject it.
-        if (Val != Val2)
-          return nullptr;
-      }
-      return ConstantInt::get(V->getContext(), Val);
+      // We can check that all bytes of an integer are equal by making use of a
+      // little trick: rotate by 8 and check if it's still the same value.
+      if (CI->getValue() != CI->getValue().rotl(8))
+        return nullptr;
+      return ConstantInt::get(V->getContext(), CI->getValue().trunc(8));
     }
   }
 
@@ -2620,20 +2616,20 @@ bool llvm::isSafeToSpeculativelyExecute(const Value *V,
   case Instruction::SDiv:
   case Instruction::SRem: {
     // x / y is undefined if y == 0 or x == INT_MIN and y == -1
-    const APInt *X, *Y;
-    if (match(Inst->getOperand(1), m_APInt(Y))) {
-      if (*Y != 0) {
-        if (*Y == -1) {
-          // The numerator can't be MinSignedValue if the denominator is -1.
-          if (match(Inst->getOperand(0), m_APInt(X)))
-            return !Y->isMinSignedValue();
-          // The numerator *might* be MinSignedValue.
-          return false;
-        }
-        // The denominator is not 0 or -1, it's safe to proceed.
-        return true;
-      }
-    }
+    const APInt *Numerator, *Denominator;
+    if (!match(Inst->getOperand(1), m_APInt(Denominator)))
+      return false;
+    // We cannot hoist this division if the denominator is 0.
+    if (*Denominator == 0)
+      return false;
+    // It's safe to hoist if the denominator is not 0 or -1.
+    if (*Denominator != -1)
+      return true;
+    // At this point we know that the denominator is -1.  It is safe to hoist as
+    // long we know that the numerator is not INT_MIN.
+    if (match(Inst->getOperand(0), m_APInt(Numerator)))
+      return !Numerator->isMinSignedValue();
+    // The numerator *might* be MinSignedValue.
     return false;
   }
   case Instruction::Load: {

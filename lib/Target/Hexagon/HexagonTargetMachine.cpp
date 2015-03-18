@@ -17,8 +17,8 @@
 #include "HexagonMachineScheduler.h"
 #include "HexagonTargetObjectFile.h"
 #include "llvm/CodeGen/Passes.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
-#include "llvm/PassManager.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -138,33 +138,29 @@ void HexagonPassConfig::addPreRegAlloc() {
 }
 
 void HexagonPassConfig::addPostRegAlloc() {
-  const HexagonTargetMachine &TM = getHexagonTargetMachine();
   if (getOptLevel() != CodeGenOpt::None)
     if (!DisableHexagonCFGOpt)
-      addPass(createHexagonCFGOptimizer(TM), false);
+      addPass(createHexagonCFGOptimizer(), false);
 }
 
 void HexagonPassConfig::addPreSched2() {
-  const HexagonTargetMachine &TM = getHexagonTargetMachine();
-
   addPass(createHexagonCopyToCombine(), false);
   if (getOptLevel() != CodeGenOpt::None)
     addPass(&IfConverterID, false);
-  addPass(createHexagonSplitConst32AndConst64(TM));
+  addPass(createHexagonSplitConst32AndConst64());
 }
 
 void HexagonPassConfig::addPreEmitPass() {
-  const HexagonTargetMachine &TM = getHexagonTargetMachine();
   bool NoOpt = (getOptLevel() == CodeGenOpt::None);
 
   if (!NoOpt)
     addPass(createHexagonNewValueJump(), false);
 
   // Expand Spill code for predicate registers.
-  addPass(createHexagonExpandPredSpillCode(TM), false);
+  addPass(createHexagonExpandPredSpillCode(), false);
 
   // Split up TFRcondsets into conditional transfers.
-  addPass(createHexagonSplitTFRCondSets(TM), false);
+  addPass(createHexagonSplitTFRCondSets(), false);
 
   // Create Packets.
   if (!NoOpt) {
