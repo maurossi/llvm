@@ -2,6 +2,7 @@ LOCAL_PATH:= $(call my-dir)
 
 transforms_scalar_SRC_FILES := \
   ADCE.cpp \
+  BDCE.cpp \
   AlignmentFromAssumptions.cpp \
   ConstantProp.cpp \
   ConstantHoisting.cpp \
@@ -29,8 +30,10 @@ transforms_scalar_SRC_FILES := \
   MemCpyOptimizer.cpp \
   MergedLoadStoreMotion.cpp \
   PartiallyInlineLibCalls.cpp \
+  PlaceSafepoints.cpp \
   Reassociate.cpp \
   Reg2Mem.cpp \
+  RewriteStatepointsForGC.cpp \
   SCCP.cpp \
   SROA.cpp \
   SampleProfile.cpp \
@@ -40,6 +43,7 @@ transforms_scalar_SRC_FILES := \
   SeparateConstOffsetFromGEP.cpp \
   SimplifyCFGPass.cpp \
   Sink.cpp \
+  StraightLineStrengthReduce.cpp \
   StructurizeCFG.cpp \
   TailRecursionElimination.cpp
 

@@ -3,7 +3,8 @@ LOCAL_PATH:= $(call my-dir)
 llvm_pre_static_libraries := \
   libLLVMLinker \
   libLLVMipo \
-  libLLVMDebugInfo \
+  libLLVMDebugInfoDWARF \
+  libLLVMDebugInfoPDB \
   libLLVMIRReader \
   libLLVMBitWriter \
   libLLVMBitReader

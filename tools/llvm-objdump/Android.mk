@@ -14,7 +14,8 @@ llvm_objdump_SRC_FILES := \
   MachODump.cpp \
 
 llvm_objdump_STATIC_LIBRARIES := \
-  libLLVMDebugInfo \
+  libLLVMDebugInfoDWARF \
+  libLLVMDebugInfoPDB \
   libLLVMARMAsmParser \
   libLLVMARMInfo \
   libLLVMARMDesc \

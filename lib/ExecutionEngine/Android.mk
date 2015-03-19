@@ -8,7 +8,7 @@ LOCAL_SRC_FILES := \
 	ExecutionEngineBindings.cpp \
 	ExecutionEngine.cpp \
 	GDBRegistrationListener.cpp \
-	RTDyldMemoryManager.cpp \
+	SectionMemoryManager.cpp \
 	TargetSelect.cpp
 
 LOCAL_MODULE:= libLLVMExecutionEngine

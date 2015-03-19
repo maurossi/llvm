@@ -117,7 +117,8 @@ codegen_SRC_FILES := \
   TargetSchedule.cpp \
   TwoAddressInstructionPass.cpp \
   UnreachableBlockElim.cpp \
-  VirtRegMap.cpp
+  VirtRegMap.cpp \
+  WinEHPrepare.cpp
 
 # For the host
 # =====================================================

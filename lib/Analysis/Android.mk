@@ -24,7 +24,6 @@ analysis_SRC_FILES := \
   DependenceAnalysis.cpp \
   DomPrinter.cpp \
   DominanceFrontier.cpp \
-  FunctionTargetTransformInfo.cpp \
   IVUsers.cpp \
   InstCount.cpp \
   InstructionSimplify.cpp \
@@ -37,9 +36,11 @@ analysis_SRC_FILES := \
   LibCallSemantics.cpp \
   Lint.cpp \
   Loads.cpp \
+  LoopAccessAnalysis.cpp \
   LoopInfo.cpp \
   LoopPass.cpp \
   MemDepPrinter.cpp \
+  MemDerefPrinter.cpp \
   MemoryBuiltins.cpp \
   MemoryDependenceAnalysis.cpp \
   ModuleDebugInfoPrinter.cpp \

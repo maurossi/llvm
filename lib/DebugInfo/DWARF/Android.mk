@@ -1,6 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-debuginfo_SRC_FILES := \
+debuginfo_dwarf_SRC_FILES := \
   DIContext.cpp \
   DWARFAbbreviationDeclaration.cpp \
   DWARFAcceleratorTable.cpp \
@@ -25,9 +25,9 @@ include $(CLEAR_VARS)
 
 REQUIRES_RTTI := 1
 
-LOCAL_SRC_FILES := $(debuginfo_SRC_FILES)
+LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfo
+LOCAL_MODULE:= libLLVMDebugInfoDWARF
 
 LOCAL_MODULE_TAGS := optional
 
@@ -42,9 +42,9 @@ include $(CLEAR_VARS)
 
 REQUIRES_RTTI := 1
 
-LOCAL_SRC_FILES := $(debuginfo_SRC_FILES)
+LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfo
+LOCAL_MODULE:= libLLVMDebugInfoDWARF
 
 LOCAL_MODULE_TAGS := optional
 

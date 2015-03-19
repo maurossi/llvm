@@ -12,6 +12,7 @@ vmcore_SRC_FILES := \
   Core.cpp \
   DataLayout.cpp \
   DebugInfo.cpp \
+  DebugInfoMetadata.cpp \
   DebugLoc.cpp \
   DiagnosticInfo.cpp \
   DiagnosticPrinter.cpp \

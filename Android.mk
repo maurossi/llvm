@@ -19,7 +19,8 @@ subdirs := \
   lib/CodeGen \
   lib/CodeGen/AsmPrinter \
   lib/CodeGen/SelectionDAG \
-  lib/DebugInfo \
+  lib/DebugInfo/DWARF \
+  lib/DebugInfo/PDB \
   lib/IR \
   lib/IRReader \
   lib/Linker \
