@@ -5,7 +5,7 @@ include $(LLVM_ROOT_PATH)/llvm.mk
 
 llvm_vtabledump_SRC_FILES := \
   Error.cpp \
-  llvm-vtabledump.cpp
+  llvm-cxxdump.cpp
 
 llvm_vtabledump_STATIC_LIBRARIES := \
   libLLVMARMAsmParser \

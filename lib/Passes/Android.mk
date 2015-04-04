@@ -1,26 +1,15 @@
 LOCAL_PATH:= $(call my-dir)
 
-transforms_objcarc_SRC_FILES := \
-  ARCInstKind.cpp \
-  DependencyAnalysis.cpp \
-  ObjCARCAliasAnalysis.cpp \
-  ObjCARCAPElim.cpp \
-  ObjCARCContract.cpp \
-  ObjCARC.cpp \
-  ObjCARCExpand.cpp \
-  ObjCARCOpts.cpp \
-  PtrState.cpp \
-  ProvenanceAnalysis.cpp \
-  ProvenanceAnalysisEvaluator.cpp
+passes_SRC_FILES := \
+  PassBuilder.cpp
 
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := $(transforms_objcarc_SRC_FILES)
-LOCAL_MODULE:= libLLVMTransformObjCARC
-
+LOCAL_MODULE:= libLLVMPasses
 LOCAL_MODULE_TAGS := optional
+LOCAL_SRC_FILES := $(passes_SRC_FILES)
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
@@ -31,10 +20,9 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := $(transforms_objcarc_SRC_FILES)
-LOCAL_MODULE:= libLLVMTransformObjCARC
-
+LOCAL_MODULE:= libLLVMPasses
 LOCAL_MODULE_TAGS := optional
+LOCAL_SRC_FILES := $(passes_SRC_FILES)
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
