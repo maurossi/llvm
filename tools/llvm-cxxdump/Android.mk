@@ -3,11 +3,11 @@ LOCAL_PATH := $(call my-dir)
 LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 include $(LLVM_ROOT_PATH)/llvm.mk
 
-llvm_vtabledump_SRC_FILES := \
+llvm_cxxdump_SRC_FILES := \
   Error.cpp \
   llvm-cxxdump.cpp
 
-llvm_vtabledump_STATIC_LIBRARIES := \
+llvm_cxxdump_STATIC_LIBRARIES := \
   libLLVMARMAsmParser \
   libLLVMARMInfo \
   libLLVMARMDesc \
@@ -47,13 +47,13 @@ llvm_vtabledump_STATIC_LIBRARIES := \
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := llvm-vtabledump
+LOCAL_MODULE := llvm-cxxdump
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE_TAGS := optional
-LOCAL_SRC_FILES := $(llvm_vtabledump_SRC_FILES)
+LOCAL_SRC_FILES := $(llvm_cxxdump_SRC_FILES)
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-LOCAL_STATIC_LIBRARIES := $(llvm_vtabledump_STATIC_LIBRARIES)
+LOCAL_STATIC_LIBRARIES := $(llvm_cxxdump_STATIC_LIBRARIES)
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
