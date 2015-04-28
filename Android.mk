@@ -11,6 +11,7 @@ subdirs := \
   lib/AsmParser \
   lib/Bitcode/Reader \
   lib/Bitcode/Writer \
+  lib/ExecutionEngine \
   lib/ExecutionEngine/JIT \
   lib/CodeGen \
   lib/CodeGen/AsmPrinter \
