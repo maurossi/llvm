@@ -192,7 +192,14 @@ ifneq ($(filter %GenIntrinsics.inc,$(tblgen_gen_tables)),)
 $(intermediates)/%GenIntrinsics.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(intermediates)/%GenIntrinsics.inc: $(tblgen_source_dir)/%.td \
                                      $(tblgen_td_deps) | $(TBLGEN)
-	$(call transform-td-to-out,tgt_intrinsics)
+	$(call transform-td-to-out,tgt-intrinsic)
+endif
+
+ifneq ($(filter %GenDFAPacketizer.inc,$(tblgen_gen_tables)),)
+$(intermediates)/%GenDFAPacketizer.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(intermediates)/%GenDFAPacketizer.inc: $(tblgen_source_dir)/%.td \
+                                     $(tblgen_td_deps) | $(TBLGEN)
+	$(call transform-td-to-out,dfa-packetizer)
 endif
 
 ifneq ($(findstring ARMGenDecoderTables.inc,$(tblgen_gen_tables)),)

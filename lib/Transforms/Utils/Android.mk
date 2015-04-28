@@ -32,7 +32,8 @@ transforms_utils_SRC_FILES := \
   SpecialCaseList.cpp \
   UnifyFunctionExitNodes.cpp \
   Utils.cpp \
-  ValueMapper.cpp
+  ValueMapper.cpp \
+  FlattenCFG.cpp
 
 # For the host
 # =====================================================
