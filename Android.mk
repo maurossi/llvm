@@ -72,12 +72,17 @@ subdirs += \
   lib/Target/R600/TargetInfo
 
 # LLVM Command Line Tools
-subdirs += tools/llc
-subdirs += tools/llvm-as
-subdirs += tools/llvm-dis
-subdirs += tools/llvm-link
-#subdirs += tools/opt
+subdirs += \
+  tools/llc \
+  tools/llvm-as \
+  tools/llvm-dis \
+  tools/llvm-link \
+  tools/opt
 
+# LLVM Command Line Utilities
+subdirs += \
+  utils/count \
+  utils/not
 
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk

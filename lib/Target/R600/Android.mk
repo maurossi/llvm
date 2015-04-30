@@ -15,7 +15,6 @@ AMDGPU_codegen_SRC_FILES := \
 	AMDILCFGStructurizer.cpp \
 	AMDGPUAsmPrinter.cpp \
 	AMDGPUFrameLowering.cpp \
-	AMDGPUIntrinsicInfo.cpp \
 	AMDGPUISelDAGToDAG.cpp \
 	AMDGPUMCInstLower.cpp \
 	AMDGPUMachineFunction.cpp \
@@ -24,9 +23,7 @@ AMDGPU_codegen_SRC_FILES := \
 	AMDGPUTargetTransformInfo.cpp \
 	AMDGPUISelLowering.cpp \
 	AMDGPUInstrInfo.cpp \
-	AMDGPUPromoteAlloca.cpp \
 	AMDGPURegisterInfo.cpp \
-	R600ClauseMergePass.cpp \
 	R600ControlFlowFinalizer.cpp \
 	R600EmitClauseMarkers.cpp \
 	R600ExpandSpecialInstrs.cpp \
@@ -40,15 +37,12 @@ AMDGPU_codegen_SRC_FILES := \
 	R600TextureIntrinsicsReplacer.cpp \
 	SIAnnotateControlFlow.cpp \
 	SIFixSGPRCopies.cpp \
-	SIFixSGPRLiveRanges.cpp \
 	SIInsertWaits.cpp \
 	SIInstrInfo.cpp \
 	SIISelLowering.cpp \
 	SILowerControlFlow.cpp \
-	SILowerI1Copies.cpp \
 	SIMachineFunctionInfo.cpp \
-	SIRegisterInfo.cpp \
-	SITypeRewriter.cpp
+	SIRegisterInfo.cpp
 
 # For the host
 # =====================================================

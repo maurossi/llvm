@@ -8,7 +8,6 @@ AMDGPU_mc_desc_TBLGEN_TABLES := \
 AMDGPU_mc_desc_SRC_FILES := \
   AMDGPUAsmBackend.cpp \
   AMDGPUELFObjectWriter.cpp \
-  AMDGPUMCCodeEmitter.cpp \
   AMDGPUMCTargetDesc.cpp \
   AMDGPUMCAsmInfo.cpp \
   R600MCCodeEmitter.cpp \
