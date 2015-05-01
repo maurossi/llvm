@@ -21,7 +21,10 @@ TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(AMDGPU_instprinter_SRC_FILES)
 
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
+LOCAL_C_INCLUDES += \
+	$(LOCAL_PATH)/.. \
+	$(intermediates)/../libLLVMR600CodeGen_intermediates \
+	$(intermediates)/../libLLVMCore_intermediates
 
 LOCAL_MODULE:= libLLVMR600AsmPrinter
 
@@ -43,7 +46,10 @@ TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(AMDGPU_instprinter_SRC_FILES)
 
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
+LOCAL_C_INCLUDES += \
+	$(LOCAL_PATH)/.. \
+	$(intermediates)/../libLLVMR600CodeGen_intermediates \
+	$(intermediates)/../libLLVMCore_intermediates
 
 LOCAL_MODULE := libLLVMR600AsmPrinter
 

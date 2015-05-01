@@ -26,12 +26,15 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 intermediates := $(call local-intermediates-dir)
+
 LOCAL_C_INCLUDES +=     \
 	$(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMR600CodeGen_intermediates
+	$(intermediates)/../libLLVMR600CodeGen_intermediates \
+	$(intermediates)/../libLLVMCore_intermediates
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -53,11 +56,14 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 intermediates := $(call local-intermediates-dir)
+
 LOCAL_C_INCLUDES +=     \
         $(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMR600CodeGen_intermediates
+	$(intermediates)/../libLLVMR600CodeGen_intermediates \
+	$(intermediates)/../libLLVMCore_intermediates
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
