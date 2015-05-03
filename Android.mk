@@ -79,11 +79,6 @@ subdirs += \
   tools/llvm-link \
   tools/opt
 
-# LLVM Command Line Utilities
-subdirs += \
-  utils/count \
-  utils/not
-
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk
 include $(addprefix $(LOCAL_PATH)/,$(addsuffix /Android.mk, $(subdirs)))
