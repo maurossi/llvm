@@ -12,23 +12,27 @@ AMDGPU_codegen_TBLGEN_TABLES := \
 	AMDGPUGenAsmWriter.inc
 
 AMDGPU_codegen_SRC_FILES := \
-	AMDILCFGStructurizer.cpp \
 	AMDGPUAsmPrinter.cpp \
+	AMDGPUConvertToISA.cpp \
 	AMDGPUFrameLowering.cpp \
 	AMDGPUISelDAGToDAG.cpp \
+	AMDGPUISelLowering.cpp \
+	AMDGPUIndirectAddressing.cpp \
+	AMDGPUInstrInfo.cpp \
 	AMDGPUMCInstLower.cpp \
 	AMDGPUMachineFunction.cpp \
+	AMDGPURegisterInfo.cpp \
 	AMDGPUSubtarget.cpp \
 	AMDGPUTargetMachine.cpp \
 	AMDGPUTargetTransformInfo.cpp \
-	AMDGPUISelLowering.cpp \
-	AMDGPUInstrInfo.cpp \
-	AMDGPURegisterInfo.cpp \
+	AMDILCFGStructurizer.cpp \
+	AMDILISelLowering.cpp \
+	AMDILIntrinsicInfo.cpp \
 	R600ControlFlowFinalizer.cpp \
 	R600EmitClauseMarkers.cpp \
 	R600ExpandSpecialInstrs.cpp \
-	R600InstrInfo.cpp \
 	R600ISelLowering.cpp \
+	R600InstrInfo.cpp \
 	R600MachineFunctionInfo.cpp \
 	R600MachineScheduler.cpp \
 	R600OptimizeVectorRegisters.cpp \
@@ -37,9 +41,9 @@ AMDGPU_codegen_SRC_FILES := \
 	R600TextureIntrinsicsReplacer.cpp \
 	SIAnnotateControlFlow.cpp \
 	SIFixSGPRCopies.cpp \
+	SIISelLowering.cpp \
 	SIInsertWaits.cpp \
 	SIInstrInfo.cpp \
-	SIISelLowering.cpp \
 	SILowerControlFlow.cpp \
 	SIMachineFunctionInfo.cpp \
 	SIRegisterInfo.cpp

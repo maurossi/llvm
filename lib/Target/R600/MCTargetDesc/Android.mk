@@ -1,14 +1,19 @@
 LOCAL_PATH := $(call my-dir)
 
 AMDGPU_mc_desc_TBLGEN_TABLES := \
-  AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenInstrInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+	AMDGPUGenRegisterInfo.inc \
+	AMDGPUGenInstrInfo.inc \
+	AMDGPUGenDAGISel.inc  \
+	AMDGPUGenSubtargetInfo.inc \
+	AMDGPUGenMCCodeEmitter.inc \
+	AMDGPUGenCallingConv.inc \
+	AMDGPUGenIntrinsics.inc \
+	AMDGPUGenDFAPacketizer.inc \
+	AMDGPUGenAsmWriter.inc
 
 AMDGPU_mc_desc_SRC_FILES := \
   AMDGPUAsmBackend.cpp \
   AMDGPUELFObjectWriter.cpp \
-  AMDGPUMCCodeEmitter.cpp \
   AMDGPUMCTargetDesc.cpp \
   AMDGPUMCAsmInfo.cpp \
   R600MCCodeEmitter.cpp \
@@ -31,7 +36,6 @@ intermediates := $(call local-intermediates-dir)
 
 LOCAL_C_INCLUDES := \
 		$(LOCAL_PATH)/.. \
-		$(intermediates)/../libLLVMR600CodeGen_intermediates \
 		$(intermediates)/../libLLVMCore_intermediates
 
 TBLGEN_TABLES := $(AMDGPU_mc_desc_TBLGEN_TABLES)

@@ -1,10 +1,15 @@
 LOCAL_PATH := $(call my-dir)
 
 AMDGPU_instprinter_TBLGEN_TABLES := \
-  AMDGPUGenAsmWriter.inc \
-  AMDGPUGenInstrInfo.inc \
-  AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+	AMDGPUGenRegisterInfo.inc \
+	AMDGPUGenInstrInfo.inc \
+	AMDGPUGenDAGISel.inc  \
+	AMDGPUGenSubtargetInfo.inc \
+	AMDGPUGenMCCodeEmitter.inc \
+	AMDGPUGenCallingConv.inc \
+	AMDGPUGenIntrinsics.inc \
+	AMDGPUGenDFAPacketizer.inc \
+	AMDGPUGenAsmWriter.inc
 
 AMDGPU_instprinter_SRC_FILES := \
   AMDGPUInstPrinter.cpp
@@ -23,7 +28,6 @@ LOCAL_SRC_FILES := $(AMDGPU_instprinter_SRC_FILES)
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMR600CodeGen_intermediates \
 	$(intermediates)/../libLLVMCore_intermediates
 
 LOCAL_MODULE:= libLLVMR600AsmPrinter
@@ -48,7 +52,6 @@ LOCAL_SRC_FILES := $(AMDGPU_instprinter_SRC_FILES)
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMR600CodeGen_intermediates \
 	$(intermediates)/../libLLVMCore_intermediates
 
 LOCAL_MODULE := libLLVMR600AsmPrinter
