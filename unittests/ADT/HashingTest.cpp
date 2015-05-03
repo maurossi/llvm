@@ -19,6 +19,12 @@
 #include <map>
 #include <vector>
 
+#ifdef __ANDROID__
+namespace std {
+	typedef basic_string<wchar_t> wstring;
+}
+#endif
+
 namespace llvm {
 
 // Helper for test code to print hash codes.

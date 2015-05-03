@@ -11,6 +11,7 @@ subdirs := \
   lib/AsmParser \
   lib/Bitcode/Reader \
   lib/Bitcode/Writer \
+  lib/ExecutionEngine \
   lib/ExecutionEngine/JIT \
   lib/CodeGen \
   lib/CodeGen/AsmPrinter \
@@ -63,13 +64,20 @@ subdirs += \
   lib/Target/X86/TargetInfo \
   lib/Target/X86/Utils
 
-# LLVM Command Line Tools
-subdirs += tools/llc
-subdirs += tools/llvm-as
-subdirs += tools/llvm-dis
-subdirs += tools/llvm-link
-#subdirs += tools/opt
+# R600 Code Generation Libraries
+subdirs += \
+  lib/Target/R600 \
+  lib/Target/R600/InstPrinter \
+  lib/Target/R600/MCTargetDesc \
+  lib/Target/R600/TargetInfo
 
+# LLVM Command Line Tools
+subdirs += \
+  tools/llc \
+  tools/llvm-as \
+  tools/llvm-dis \
+  tools/llvm-link \
+  tools/opt
 
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk

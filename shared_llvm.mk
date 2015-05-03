@@ -25,7 +25,15 @@ llvm_x86_static_libraries := \
   libLLVMX86AsmParser \
   libLLVMX86AsmPrinter \
   libLLVMX86Utils \
-  libLLVMX86Disassembler
+  libLLVMX86Disassembler \
+  libLLVMExecutionEngine \
+  libLLVMJIT
+
+llvm_r600_static_libraries := \
+  libLLVMR600CodeGen \
+  libLLVMR600Info \
+  libLLVMR600Desc \
+  libLLVMR600AsmPrinter
 
 llvm_mips_static_libraries := \
   libLLVMMipsCodeGen \
@@ -69,6 +77,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
   $(llvm_pre_static_libraries) \
   $(llvm_arm_static_libraries) \
   $(llvm_x86_static_libraries) \
+  $(llvm_r600_static_libraries) \
   $(llvm_mips_static_libraries) \
   $(llvm_post_static_libraries)
 
@@ -98,6 +107,7 @@ ifeq ($(TARGET_ARCH),arm)
 else
   ifeq ($(TARGET_ARCH),x86)
     LOCAL_WHOLE_STATIC_LIBRARIES += $(llvm_x86_static_libraries)
+    LOCAL_WHOLE_STATIC_LIBRARIES_r600 += $(llvm_r600_static_libraries)
   else
     ifeq ($(TARGET_ARCH),mips)
       LOCAL_WHOLE_STATIC_LIBRARIES += $(llvm_mips_static_libraries)
