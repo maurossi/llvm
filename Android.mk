@@ -76,8 +76,9 @@ subdirs += \
   tools/llc \
   tools/llvm-as \
   tools/llvm-dis \
-  tools/llvm-link \
-  tools/opt
+  tools/llvm-link
+
+#  tools/opt
 
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk

@@ -52,7 +52,8 @@ LOCAL_SRC_FILES := $(AMDGPU_instprinter_SRC_FILES)
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMCore_intermediates
+	$(intermediates)/../libLLVMCore_intermediates \
+	$(intermediates)/../libLLVMR600CodeGen_intermediates
 
 LOCAL_MODULE := libLLVMR600AsmPrinter
 

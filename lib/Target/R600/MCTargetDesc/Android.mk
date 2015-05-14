@@ -65,8 +65,8 @@ intermediates := $(call local-intermediates-dir)
 
 LOCAL_C_INCLUDES := \
 		$(LOCAL_PATH)/.. \
-		$(intermediates)/../libLLVMR600CodeGen_intermediates \
-		$(intermediates)/../libLLVMCore_intermediates
+		$(intermediates)/../libLLVMCore_intermediates \
+		$(intermediates)/../libLLVMR600CodeGen_intermediates
 
 TBLGEN_TABLES := $(AMDGPU_mc_desc_TBLGEN_TABLES)
 

@@ -33,7 +33,7 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 intermediates := $(call local-intermediates-dir)
 
-LOCAL_C_INCLUDES +=     \
+LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/.. \
 	$(intermediates)/../libLLVMCore_intermediates
 
@@ -64,7 +64,8 @@ intermediates := $(call local-intermediates-dir)
 
 LOCAL_C_INCLUDES +=     \
         $(LOCAL_PATH)/.. \
-	$(intermediates)/../libLLVMCore_intermediates
+	$(intermediates)/../libLLVMCore_intermediates \
+	$(intermediates)/../libLLVMR600CodeGen_intermediates
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)

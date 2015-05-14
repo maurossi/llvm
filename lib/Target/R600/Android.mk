@@ -11,42 +11,43 @@ AMDGPU_codegen_TBLGEN_TABLES := \
 	AMDGPUGenDFAPacketizer.inc \
 	AMDGPUGenAsmWriter.inc
 
+#  AMDILCFGStructurizer.cpp \
+#  AMDILIntrinsicInfo.cpp \
+#  AMDILISelLowering.cpp \
+#  AMDGPUISelLowering.cpp \
+#  R600ISelLowering.cpp \
+#  SIISelLowering.cpp \
+#  AMDGPUISelDAGToDAG.cpp \
+#  AMDGPUTargetMachine.cpp \
+
 AMDGPU_codegen_SRC_FILES := \
-	AMDGPUAsmPrinter.cpp \
-	AMDGPUConvertToISA.cpp \
-	AMDGPUFrameLowering.cpp \
-	AMDGPUISelDAGToDAG.cpp \
-	AMDGPUISelLowering.cpp \
-	AMDGPUIndirectAddressing.cpp \
-	AMDGPUInstrInfo.cpp \
-	AMDGPUMCInstLower.cpp \
-	AMDGPUMachineFunction.cpp \
-	AMDGPURegisterInfo.cpp \
-	AMDGPUSubtarget.cpp \
-	AMDGPUTargetMachine.cpp \
-	AMDGPUTargetTransformInfo.cpp \
-	AMDILCFGStructurizer.cpp \
-	AMDILISelLowering.cpp \
-	AMDILIntrinsicInfo.cpp \
-	R600ControlFlowFinalizer.cpp \
-	R600EmitClauseMarkers.cpp \
-	R600ExpandSpecialInstrs.cpp \
-	R600ISelLowering.cpp \
-	R600InstrInfo.cpp \
-	R600MachineFunctionInfo.cpp \
-	R600MachineScheduler.cpp \
-	R600OptimizeVectorRegisters.cpp \
-	R600Packetizer.cpp \
-	R600RegisterInfo.cpp \
-	R600TextureIntrinsicsReplacer.cpp \
-	SIAnnotateControlFlow.cpp \
-	SIFixSGPRCopies.cpp \
-	SIISelLowering.cpp \
-	SIInsertWaits.cpp \
-	SIInstrInfo.cpp \
-	SILowerControlFlow.cpp \
-	SIMachineFunctionInfo.cpp \
-	SIRegisterInfo.cpp
+  AMDGPUAsmPrinter.cpp \
+  AMDGPUFrameLowering.cpp \
+  AMDGPUIndirectAddressing.cpp \
+  AMDGPUMCInstLower.cpp \
+  AMDGPUMachineFunction.cpp \
+  AMDGPUSubtarget.cpp \
+  AMDGPUTargetTransformInfo.cpp \
+  AMDGPUConvertToISA.cpp \
+  AMDGPUInstrInfo.cpp \
+  AMDGPURegisterInfo.cpp \
+  R600ControlFlowFinalizer.cpp \
+  R600EmitClauseMarkers.cpp \
+  R600ExpandSpecialInstrs.cpp \
+  R600InstrInfo.cpp \
+  R600MachineFunctionInfo.cpp \
+  R600MachineScheduler.cpp \
+  R600OptimizeVectorRegisters.cpp \
+  R600Packetizer.cpp \
+  R600RegisterInfo.cpp \
+  R600TextureIntrinsicsReplacer.cpp \
+  SIAnnotateControlFlow.cpp \
+  SIFixSGPRCopies.cpp \
+  SIInsertWaits.cpp \
+  SIInstrInfo.cpp \
+  SILowerControlFlow.cpp \
+  SIMachineFunctionInfo.cpp \
+  SIRegisterInfo.cpp
 
 # For the host
 # =====================================================
@@ -56,6 +57,10 @@ include $(CLEAR_TBLGEN_VARS)
 TBLGEN_TABLES := $(AMDGPU_codegen_TBLGEN_TABLES)
 
 LOCAL_SRC_FILES := $(AMDGPU_codegen_SRC_FILES)
+
+#LOCAL_C_INCLUDES += \
+#	$(LOCAL_PATH) \
+#	$(intermediates)
 
 LOCAL_MODULE:= libLLVMR600CodeGen
 
@@ -75,6 +80,10 @@ include $(CLEAR_TBLGEN_VARS)
 TBLGEN_TABLES := $(AMDGPU_codegen_TBLGEN_TABLES)
 
 LOCAL_SRC_FILES := $(AMDGPU_codegen_SRC_FILES)
+
+#LOCAL_C_INCLUDES += \
+#	$(LOCAL_PATH) \
+#	$(intermediates)
 
 LOCAL_MODULE:= libLLVMR600CodeGen
 
