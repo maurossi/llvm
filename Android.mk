@@ -126,6 +126,7 @@ subdirs += \
   tools/llvm-rtdyld \
   tools/llvm-size \
   tools/llvm-symbolizer \
+  tools/lto \
   tools/macho-dump \
   tools/obj2yaml \
   tools/opt \
