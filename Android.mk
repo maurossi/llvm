@@ -80,6 +80,13 @@ subdirs += \
   lib/Target/X86/TargetInfo \
   lib/Target/X86/Utils
 
+# R600 Code Generation Libraries
+subdirs += \
+  lib/Target/R600 \
+  lib/Target/R600/InstPrinter \
+  lib/Target/R600/MCTargetDesc \
+  lib/Target/R600/TargetInfo
+
 # LLVM Command Line Tools
 subdirs += \
   tools/bugpoint \

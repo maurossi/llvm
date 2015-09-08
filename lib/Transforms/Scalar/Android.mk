@@ -36,7 +36,8 @@ transforms_scalar_SRC_FILES := \
   SimplifyCFGPass.cpp \
   Sink.cpp \
   StructurizeCFG.cpp \
-  TailRecursionElimination.cpp
+  TailRecursionElimination.cpp \
+  FlattenCFGPass.cpp
 
 # For the host
 # =====================================================

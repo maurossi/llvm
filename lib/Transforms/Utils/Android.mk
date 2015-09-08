@@ -35,7 +35,8 @@ transforms_utils_SRC_FILES := \
   SimplifyLibCalls.cpp \
   UnifyFunctionExitNodes.cpp \
   Utils.cpp \
-  ValueMapper.cpp
+  ValueMapper.cpp \
+  FlattenCFG.cpp
 
 # For the host
 # =====================================================
