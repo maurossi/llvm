@@ -530,6 +530,19 @@ void AArch64InstrInfo::insertSelect(MachineBasicBlock &MBB,
       // The extends the live range of NewVReg.
       MRI.clearKillFlags(NewVReg);
     }
+    // cmp reg, #foo is actually ands xzr, reg, #1<<foo.
+    if (Cond[1].getImm() == AArch64::TBZW || Cond[1].getImm() == AArch64::TBNZW)
+      BuildMI(MBB, I, DL, get(AArch64::ANDSWri), AArch64::WZR)
+          .addReg(Cond[2].getReg())
+          .addImm(
+              AArch64_AM::encodeLogicalImmediate(1ull << Cond[3].getImm(), 32));
+    else
+      BuildMI(MBB, I, DL, get(AArch64::ANDSXri), AArch64::XZR)
+          .addReg(Cond[2].getReg())
+          .addImm(
+              AArch64_AM::encodeLogicalImmediate(1ull << Cond[3].getImm(), 64));
+    break;
+  }
   }
 
   // Pull all virtual register into the appropriate class.
@@ -539,51 +552,6 @@ void AArch64InstrInfo::insertSelect(MachineBasicBlock &MBB,
   // Insert the csel.
   BuildMI(MBB, I, DL, get(Opc), DstReg).addReg(TrueReg).addReg(FalseReg).addImm(
       CC);
-}
-
-// FIXME: this implementation should be micro-architecture dependent, so a
-// micro-architecture target hook should be introduced here in future.
-bool AArch64InstrInfo::isAsCheapAsAMove(const MachineInstr *MI) const {
-  if (!Subtarget.isCortexA57() && !Subtarget.isCortexA53())
-    return MI->isAsCheapAsAMove();
-
-  switch (MI->getOpcode()) {
-  default:
-    return false;
-
-  // add/sub on register without shift
-  case AArch64::ADDWri:
-  case AArch64::ADDXri:
-  case AArch64::SUBWri:
-  case AArch64::SUBXri:
-    return (MI->getOperand(3).getImm() == 0);
-
-  // logical ops on immediate
-  case AArch64::ANDWri:
-  case AArch64::ANDXri:
-  case AArch64::EORWri:
-  case AArch64::EORXri:
-  case AArch64::ORRWri:
-  case AArch64::ORRXri:
-    return true;
-
-  // logical ops on register without shift
-  case AArch64::ANDWrr:
-  case AArch64::ANDXrr:
-  case AArch64::BICWrr:
-  case AArch64::BICXrr:
-  case AArch64::EONWrr:
-  case AArch64::EONXrr:
-  case AArch64::EORWrr:
-  case AArch64::EORXrr:
-  case AArch64::ORNWrr:
-  case AArch64::ORNXrr:
-  case AArch64::ORRWrr:
-  case AArch64::ORRXrr:
-    return true;
-  }
-
-  llvm_unreachable("Unknown opcode to check as cheap as a move!");
 }
 
 bool AArch64InstrInfo::isCoalescableExtInstr(const MachineInstr &MI,

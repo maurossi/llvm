@@ -99,6 +99,10 @@ namespace llvm {
       /// SVR4 calls.
       CALL, CALL_NOP,
 
+      /// CALL_TLS and CALL_NOP_TLS - Versions of CALL and CALL_NOP used
+      /// to access TLS variables.
+      CALL_TLS, CALL_NOP_TLS,
+
       /// CHAIN,FLAG = MTCTR(VAL, CHAIN[, INFLAG]) - Directly corresponds to a
       /// MTCTR instruction.
       MTCTR,
@@ -181,6 +185,10 @@ namespace llvm {
       /// on PPC32.
       PPC32_GOT,
 
+      /// GPRC = address of _GLOBAL_OFFSET_TABLE_. Used by general dynamic and
+      /// local dynamic TLS  on PPC32.
+      PPC32_PICGOT,
+
       /// G8RC = ADDIS_GOT_TPREL_HA %X2, Symbol - Used by the initial-exec
       /// TLS model, produces an ADDIS8 instruction that adds the GOT
       /// base to sym\@got\@tprel\@ha.
@@ -210,10 +218,6 @@ namespace llvm {
       /// sym\@got\@tlsgd\@l.
       ADDI_TLSGD_L,
 
-      /// G8RC = GET_TLS_ADDR %X3, Symbol - For the general-dynamic TLS
-      /// model, produces a call to __tls_get_addr(sym\@tlsgd).
-      GET_TLS_ADDR,
-
       /// G8RC = ADDIS_TLSLD_HA %X2, Symbol - For the local-dynamic TLS
       /// model, produces an ADDIS8 instruction that adds the GOT base
       /// register to sym\@got\@tlsld\@ha.
@@ -223,10 +227,6 @@ namespace llvm {
       /// model, produces an ADDI8 instruction that adds G8RReg to
       /// sym\@got\@tlsld\@l.
       ADDI_TLSLD_L,
-
-      /// G8RC = GET_TLSLD_ADDR %X3, Symbol - For the local-dynamic TLS
-      /// model, produces a call to __tls_get_addr(sym\@tlsld).
-      GET_TLSLD_ADDR,
 
       /// G8RC = ADDIS_DTPREL_HA %X3, Symbol, Chain - For the
       /// local-dynamic TLS model, produces an ADDIS8 instruction
@@ -297,27 +297,28 @@ namespace llvm {
   namespace PPC {
     /// isVPKUHUMShuffleMask - Return true if this is the shuffle mask for a
     /// VPKUHUM instruction.
-    bool isVPKUHUMShuffleMask(ShuffleVectorSDNode *N, bool isUnary,
+    bool isVPKUHUMShuffleMask(ShuffleVectorSDNode *N, unsigned ShuffleKind,
                               SelectionDAG &DAG);
 
     /// isVPKUWUMShuffleMask - Return true if this is the shuffle mask for a
     /// VPKUWUM instruction.
-    bool isVPKUWUMShuffleMask(ShuffleVectorSDNode *N, bool isUnary,
+    bool isVPKUWUMShuffleMask(ShuffleVectorSDNode *N, unsigned ShuffleKind,
                               SelectionDAG &DAG);
 
     /// isVMRGLShuffleMask - Return true if this is a shuffle mask suitable for
     /// a VRGL* instruction with the specified unit size (1,2 or 4 bytes).
     bool isVMRGLShuffleMask(ShuffleVectorSDNode *N, unsigned UnitSize,
-                            bool isUnary, SelectionDAG &DAG);
+                            unsigned ShuffleKind, SelectionDAG &DAG);
 
     /// isVMRGHShuffleMask - Return true if this is a shuffle mask suitable for
     /// a VRGH* instruction with the specified unit size (1,2 or 4 bytes).
     bool isVMRGHShuffleMask(ShuffleVectorSDNode *N, unsigned UnitSize,
-                            bool isUnary, SelectionDAG &DAG);
+                            unsigned ShuffleKind, SelectionDAG &DAG);
 
-    /// isVSLDOIShuffleMask - If this is a vsldoi shuffle mask, return the shift
-    /// amount, otherwise return -1.
-    int isVSLDOIShuffleMask(SDNode *N, bool isUnary, SelectionDAG &DAG);
+    /// isVSLDOIShuffleMask - If this is a vsldoi shuffle mask, return the
+    /// shift amount, otherwise return -1.
+    int isVSLDOIShuffleMask(SDNode *N, unsigned ShuffleKind,
+                            SelectionDAG &DAG);
 
     /// isSplatShuffleMask - Return true if the specified VECTOR_SHUFFLE operand
     /// specifies a splat of a single element that is suitable for input to
@@ -510,6 +511,20 @@ namespace llvm {
     FastISel *createFastISel(FunctionLoweringInfo &FuncInfo,
                              const TargetLibraryInfo *LibInfo) const override;
 
+    /// \brief Returns true if an argument of type Ty needs to be passed in a
+    /// contiguous block of registers in calling convention CallConv.
+    bool functionArgumentNeedsConsecutiveRegisters(
+      Type *Ty, CallingConv::ID CallConv, bool isVarArg) const override {
+      // We support any array type as "consecutive" block in the parameter
+      // save area.  The element type defines the alignment requirement and
+      // whether the argument should go in GPRs, FPRs, or VRs if available.
+      //
+      // Note that clang uses this capability both to implement the ELFv2
+      // homogeneous float/vector aggregate ABI, and to avoid having to use
+      // "byval" when passing aggregates that might fully fit in registers.
+      return Ty->isArrayTy();
+    }
+
   private:
     SDValue getFramePointerFrameIndex(SelectionDAG & DAG) const;
     SDValue getReturnAddrFrameIndex(SelectionDAG & DAG) const;
@@ -533,6 +548,8 @@ namespace llvm {
     SDValue LowerFRAMEADDR(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerConstantPool(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerBlockAddress(SDValue Op, SelectionDAG &DAG) const;
+    std::pair<SDValue,SDValue> lowerTLSCall(SDValue Op, SDLoc dl,
+                                            SelectionDAG &DAG) const;
     SDValue LowerGlobalTLSAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerJumpTable(SDValue Op, SelectionDAG &DAG) const;

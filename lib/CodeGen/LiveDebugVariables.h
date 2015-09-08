@@ -66,7 +66,6 @@ private:
   bool runOnMachineFunction(MachineFunction &) override;
   void releaseMemory() override;
   void getAnalysisUsage(AnalysisUsage &) const override;
-  bool doInitialization(Module &) override;
 
 };
 

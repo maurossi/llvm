@@ -36,6 +36,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Dwarf.h"
+#include "llvm/Support/Endian.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/LEB128.h"
@@ -1436,14 +1437,6 @@ void DwarfDebug::beginFunction(const MachineFunction *MF) {
   // belongs to so that we add to the correct per-cu line table in the
   // non-asm case.
   LexicalScope *FnScope = LScopes.getCurrentFunctionScope();
-  // FnScope->getScopeNode() and DI->second should represent the same function,
-  // though they may not be the same MDNode due to inline functions merged in
-  // LTO where the debug info metadata still differs (either due to distinct
-  // written differences - two versions of a linkonce_odr function
-  // written/copied into two separate files, or some sub-optimal metadata that
-  // isn't structurally identical (see: file path/name info from clang, which
-  // includes the directory of the cpp file being built, even when the file name
-  // is absolute (such as an <> lookup header)))
   DwarfCompileUnit *TheCU = SPMap.lookup(FnScope->getScopeNode());
   assert(TheCU && "Unable to find compile unit!");
   if (Asm->OutStreamer.hasRawTextSupport())
@@ -1541,8 +1534,7 @@ void DwarfDebug::endFunction(const MachineFunction *MF) {
     assert(CurFn == MF);
   assert(CurFn != nullptr);
 
-  if (!MMI->hasDebugInfo() || LScopes.empty() ||
-      !FunctionDIs.count(MF->getFunction())) {
+  if (!MMI->hasDebugInfo() || LScopes.empty()) {
     // If we don't have a lexical scope for this function then there will
     // be a hole in the range information. Keep note of this by setting the
     // previously used section to nullptr.
@@ -1569,8 +1561,7 @@ void DwarfDebug::endFunction(const MachineFunction *MF) {
   // Construct abstract scopes.
   for (LexicalScope *AScope : LScopes.getAbstractScopesList()) {
     DISubprogram SP(AScope->getScopeNode());
-    if (!SP.isSubprogram())
-      continue;
+    assert(SP.isSubprogram());
     // Collect info for variables that were optimized out.
     DIArray Variables = SP.getVariables();
     for (unsigned i = 0, e = Variables.getNumElements(); i != e; ++i) {

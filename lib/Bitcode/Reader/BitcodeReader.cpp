@@ -588,6 +588,8 @@ static Attribute::AttrKind GetAttrFromCode(uint64_t Code) {
     return Attribute::NonLazyBind;
   case bitc::ATTR_KIND_NON_NULL:
     return Attribute::NonNull;
+  case bitc::ATTR_KIND_DEREFERENCEABLE:
+    return Attribute::Dereferenceable;
   case bitc::ATTR_KIND_NO_RED_ZONE:
     return Attribute::NoRedZone;
   case bitc::ATTR_KIND_NO_RETURN:
@@ -683,14 +685,16 @@ std::error_code BitcodeReader::ParseAttributeGroupBlock() {
             return EC;
 
           B.addAttribute(Kind);
-        } else if (Record[i] == 1) { // Align attribute
+        } else if (Record[i] == 1) { // Integer attribute
           Attribute::AttrKind Kind;
           if (std::error_code EC = ParseAttrKind(Record[++i], &Kind))
             return EC;
           if (Kind == Attribute::Alignment)
             B.addAlignmentAttr(Record[++i]);
-          else
+          else if (Kind == Attribute::StackAlignment)
             B.addStackAlignmentAttr(Record[++i]);
+          else if (Kind == Attribute::Dereferenceable)
+            B.addDereferenceableAttr(Record[++i]);
         } else {                     // String attribute
           assert((Record[i] == 3 || Record[i] == 4) &&
                  "Invalid attribute group entry");
@@ -2889,10 +2893,14 @@ std::error_code BitcodeReader::ParseFunctionBody(Function *F) {
         dyn_cast_or_null<PointerType>(getTypeByID(Record[0]));
       Type *OpTy = getTypeByID(Record[1]);
       Value *Size = getFnValueByID(Record[2], OpTy);
-      unsigned Align = Record[3];
+      unsigned AlignRecord = Record[3];
+      bool InAlloca = AlignRecord & (1 << 5);
+      unsigned Align = AlignRecord & ((1 << 5) - 1);
       if (!Ty || !Size)
         return Error(InvalidRecord);
-      I = new AllocaInst(Ty->getElementType(), Size, (1 << Align) >> 1);
+      AllocaInst *AI = new AllocaInst(Ty->getElementType(), Size, (1 << Align) >> 1);
+      AI->setUsedWithInAlloca(InAlloca);
+      I = AI;
       InstructionList.push_back(I);
       break;
     }

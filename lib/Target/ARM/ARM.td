@@ -267,10 +267,6 @@ def FeatureAPCS  : SubtargetFeature<"apcs", "TargetABI", "ARM_ABI_APCS",
 def FeatureAAPCS : SubtargetFeature<"aapcs", "TargetABI", "ARM_ABI_AAPCS",
                                    "Use the AAPCS ABI">;
 
-// RenderScript-specific support for 64-bit long types on all targets
-def FeatureLong64 : SubtargetFeature<"long64", "UseLong64",
-                                     "true",
-                                     "long type is forced to be 64-bit">;
 
 class ProcNoItin<string Name, list<SubtargetFeature> Features>
  : Processor<Name, NoItineraries, Features>;

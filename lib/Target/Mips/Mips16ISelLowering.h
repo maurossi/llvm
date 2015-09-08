@@ -19,7 +19,8 @@
 namespace llvm {
   class Mips16TargetLowering : public MipsTargetLowering  {
   public:
-    explicit Mips16TargetLowering(MipsTargetMachine &TM);
+    explicit Mips16TargetLowering(MipsTargetMachine &TM,
+                                  const MipsSubtarget &STI);
 
     bool allowsUnalignedMemoryAccesses(EVT VT, unsigned AddrSpace,
                                        bool *Fast) const override;
@@ -29,9 +30,9 @@ namespace llvm {
                                 MachineBasicBlock *MBB) const override;
 
   private:
-    bool isEligibleForTailCallOptimization(const MipsCC &MipsCCInfo,
-                                     unsigned NextStackOffset,
-                                     const MipsFunctionInfo& FI) const override;
+    bool isEligibleForTailCallOptimization(
+        const CCState &CCInfo, unsigned NextStackOffset,
+        const MipsFunctionInfo &FI) const override;
 
     void setMips16HardFloatLibCalls();
 

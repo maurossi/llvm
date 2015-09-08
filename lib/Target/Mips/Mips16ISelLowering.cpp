@@ -118,13 +118,14 @@ static const Mips16IntrinsicHelperType Mips16IntrinsicHelper[] = {
   {"truncf", "__mips16_call_stub_sf_1"},
 };
 
-Mips16TargetLowering::Mips16TargetLowering(MipsTargetMachine &TM)
-  : MipsTargetLowering(TM) {
+Mips16TargetLowering::Mips16TargetLowering(MipsTargetMachine &TM,
+                                           const MipsSubtarget &STI)
+    : MipsTargetLowering(TM, STI) {
 
   // Set up the register classes
   addRegisterClass(MVT::i32, &Mips::CPU16RegsRegClass);
 
-  if (Subtarget->inMips16HardFloat())
+  if (!TM.Options.UseSoftFloat)
     setMips16HardFloatLibCalls();
 
   setOperationAction(ISD::ATOMIC_FENCE,       MVT::Other, Expand);
@@ -150,8 +151,9 @@ Mips16TargetLowering::Mips16TargetLowering(MipsTargetMachine &TM)
 }
 
 const MipsTargetLowering *
-llvm::createMips16TargetLowering(MipsTargetMachine &TM) {
-  return new Mips16TargetLowering(TM);
+llvm::createMips16TargetLowering(MipsTargetMachine &TM,
+                                 const MipsSubtarget &STI) {
+  return new Mips16TargetLowering(TM, STI);
 }
 
 bool
@@ -239,10 +241,9 @@ Mips16TargetLowering::EmitInstrWithCustomInserter(MachineInstr *MI,
   }
 }
 
-bool Mips16TargetLowering::
-isEligibleForTailCallOptimization(const MipsCC &MipsCCInfo,
-                                  unsigned NextStackOffset,
-                                  const MipsFunctionInfo& FI) const {
+bool Mips16TargetLowering::isEligibleForTailCallOptimization(
+    const CCState &CCInfo, unsigned NextStackOffset,
+    const MipsFunctionInfo &FI) const {
   // No tail call optimization for mips16.
   return false;
 }
@@ -427,7 +428,7 @@ getOpndList(SmallVectorImpl<SDValue> &Ops,
   const char* Mips16HelperFunction = nullptr;
   bool NeedMips16Helper = false;
 
-  if (Subtarget->inMips16HardFloat()) {
+  if (Subtarget.inMips16HardFloat()) {
     //
     // currently we don't have symbols tagged with the mips16 or mips32
     // qualifier so we will assume that we don't know what kind it is.

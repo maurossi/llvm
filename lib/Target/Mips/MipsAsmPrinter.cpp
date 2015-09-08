@@ -53,15 +53,17 @@ using namespace llvm;
 
 #define DEBUG_TYPE "mips-asm-printer"
 
-MipsTargetStreamer &MipsAsmPrinter::getTargetStreamer() {
+MipsTargetStreamer &MipsAsmPrinter::getTargetStreamer() const {
   return static_cast<MipsTargetStreamer &>(*OutStreamer.getTargetStreamer());
 }
 
 bool MipsAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
+  Subtarget = &TM.getSubtarget<MipsSubtarget>();
+
   // Initialize TargetLoweringObjectFile.
-  if (Subtarget->allowMixed16_32())
-    const_cast<TargetLoweringObjectFile&>(getObjFileLowering())
+  const_cast<TargetLoweringObjectFile &>(getObjFileLowering())
       .Initialize(OutContext, TM);
+
   MipsFI = MF.getInfo<MipsFunctionInfo>();
   if (Subtarget->inMips16Mode())
     for (std::map<
@@ -315,11 +317,11 @@ void MipsAsmPrinter::emitFrameDirective() {
 
 /// Emit Set directives.
 const char *MipsAsmPrinter::getCurrentABIString() const {
-  switch (Subtarget->getTargetABI()) {
-  case MipsSubtarget::O32:  return "abi32";
-  case MipsSubtarget::N32:  return "abiN32";
-  case MipsSubtarget::N64:  return "abi64";
-  case MipsSubtarget::EABI: return "eabi32"; // TODO: handle eabi64
+  switch (Subtarget->getABI().GetEnumValue()) {
+  case MipsABIInfo::ABI::O32:  return "abi32";
+  case MipsABIInfo::ABI::N32:  return "abiN32";
+  case MipsABIInfo::ABI::N64:  return "abi64";
+  case MipsABIInfo::ABI::EABI: return "eabi32"; // TODO: handle eabi64
   default: llvm_unreachable("Unknown Mips ABI");
   }
 }
@@ -469,14 +471,12 @@ bool MipsAsmPrinter::PrintAsmOperand(const MachineInstr *MI, unsigned OpNum,
       return false;
     case 'z': {
       // $0 if zero, regular printing otherwise
-      if (MO.getType() != MachineOperand::MO_Immediate)
-        return true;
-      int64_t Val = MO.getImm();
-      if (Val)
-        O << Val;
-      else
+      if (MO.getType() == MachineOperand::MO_Immediate && MO.getImm() == 0) {
         O << "$0";
-      return false;
+        return false;
+      }
+      // If not, call printOperand as normal.
+      break;
     }
     case 'D': // Second part of a double word register operand
     case 'L': // Low order register of a double word register operand
@@ -667,12 +667,10 @@ printFCCOperand(const MachineInstr *MI, int opNum, raw_ostream &O,
 }
 
 void MipsAsmPrinter::EmitStartOfAsmFile(Module &M) {
-  // TODO: Need to add -mabicalls and -mno-abicalls flags.
-  // Currently we assume that -mabicalls is the default.
-  bool IsABICalls = true;
+  bool IsABICalls = Subtarget->isABICalls();
   if (IsABICalls) {
     getTargetStreamer().emitDirectiveAbiCalls();
-    Reloc::Model RM = Subtarget->getRelocationModel();
+    Reloc::Model RM = TM.getRelocationModel();
     // FIXME: This condition should be a lot more complicated that it is here.
     //        Ideally it should test for properties of the ABI and not the ABI
     //        itself.
@@ -706,11 +704,44 @@ void MipsAsmPrinter::EmitStartOfAsmFile(Module &M) {
   }
 
   getTargetStreamer().updateABIInfo(*Subtarget);
-  getTargetStreamer().emitDirectiveModuleFP();
 
-  if (Subtarget->isABI_O32())
+  // We should always emit a '.module fp=...' but binutils 2.24 does not accept
+  // it. We therefore emit it when it contradicts the ABI defaults (-mfpxx or
+  // -mfp64) and omit it otherwise.
+  if (Subtarget->isABI_O32() && (Subtarget->isABI_FPXX() ||
+                                 Subtarget->isFP64bit()))
+    getTargetStreamer().emitDirectiveModuleFP();
+
+  // We should always emit a '.module [no]oddspreg' but binutils 2.24 does not
+  // accept it. We therefore emit it when it contradicts the default or an
+  // option has changed the default (i.e. FPXX) and omit it otherwise.
+  if (Subtarget->isABI_O32() && (!Subtarget->useOddSPReg() ||
+                                 Subtarget->isABI_FPXX()))
     getTargetStreamer().emitDirectiveModuleOddSPReg(Subtarget->useOddSPReg(),
                                                     Subtarget->isABI_O32());
+}
+
+void MipsAsmPrinter::emitInlineAsmStart(
+    const MCSubtargetInfo &StartInfo) const {
+  MipsTargetStreamer &TS = getTargetStreamer();
+
+  // GCC's choice of assembler options for inline assembly code ('at', 'macro'
+  // and 'reorder') is different from LLVM's choice for generated code ('noat',
+  // 'nomacro' and 'noreorder').
+  // In order to maintain compatibility with inline assembly code which depends
+  // on GCC's assembler options being used, we have to switch to those options
+  // for the duration of the inline assembly block and then switch back.
+  TS.emitDirectiveSetPush();
+  TS.emitDirectiveSetAt();
+  TS.emitDirectiveSetMacro();
+  TS.emitDirectiveSetReorder();
+  OutStreamer.AddBlankLine();
+}
+
+void MipsAsmPrinter::emitInlineAsmEnd(const MCSubtargetInfo &StartInfo,
+                                      const MCSubtargetInfo *EndInfo) const {
+  OutStreamer.AddBlankLine();
+  getTargetStreamer().emitDirectiveSetPop();
 }
 
 void MipsAsmPrinter::EmitJal(MCSymbol *Symbol) {

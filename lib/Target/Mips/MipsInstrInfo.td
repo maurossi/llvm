@@ -286,6 +286,36 @@ class MipsPat<dag pattern, dag result> : Pat<pattern, result>, PredicateControl 
 class MipsInstAlias<string Asm, dag Result, bit Emit = 0b1> :
   InstAlias<Asm, Result, Emit>, PredicateControl;
 
+// The portions of MIPS-III that were also added to MIPS32
+class INSN_MIPS3_32R2 { list<Predicate> InsnPredicates = [HasMips3_32r2]; }
+
+// The portions of MIPS-IV that were also added to MIPS32 but were removed in
+// MIPS32r6 and MIPS64r6.
+class INSN_MIPS4_32_NOT_32R6_64R6 {
+  list<Predicate> InsnPredicates = [HasMips4_32, NotMips32r6, NotMips64r6];
+}
+
+// The portions of MIPS-IV that were also added to MIPS32r2 but were removed in
+// MIPS32r6 and MIPS64r6.
+class INSN_MIPS4_32R2_NOT_32R6_64R6 {
+  list<Predicate> InsnPredicates = [HasMips4_32r2, NotMips32r6, NotMips64r6];
+}
+
+// The portions of MIPS-V that were also added to MIPS32r2 but were removed in
+// MIPS32r6 and MIPS64r6.
+class INSN_MIPS5_32R2_NOT_32R6_64R6 {
+  list<Predicate> InsnPredicates = [HasMips5_32r2, NotMips32r6, NotMips64r6];
+}
+
+//===----------------------------------------------------------------------===//
+
+class MipsPat<dag pattern, dag result> : Pat<pattern, result>, PredicateControl {
+  let EncodingPredicates = [HasStdEnc];
+}
+
+class MipsInstAlias<string Asm, dag Result, bit Emit = 0b1> :
+  InstAlias<Asm, Result, Emit>, PredicateControl;
+
 class IsCommutable {
   bit isCommutable = 1;
 }
@@ -1414,13 +1444,15 @@ def TLBR : TLB<"tlbr">, COP0_TLB_FM<0x01>;
 def TLBWI : TLB<"tlbwi">, COP0_TLB_FM<0x02>;
 def TLBWR : TLB<"tlbwr">, COP0_TLB_FM<0x06>;
 
-class CacheOp<string instr_asm, Operand MemOpnd, RegisterOperand GPROpnd> :
+class CacheOp<string instr_asm, Operand MemOpnd> :
     InstSE<(outs), (ins  MemOpnd:$addr, uimm5:$hint),
-           !strconcat(instr_asm, "\t$hint, $addr"), [], NoItinerary, FrmOther>;
+           !strconcat(instr_asm, "\t$hint, $addr"), [], NoItinerary, FrmOther> {
+  let DecoderMethod = "DecodeCacheOp";
+}
 
-def CACHE : CacheOp<"cache", mem, GPR32Opnd>, CACHEOP_FM<0b101111>,
+def CACHE : CacheOp<"cache", mem>, CACHEOP_FM<0b101111>,
             INSN_MIPS3_32_NOT_32R6_64R6;
-def PREF :  CacheOp<"pref", mem, GPR32Opnd>, CACHEOP_FM<0b110011>,
+def PREF :  CacheOp<"pref", mem>, CACHEOP_FM<0b110011>,
             INSN_MIPS3_32_NOT_32R6_64R6;
 
 //===----------------------------------------------------------------------===//

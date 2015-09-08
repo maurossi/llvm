@@ -19,6 +19,7 @@
 #include "R600Defines.h"
 #include "R600InstrInfo.h"
 #include "R600MachineFunctionInfo.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
@@ -82,6 +83,8 @@ R600TargetLowering::R600TargetLowering(TargetMachine &TM) :
   setOperationAction(ISD::SETCC, MVT::i32, Expand);
   setOperationAction(ISD::SETCC, MVT::f32, Expand);
   setOperationAction(ISD::FP_TO_UINT, MVT::i1, Custom);
+  setOperationAction(ISD::FP_TO_SINT, MVT::i64, Custom);
+  setOperationAction(ISD::FP_TO_UINT, MVT::i64, Custom);
 
   setOperationAction(ISD::SELECT, MVT::i32, Expand);
   setOperationAction(ISD::SELECT, MVT::f32, Expand);
@@ -839,8 +842,28 @@ void R600TargetLowering::ReplaceNodeResults(SDNode *N,
   default:
     AMDGPUTargetLowering::ReplaceNodeResults(N, Results, DAG);
     return;
-  case ISD::FP_TO_UINT: Results.push_back(LowerFPTOUINT(N->getOperand(0), DAG));
+  case ISD::FP_TO_UINT:
+    if (N->getValueType(0) == MVT::i1) {
+      Results.push_back(LowerFPTOUINT(N->getOperand(0), DAG));
+      return;
+    }
+    // Fall-through. Since we don't care about out of bounds values
+    // we can use FP_TO_SINT for uints too. The DAGLegalizer code for uint
+    // considers some extra cases which are not necessary here.
+  case ISD::FP_TO_SINT: {
+    SDValue Result;
+    if (expandFP_TO_SINT(N, Result, DAG))
+      Results.push_back(Result);
     return;
+  case ISD::UDIV: {
+    SDValue Op = SDValue(N, 0);
+    SDLoc DL(Op);
+    EVT VT = Op.getValueType();
+    SDValue UDIVREM = DAG.getNode(ISD::UDIVREM, DL, DAG.getVTList(VT, VT),
+      N->getOperand(0), N->getOperand(1));
+    Results.push_back(UDIVREM);
+    break;
+  }
   case ISD::UDIV: {
     SDValue Op = SDValue(N, 0);
     SDLoc DL(Op);
@@ -1512,6 +1535,19 @@ SDValue R600TargetLowering::LowerLOAD(SDValue Op, SelectionDAG &DAG) const
     return DAG.getMergeValues(Ops, DL);
   }
 
+  // Lower loads constant address space global variable loads
+  if (LoadNode->getAddressSpace() == AMDGPUAS::CONSTANT_ADDRESS &&
+      isa<GlobalVariable>(
+          GetUnderlyingObject(LoadNode->getMemOperand()->getValue()))) {
+
+    SDValue Ptr = DAG.getZExtOrTrunc(LoadNode->getBasePtr(), DL,
+        getPointerTy(AMDGPUAS::PRIVATE_ADDRESS));
+    Ptr = DAG.getNode(ISD::SRL, DL, MVT::i32, Ptr,
+        DAG.getConstant(2, MVT::i32));
+    return DAG.getNode(AMDGPUISD::REGISTER_LOAD, DL, Op->getVTList(),
+                       LoadNode->getChain(), Ptr,
+                       DAG.getTargetConstant(0, MVT::i32), Op.getOperand(2));
+  }
 
   if (LoadNode->getAddressSpace() == AMDGPUAS::LOCAL_ADDRESS && VT.isVector()) {
     SDValue MergedValues[2] = {
@@ -1666,7 +1702,7 @@ SDValue R600TargetLowering::LowerFormalArguments(
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(),
                  getTargetMachine(), ArgLocs, *DAG.getContext());
   MachineFunction &MF = DAG.getMachineFunction();
-  unsigned ShaderType = MF.getInfo<R600MachineFunctionInfo>()->ShaderType;
+  unsigned ShaderType = MF.getInfo<R600MachineFunctionInfo>()->getShaderType();
 
   SmallVector<ISD::InputArg, 8> LocalIns;
 

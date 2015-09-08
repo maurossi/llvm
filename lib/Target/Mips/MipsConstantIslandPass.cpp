@@ -343,7 +343,6 @@ namespace {
 
   const TargetMachine &TM;
   bool IsPIC;
-  unsigned ABI;
   const MipsSubtarget *STI;
   const Mips16InstrInfo *TII;
   MipsFunctionInfo *MFI;
@@ -365,11 +364,9 @@ namespace {
   public:
     static char ID;
     MipsConstantIslands(TargetMachine &tm)
-      : MachineFunctionPass(ID), TM(tm),
-        IsPIC(TM.getRelocationModel() == Reloc::PIC_),
-        ABI(TM.getSubtarget<MipsSubtarget>().getTargetABI()),
-        STI(&TM.getSubtarget<MipsSubtarget>()), MF(nullptr), MCP(nullptr),
-        PrescannedForConstants(false){}
+        : MachineFunctionPass(ID), TM(tm),
+          IsPIC(TM.getRelocationModel() == Reloc::PIC_), STI(nullptr),
+          MF(nullptr), MCP(nullptr), PrescannedForConstants(false) {}
 
     const char *getPassName() const override {
       return "Mips Constant Islands";
@@ -450,9 +447,9 @@ bool MipsConstantIslands::runOnMachineFunction(MachineFunction &mf) {
   // FIXME:
   MF = &mf;
   MCP = mf.getConstantPool();
+  STI = &mf.getTarget().getSubtarget<MipsSubtarget>();
   DEBUG(dbgs() << "constant island machine function " << "\n");
-  if (!TM.getSubtarget<MipsSubtarget>().inMips16Mode() ||
-      !MipsSubtarget::useConstantIslands()) {
+  if (!STI->inMips16Mode() || !MipsSubtarget::useConstantIslands()) {
     return false;
   }
   TII = (const Mips16InstrInfo*)MF->getTarget().getInstrInfo();

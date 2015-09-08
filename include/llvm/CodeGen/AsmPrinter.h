@@ -470,6 +470,10 @@ public:
   virtual void emitInlineAsmEnd(const MCSubtargetInfo &StartInfo,
                                 const MCSubtargetInfo *EndInfo) const;
 
+  /// Let the target do anything it needs to do before emitting inlineasm.
+  /// \p StartInfo - the subtarget info before parsing inline asm
+  virtual void emitInlineAsmStart(const MCSubtargetInfo &StartInfo) const;
+
 private:
   /// Private state for PrintSpecial()
   // Assign a unique ID to this machine instruction.

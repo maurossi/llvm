@@ -14,18 +14,13 @@
 #include "llvm/Analysis/BlockFrequencyInfoImpl.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/Support/raw_ostream.h"
-#include <deque>
+#include <numeric>
 
 using namespace llvm;
 using namespace llvm::bfi_detail;
 
 #define DEBUG_TYPE "block-freq"
 
-//===----------------------------------------------------------------------===//
-//
-// BlockMass implementation.
-//
-//===----------------------------------------------------------------------===//
 ScaledNumber<uint64_t> BlockMass::toScaled() const {
   if (isFull())
     return ScaledNumber<uint64_t>(1, 0);
@@ -46,11 +41,6 @@ raw_ostream &BlockMass::print(raw_ostream &OS) const {
   return OS;
 }
 
-//===----------------------------------------------------------------------===//
-//
-// BlockFrequencyInfoImpl implementation.
-//
-//===----------------------------------------------------------------------===//
 namespace {
 
 typedef BlockFrequencyInfoImplBase::BlockNode BlockNode;
@@ -87,7 +77,8 @@ struct DitheringDistributer {
 
   BlockMass takeMass(uint32_t Weight);
 };
-}
+
+} // end namespace
 
 DitheringDistributer::DitheringDistributer(Distribution &Dist,
                                            const BlockMass &Mass) {
@@ -121,11 +112,7 @@ void Distribution::add(const BlockNode &Node, uint64_t Amount,
   Total = NewTotal;
 
   // Save the weight.
-  Weight W;
-  W.TargetNode = Node;
-  W.Amount = Amount;
-  W.Type = Type;
-  Weights.push_back(W);
+  Weights.push_back(Weight(Type, Node, Amount));
 }
 
 static void combineWeight(Weight &W, const Weight &OtherW) {
@@ -136,8 +123,12 @@ static void combineWeight(Weight &W, const Weight &OtherW) {
   }
   assert(W.Type == OtherW.Type);
   assert(W.TargetNode == OtherW.TargetNode);
-  assert(W.Amount < W.Amount + OtherW.Amount && "Unexpected overflow");
-  W.Amount += OtherW.Amount;
+  assert(OtherW.Amount && "Expected non-zero weight");
+  if (W.Amount > W.Amount + OtherW.Amount)
+    // Saturate on overflow.
+    W.Amount = UINT64_MAX;
+  else
+    W.Amount += OtherW.Amount;
 }
 static void combineWeightsBySorting(WeightList &Weights) {
   // Sort so edges to the same node are adjacent.
@@ -220,11 +211,19 @@ void Distribution::normalize() {
     Shift = 33 - countLeadingZeros(Total);
 
   // Early exit if nothing needs to be scaled.
-  if (!Shift)
+  if (!Shift) {
+    // If we didn't overflow then combineWeights() shouldn't have changed the
+    // sum of the weights, but let's double-check.
+    assert(Total == std::accumulate(Weights.begin(), Weights.end(), UINT64_C(0),
+                                    [](uint64_t Sum, const Weight &W) {
+                      return Sum + W.Amount;
+                    }) &&
+           "Expected total to be correct");
     return;
+  }
 
   // Recompute the total through accumulation (rather than shifting it) so that
-  // it's accurate after shifting.
+  // it's accurate after shifting and any changes combineWeights() made above.
   Total = 0;
 
   // Sum the weights to each node and shift right if necessary.

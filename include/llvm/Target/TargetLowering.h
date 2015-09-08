@@ -1635,7 +1635,7 @@ public:
       LegalizeTypeAction LA = ValueTypeActions.getTypeAction(SVT);
 
       assert(
-        (LA == TypeLegal ||
+        (LA == TypeLegal || LA == TypeSoftenFloat ||
          ValueTypeActions.getTypeAction(NVT) != TypePromoteInteger)
          && "Promote may not follow Expand or Promote");
 
@@ -2563,6 +2563,12 @@ public:
                  SelectionDAG &DAG, SDValue LL = SDValue(),
                  SDValue LH = SDValue(), SDValue RL = SDValue(),
                  SDValue RH = SDValue()) const;
+
+  /// Expand float(f32) to SINT(i64) conversion
+  /// \param N Node to expand
+  /// \param Result output after conversion
+  /// \returns True, if the expansion was successful, false otherwise
+  bool expandFP_TO_SINT(SDNode *N, SDValue &Result, SelectionDAG &DAG) const;
 
   //===--------------------------------------------------------------------===//
   // Instruction Emitting Hooks

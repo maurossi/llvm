@@ -335,7 +335,6 @@ public:
 
   /// clear - Release all memory.
   void clear() {
-    MF = nullptr;
     userValues.clear();
     virtRegToEqClass.clear();
     userVarMap.clear();

@@ -99,7 +99,7 @@ void DAGTypeLegalizer::PromoteIntegerResult(SDNode *N, unsigned ResNo) {
   case ISD::FP_TO_SINT:
   case ISD::FP_TO_UINT:  Res = PromoteIntRes_FP_TO_XINT(N); break;
 
-  case ISD::FP32_TO_FP16:Res = PromoteIntRes_FP32_TO_FP16(N); break;
+  case ISD::FP_TO_FP16:  Res = PromoteIntRes_FP_TO_FP16(N); break;
 
   case ISD::AND:
   case ISD::OR:
@@ -225,10 +225,9 @@ SDValue DAGTypeLegalizer::PromoteIntRes_AtomicCmpSwap(AtomicSDNode *N,
       N->getOpcode(), SDLoc(N), N->getMemoryVT(), VTs, N->getChain(),
       N->getBasePtr(), Op2, Op3, N->getMemOperand(), N->getSuccessOrdering(),
       N->getFailureOrdering(), N->getSynchScope());
-  // Legalized the chain result - switch anything that used the old chain to
-  // use the new one.
-  unsigned ChainOp = N->getNumValues() - 1;
-  ReplaceValueWith(SDValue(N, ChainOp), Res.getValue(ChainOp));
+  // Update the use to N with the newly created Res.
+  for (unsigned i = 1, NumResults = N->getNumValues(); i < NumResults; ++i)
+    ReplaceValueWith(SDValue(N, i), Res.getValue(i));
   return Res;
 }
 
@@ -402,7 +401,7 @@ SDValue DAGTypeLegalizer::PromoteIntRes_FP_TO_XINT(SDNode *N) {
                      DAG.getValueType(N->getValueType(0).getScalarType()));
 }
 
-SDValue DAGTypeLegalizer::PromoteIntRes_FP32_TO_FP16(SDNode *N) {
+SDValue DAGTypeLegalizer::PromoteIntRes_FP_TO_FP16(SDNode *N) {
   EVT NVT = TLI.getTypeToTransformTo(*DAG.getContext(), N->getValueType(0));
   SDLoc dl(N);
 
@@ -827,7 +826,7 @@ bool DAGTypeLegalizer::PromoteIntegerOperand(SDNode *N, unsigned OpNo) {
   case ISD::STORE:        Res = PromoteIntOp_STORE(cast<StoreSDNode>(N),
                                                    OpNo); break;
   case ISD::TRUNCATE:     Res = PromoteIntOp_TRUNCATE(N); break;
-  case ISD::FP16_TO_FP32:
+  case ISD::FP16_TO_FP:
   case ISD::UINT_TO_FP:   Res = PromoteIntOp_UINT_TO_FP(N); break;
   case ISD::ZERO_EXTEND:  Res = PromoteIntOp_ZERO_EXTEND(N); break;
 

@@ -396,8 +396,6 @@ ARMTargetLowering::ARMTargetLowering(TargetMachine &TM)
     addRegisterClass(MVT::f32, &ARM::SPRRegClass);
     if (!Subtarget->isFPOnlySP())
       addRegisterClass(MVT::f64, &ARM::DPRRegClass);
-
-    setTruncStoreAction(MVT::f64, MVT::f32, Expand);
   }
 
   for (unsigned VT = (unsigned)MVT::FIRST_VECTOR_VALUETYPE;
@@ -582,8 +580,14 @@ ARMTargetLowering::ARMTargetLowering(TargetMachine &TM)
 
   computeRegisterProperties();
 
-  // ARM does not have f32 extending load.
+  // ARM does not have floating-point extending loads.
   setLoadExtAction(ISD::EXTLOAD, MVT::f32, Expand);
+  setLoadExtAction(ISD::EXTLOAD, MVT::f16, Expand);
+
+  // ... or truncating stores
+  setTruncStoreAction(MVT::f64, MVT::f32, Expand);
+  setTruncStoreAction(MVT::f32, MVT::f16, Expand);
+  setTruncStoreAction(MVT::f64, MVT::f16, Expand);
 
   // ARM does not have i1 sign extending load.
   setLoadExtAction(ISD::SEXTLOAD, MVT::i1, Promote);
@@ -825,10 +829,17 @@ ARMTargetLowering::ARMTargetLowering(TargetMachine &TM)
       setOperationAction(ISD::FP_TO_UINT, MVT::i32, Custom);
       setOperationAction(ISD::FP_TO_SINT, MVT::i32, Custom);
     }
-    // Special handling for half-precision FP.
+
+    // v8 adds f64 <-> f16 conversion. Before that it should be expanded.
+    if (!Subtarget->hasV8Ops()) {
+      setOperationAction(ISD::FP16_TO_FP, MVT::f64, Expand);
+      setOperationAction(ISD::FP_TO_FP16, MVT::f64, Expand);
+    }
+
+    // fp16 is a special v7 extension that adds f16 <-> f32 conversions.
     if (!Subtarget->hasFP16()) {
-      setOperationAction(ISD::FP16_TO_FP32, MVT::f32, Expand);
-      setOperationAction(ISD::FP32_TO_FP16, MVT::i32, Expand);
+      setOperationAction(ISD::FP16_TO_FP, MVT::f32, Expand);
+      setOperationAction(ISD::FP_TO_FP16, MVT::f32, Expand);
     }
   }
 
@@ -1510,7 +1521,7 @@ ARMTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
       // True if this byval aggregate will be split between registers
       // and memory.
       unsigned ByValArgsCount = CCInfo.getInRegsParamsCount();
-      unsigned CurByValIdx = CCInfo.getInRegsParamsProceed();
+      unsigned CurByValIdx = CCInfo.getInRegsParamsProcessed();
 
       if (CurByValIdx < ByValArgsCount) {
 
@@ -2567,9 +2578,9 @@ ARMTargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op, SelectionDAG &DAG,
   switch (IntNo) {
   default: return SDValue();    // Don't custom lower most intrinsics.
   case Intrinsic::arm_rbit: {
-    assert(Op.getOperand(0).getValueType() == MVT::i32 &&
+    assert(Op.getOperand(1).getValueType() == MVT::i32 &&
            "RBIT intrinsic must have i32 type!");
-    return DAG.getNode(ARMISD::RBIT, dl, MVT::i32, Op.getOperand(0));
+    return DAG.getNode(ARMISD::RBIT, dl, MVT::i32, Op.getOperand(1));
   }
   case Intrinsic::arm_thread_pointer: {
     EVT PtrVT = DAG.getTargetLoweringInfo().getPointerTy();
@@ -2951,7 +2962,7 @@ ARMTargetLowering::LowerFormalArguments(SDValue Chain,
         if (Flags.isByVal()) {
           unsigned ExtraArgRegsSize;
           unsigned ExtraArgRegsSaveSize;
-          computeRegArea(CCInfo, MF, CCInfo.getInRegsParamsProceed(),
+          computeRegArea(CCInfo, MF, CCInfo.getInRegsParamsProcessed(),
                          Flags.getByValSize(),
                          ExtraArgRegsSize, ExtraArgRegsSaveSize);
 
@@ -3075,7 +3086,7 @@ ARMTargetLowering::LowerFormalArguments(SDValue Chain,
           // Since they could be overwritten by lowering of arguments in case of
           // a tail call.
           if (Flags.isByVal()) {
-            unsigned CurByValIndex = CCInfo.getInRegsParamsProceed();
+            unsigned CurByValIndex = CCInfo.getInRegsParamsProcessed();
 
             ByValStoreOffset = RoundUpToAlignment(ByValStoreOffset, Flags.getByValAlign());
             int FrameIndex = StoreByValRegs(
@@ -7216,8 +7227,7 @@ ARMTargetLowering::EmitLowered__chkstk(MachineInstr *MI,
 
   AddDefaultCC(AddDefaultPred(BuildMI(*MBB, MI, DL, TII.get(ARM::t2SUBrr),
                                       ARM::SP)
-                              .addReg(ARM::SP, RegState::Define)
-                              .addReg(ARM::R4, RegState::Kill)));
+                              .addReg(ARM::SP).addReg(ARM::R4)));
 
   MI->eraseFromParent();
   return MBB;
@@ -10611,7 +10621,7 @@ ARMTargetLowering::LowerDYNAMIC_STACKALLOC(SDValue Op, SelectionDAG &DAG) const 
   Chain = DAG.getCopyToReg(Chain, DL, ARM::R4, Words, Flag);
   Flag = Chain.getValue(1);
 
-  SDVTList NodeTys = DAG.getVTList(MVT::i32, MVT::Glue);
+  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
   Chain = DAG.getNode(ARMISD::WIN__CHKSTK, DL, NodeTys, Chain, Flag);
 
   SDValue NewSP = DAG.getCopyFromReg(Chain, DL, ARM::SP, MVT::i32);

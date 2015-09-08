@@ -16,7 +16,6 @@
 #define AMDGPU_ASMPRINTER_H
 
 #include "llvm/CodeGen/AsmPrinter.h"
-#include <string>
 #include <vector>
 
 namespace llvm {
@@ -33,6 +32,7 @@ private:
       DX10Clamp(0),
       DebugMode(0),
       IEEEMode(0),
+      ScratchSize(0),
       CodeLen(0) {}
 
     // Fields set in PGM_RSRC1 pm4 packet.
@@ -44,23 +44,31 @@ private:
     uint32_t DX10Clamp;
     uint32_t DebugMode;
     uint32_t IEEEMode;
+    uint32_t ScratchSize;
 
     // Bonus information for debugging.
     uint64_t CodeLen;
   };
 
-  void getSIProgramInfo(SIProgramInfo &Out, MachineFunction &MF) const;
-  void findNumUsedRegistersSI(MachineFunction &MF,
+  void getSIProgramInfo(SIProgramInfo &Out, const MachineFunction &MF) const;
+  void findNumUsedRegistersSI(const MachineFunction &MF,
                               unsigned &NumSGPR,
                               unsigned &NumVGPR) const;
 
   /// \brief Emit register usage information so that the GPU driver
   /// can correctly setup the GPU state.
-  void EmitProgramInfoR600(MachineFunction &MF);
-  void EmitProgramInfoSI(MachineFunction &MF, const SIProgramInfo &KernelInfo);
+  void EmitProgramInfoR600(const MachineFunction &MF);
+  void EmitProgramInfoSI(const MachineFunction &MF, const SIProgramInfo &KernelInfo);
 
-public:
-  explicit AMDGPUAsmPrinter(TargetMachine &TM, MCStreamer &Streamer);
+    // Fields set in PGM_RSRC1 pm4 packet.
+    uint32_t NumVGPR;
+    uint32_t NumSGPR;
+    uint32_t Priority;
+    uint32_t FloatMode;
+    uint32_t Priv;
+    uint32_t DX10Clamp;
+    uint32_t DebugMode;
+    uint32_t IEEEMode;
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
@@ -70,6 +78,8 @@ public:
 
   /// Implemented in AMDGPUMCInstLower.cpp
   void EmitInstruction(const MachineInstr *MI) override;
+
+  void EmitEndOfAsmFile(Module &M) override;
 
 protected:
   bool DisasmEnabled;

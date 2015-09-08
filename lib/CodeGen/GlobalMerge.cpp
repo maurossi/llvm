@@ -72,7 +72,7 @@ using namespace llvm;
 
 #define DEBUG_TYPE "global-merge"
 
-cl::opt<bool>
+static cl::opt<bool>
 EnableGlobalMerge("enable-global-merge", cl::Hidden,
                   cl::desc("Enable global merge pass"),
                   cl::init(true));

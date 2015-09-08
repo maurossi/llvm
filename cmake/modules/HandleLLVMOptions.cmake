@@ -408,11 +408,21 @@ if(MSVC)
   string(REGEX REPLACE "(^| ) */GR-? *( |$)" "\\1 \\2" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
+# Provide public options to globally control RTTI and EH
+option(LLVM_ENABLE_EH "Enable Exception handling" OFF)
+option(LLVM_ENABLE_RTTI "Enable run time type information" OFF)
+if(LLVM_ENABLE_EH AND NOT LLVM_ENABLE_RTTI)
+  message(FATAL_ERROR "Exception handling requires RTTI. You must set LLVM_ENABLE_RTTI to ON")
+endif()
+
 # Plugin support
 # FIXME: Make this configurable.
 if(WIN32 OR CYGWIN)
-  # DLL platform(s) don't support plugins.
-  set(LLVM_ENABLE_PLUGINS OFF)
+  if(BUILD_SHARED_LIBS)
+    set(LLVM_ENABLE_PLUGINS ON)
+  else()
+    set(LLVM_ENABLE_PLUGINS OFF)
+  endif()
 else()
   set(LLVM_ENABLE_PLUGINS ON)
 endif()

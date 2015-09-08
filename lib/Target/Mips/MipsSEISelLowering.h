@@ -20,7 +20,8 @@
 namespace llvm {
   class MipsSETargetLowering : public MipsTargetLowering  {
   public:
-    explicit MipsSETargetLowering(MipsTargetMachine &TM);
+    explicit MipsSETargetLowering(MipsTargetMachine &TM,
+                                  const MipsSubtarget &STI);
 
     /// \brief Enable MSA support for the given integer type and Register
     /// class.
@@ -49,9 +50,9 @@ namespace llvm {
     const TargetRegisterClass *getRepRegClassFor(MVT VT) const override;
 
   private:
-    bool isEligibleForTailCallOptimization(const MipsCC &MipsCCInfo,
-                                     unsigned NextStackOffset,
-                                     const MipsFunctionInfo& FI) const override;
+    bool isEligibleForTailCallOptimization(
+        const CCState &CCInfo, unsigned NextStackOffset,
+        const MipsFunctionInfo &FI) const override;
 
     void
     getOpndList(SmallVectorImpl<SDValue> &Ops,

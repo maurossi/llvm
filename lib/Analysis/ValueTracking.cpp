@@ -29,6 +29,7 @@
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/PatternMatch.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/MathExtras.h"
 #include <cstring>
 using namespace llvm;
@@ -415,6 +416,7 @@ void llvm::computeKnownBits(Value *V, APInt &KnownZero, APInt &KnownOne,
     break; // Can't work with floating point.
   case Instruction::PtrToInt:
   case Instruction::IntToPtr:
+  case Instruction::AddrSpaceCast: // Pointers could be different sizes.
     // We can't handle these if we don't know the pointer size.
     if (!TD) break;
     // FALL THROUGH and handle them the same as zext/trunc.
@@ -1731,7 +1733,8 @@ Value *llvm::GetPointerBaseWithConstantOffset(Value *Ptr, int64_t &Offset,
       }
 
       Ptr = GEP->getPointerOperand();
-    } else if (Operator::getOpcode(Ptr) == Instruction::BitCast) {
+    } else if (Operator::getOpcode(Ptr) == Instruction::BitCast ||
+               Operator::getOpcode(Ptr) == Instruction::AddrSpaceCast) {
       Ptr = cast<Operator>(Ptr)->getOperand(0);
     } else if (GlobalAlias *GA = dyn_cast<GlobalAlias>(Ptr)) {
       if (GA->mayBeOverridden())
@@ -1900,7 +1903,8 @@ llvm::GetUnderlyingObject(Value *V, const DataLayout *TD, unsigned MaxLookup) {
   for (unsigned Count = 0; MaxLookup == 0 || Count < MaxLookup; ++Count) {
     if (GEPOperator *GEP = dyn_cast<GEPOperator>(V)) {
       V = GEP->getPointerOperand();
-    } else if (Operator::getOpcode(V) == Instruction::BitCast) {
+    } else if (Operator::getOpcode(V) == Instruction::BitCast ||
+               Operator::getOpcode(V) == Instruction::AddrSpaceCast) {
       V = cast<Operator>(V)->getOperand(0);
     } else if (GlobalAlias *GA = dyn_cast<GlobalAlias>(V)) {
       if (GA->mayBeOverridden())
@@ -1983,23 +1987,31 @@ bool llvm::isSafeToSpeculativelyExecute(const Value *V,
   default:
     return true;
   case Instruction::UDiv:
-  case Instruction::URem:
-    // x / y is undefined if y == 0, but calculations like x / 3 are safe.
-    return isKnownNonZero(Inst->getOperand(1), TD);
+  case Instruction::URem: {
+    // x / y is undefined if y == 0.
+    const APInt *V;
+    if (match(Inst->getOperand(1), m_APInt(V)))
+      return *V != 0;
+    return false;
+  }
   case Instruction::SDiv:
   case Instruction::SRem: {
-    Value *Op = Inst->getOperand(1);
-    // x / y is undefined if y == 0
-    if (!isKnownNonZero(Op, TD))
-      return false;
-    // x / y might be undefined if y == -1
-    unsigned BitWidth = getBitWidth(Op->getType(), TD);
-    if (BitWidth == 0)
-      return false;
-    APInt KnownZero(BitWidth, 0);
-    APInt KnownOne(BitWidth, 0);
-    computeKnownBits(Op, KnownZero, KnownOne, TD);
-    return !!KnownZero;
+    // x / y is undefined if y == 0 or x == INT_MIN and y == -1
+    const APInt *X, *Y;
+    if (match(Inst->getOperand(1), m_APInt(Y))) {
+      if (*Y != 0) {
+        if (*Y == -1) {
+          // The numerator can't be MinSignedValue if the denominator is -1.
+          if (match(Inst->getOperand(0), m_APInt(X)))
+            return !Y->isMinSignedValue();
+          // The numerator *might* be MinSignedValue.
+          return false;
+        }
+        // The denominator is not 0 or -1, it's safe to proceed.
+        return true;
+      }
+    }
+    return false;
   }
   case Instruction::Load: {
     const LoadInst *LI = cast<LoadInst>(Inst);
@@ -2082,7 +2094,7 @@ bool llvm::isKnownNonNull(const Value *V, const TargetLibraryInfo *TLI) {
     return !GV->hasExternalWeakLinkage();
 
   if (ImmutableCallSite CS = V)
-    if (CS.paramHasAttr(0, Attribute::NonNull))
+    if (CS.isReturnNonNull())
       return true;
 
   // operator new never returns null.

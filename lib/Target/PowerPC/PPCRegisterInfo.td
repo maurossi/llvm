@@ -308,7 +308,3 @@ def CARRYRC : RegisterClass<"PPC", [i32], 32, (add CARRY)> {
   let CopyCost = -1;
 }
 
-def CCRC : RegisterClass<"PPC", [i32], 32, (add CC)> {
-  let isAllocatable = 0;
-}
-

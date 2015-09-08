@@ -42,8 +42,10 @@ class TestingProgressDisplay(object):
             self.progressBar.update(float(self.completed)/self.numTests,
                                     test.getFullName())
 
-        if not test.result.code.isFailure and \
-                (self.opts.quiet or self.opts.succinct):
+        shouldShow = test.result.code.isFailure or \
+            (self.opts.show_unsupported and test.result.code.name == 'UNSUPPORTED') or \
+            (not self.opts.quiet and not self.opts.succinct)
+        if not shouldShow:
             return
 
         if self.progressBar:
@@ -168,6 +170,9 @@ def main(builtinParameters = {}):
     group.add_option("", "--no-progress-bar", dest="useProgressBar",
                      help="Do not use curses based progress bar",
                      action="store_false", default=True)
+    group.add_option("", "--show-unsupported", dest="show_unsupported",
+                     help="Show unsupported tests",
+                     action="store_true", default=False)
     parser.add_option_group(group)
 
     group = OptionGroup(parser, "Test Execution")
@@ -189,6 +194,9 @@ def main(builtinParameters = {}):
     group.add_option("", "--no-execute", dest="noExecute",
                      help="Don't execute any tests (assume PASS)",
                      action="store_true", default=False)
+    group.add_option("", "--xunit-xml-output", dest="xunit_output_file",
+                      help=("Write XUnit-compatible XML test reports to the"
+                            " specified file"), default=None)
     parser.add_option_group(group)
 
     group = OptionGroup(parser, "Test Selection")
@@ -280,10 +288,10 @@ def main(builtinParameters = {}):
     if opts.showSuites or opts.showTests:
         # Aggregate the tests by suite.
         suitesAndTests = {}
-        for t in run.tests:
-            if t.suite not in suitesAndTests:
-                suitesAndTests[t.suite] = []
-            suitesAndTests[t.suite].append(t)
+        for result_test in run.tests:
+            if result_test.suite not in suitesAndTests:
+                suitesAndTests[result_test.suite] = []
+            suitesAndTests[result_test.suite].append(result_test)
         suitesAndTests = list(suitesAndTests.items())
         suitesAndTests.sort(key = lambda item: item[0].name)
 
@@ -316,8 +324,8 @@ def main(builtinParameters = {}):
         except:
             parser.error("invalid regular expression for --filter: %r" % (
                     opts.filter))
-        run.tests = [t for t in run.tests
-                     if rex.search(t.getFullName())]
+        run.tests = [result_test for result_test in run.tests
+                     if rex.search(result_test.getFullName())]
 
     # Then select the order.
     if opts.shuffle:
@@ -325,7 +333,7 @@ def main(builtinParameters = {}):
     elif opts.incremental:
         sort_by_incremental_cache(run)
     else:
-        run.tests.sort(key = lambda t: t.getFullName())
+        run.tests.sort(key = lambda result_test: result_test.getFullName())
 
     # Finally limit the number of tests, if desired.
     if opts.maxTests is not None:
@@ -409,6 +417,36 @@ def main(builtinParameters = {}):
         N = len(byCode.get(code,[]))
         if N:
             print('  %s: %d' % (name,N))
+
+    if opts.xunit_output_file:
+        # Collect the tests, indexed by test suite
+        by_suite = {}
+        for result_test in run.tests:
+            suite = result_test.suite.config.name
+            if suite not in by_suite:
+                by_suite[suite] = {
+                                   'passes'   : 0,
+                                   'failures' : 0,
+                                   'tests'    : [] }
+            by_suite[suite]['tests'].append(result_test)
+            if result_test.result.code.isFailure:
+                by_suite[suite]['failures'] += 1
+            else:
+                by_suite[suite]['passes'] += 1
+        xunit_output_file = open(opts.xunit_output_file, "w")
+        xunit_output_file.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n")
+        xunit_output_file.write("<testsuites>\n")
+        for suite_name, suite in by_suite.items():
+            xunit_output_file.write("<testsuite name='" + suite_name + "'")
+            xunit_output_file.write(" tests='" + str(suite['passes'] + 
+              suite['failures']) + "'")
+            xunit_output_file.write(" failures='" + str(suite['failures']) + 
+              "'>\n")
+            for result_test in suite['tests']:
+                xunit_output_file.write(result_test.getJUnitXML() + "\n")
+            xunit_output_file.write("</testsuite>\n")
+        xunit_output_file.write("</testsuites>")
+        xunit_output_file.close()
 
     # If we encountered any additional errors, exit abnormally.
     if litConfig.numErrors:

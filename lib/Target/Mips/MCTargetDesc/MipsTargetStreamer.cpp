@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "InstPrinter/MipsInstPrinter.h"
+#include "MipsELFStreamer.h"
 #include "MipsMCTargetDesc.h"
 #include "MipsTargetObjectFile.h"
 #include "MipsTargetStreamer.h"
@@ -54,6 +55,8 @@ void MipsTargetStreamer::emitFMask(unsigned FPUBitmask, int FPUTopSavedRegOff) {
 void MipsTargetStreamer::emitDirectiveSetMips32R2() {}
 void MipsTargetStreamer::emitDirectiveSetMips64() {}
 void MipsTargetStreamer::emitDirectiveSetMips64R2() {}
+void MipsTargetStreamer::emitDirectiveSetPop() {}
+void MipsTargetStreamer::emitDirectiveSetPush() {}
 void MipsTargetStreamer::emitDirectiveSetDsp() {}
 void MipsTargetStreamer::emitDirectiveCpload(unsigned RegNo) {}
 void MipsTargetStreamer::emitDirectiveCpsetup(unsigned RegNo, int RegOrOffset,
@@ -170,6 +173,11 @@ void MipsTargetAsmStreamer::emitDirectiveSetDsp() {
   OS << "\t.set\tdsp\n";
   setCanHaveModuleDir(false);
 }
+
+void MipsTargetAsmStreamer::emitDirectiveSetPop() { OS << "\t.set\tpop\n"; }
+
+void MipsTargetAsmStreamer::emitDirectiveSetPush() { OS << "\t.set\tpush\n"; }
+
 // Print a 32 bit hex number with all numbers.
 static void printHex32(unsigned Value, raw_ostream &OS) {
   OS << "0x";
@@ -281,26 +289,28 @@ MipsTargetELFStreamer::MipsTargetELFStreamer(MCStreamer &S,
   else
     EFlags |= ELF::EF_MIPS_ARCH_1;
 
-  if (T.isArch64Bit()) {
-    if (Features & Mips::FeatureN32)
-      EFlags |= ELF::EF_MIPS_ABI2;
-    else if (Features & Mips::FeatureO32) {
-      EFlags |= ELF::EF_MIPS_ABI_O32;
-      EFlags |= ELF::EF_MIPS_32BITMODE; /* Compatibility Mode */
-    }
-    // No need to set any bit for N64 which is the default ABI at the moment
-    // for 64-bit Mips architectures.
-  } else {
-    if (Features & Mips::FeatureMips64r2 || Features & Mips::FeatureMips64)
-      EFlags |= ELF::EF_MIPS_32BITMODE;
-
-    // ABI
+  // ABI
+  // N64 does not require any ABI bits.
+  if (Features & Mips::FeatureO32)
     EFlags |= ELF::EF_MIPS_ABI_O32;
-  }
+  else if (Features & Mips::FeatureN32)
+    EFlags |= ELF::EF_MIPS_ABI2;
+
+  if (Features & Mips::FeatureGP64Bit) {
+    if (Features & Mips::FeatureO32)
+      EFlags |= ELF::EF_MIPS_32BITMODE; /* Compatibility Mode */
+  } else if (Features & Mips::FeatureMips64r2 || Features & Mips::FeatureMips64)
+    EFlags |= ELF::EF_MIPS_32BITMODE;
 
   // Other options.
   if (Features & Mips::FeatureNaN2008)
     EFlags |= ELF::EF_MIPS_NAN2008;
+
+  // -mabicalls and -mplt are not implemented but we should act as if they were
+  // given.
+  EFlags |= ELF::EF_MIPS_CPIC;
+  if (Features & Mips::FeatureN64)
+    EFlags |= ELF::EF_MIPS_PIC;
 
   MCA.setELFHeaderEFlags(EFlags);
 }
@@ -321,41 +331,26 @@ void MipsTargetELFStreamer::emitLabel(MCSymbol *Symbol) {
 
 void MipsTargetELFStreamer::finish() {
   MCAssembler &MCA = getStreamer().getAssembler();
-  MCContext &Context = MCA.getContext();
-  MCStreamer &OS = getStreamer();
-  Triple T(STI.getTargetTriple());
-  uint64_t Features = STI.getFeatureBits();
+  const MCObjectFileInfo &OFI = *MCA.getContext().getObjectFileInfo();
 
-  if (T.isArch64Bit() && (Features & Mips::FeatureN64)) {
-    const MCSectionELF *Sec = Context.getELFSection(
-        ".MIPS.options", ELF::SHT_MIPS_OPTIONS,
-        ELF::SHF_ALLOC | ELF::SHF_MIPS_NOSTRIP, SectionKind::getMetadata());
-    OS.SwitchSection(Sec);
+  // .bss, .text and .data are always at least 16-byte aligned.
+  MCSectionData &TextSectionData =
+      MCA.getOrCreateSectionData(*OFI.getTextSection());
+  MCSectionData &DataSectionData =
+      MCA.getOrCreateSectionData(*OFI.getDataSection());
+  MCSectionData &BSSSectionData =
+      MCA.getOrCreateSectionData(*OFI.getBSSSection());
 
-    OS.EmitIntValue(1, 1);  // kind
-    OS.EmitIntValue(40, 1); // size
-    OS.EmitIntValue(0, 2);  // section
-    OS.EmitIntValue(0, 4);  // info
-    OS.EmitIntValue(0, 4);  // ri_gprmask
-    OS.EmitIntValue(0, 4);  // pad
-    OS.EmitIntValue(0, 4);  // ri_cpr[0]mask
-    OS.EmitIntValue(0, 4);  // ri_cpr[1]mask
-    OS.EmitIntValue(0, 4);  // ri_cpr[2]mask
-    OS.EmitIntValue(0, 4);  // ri_cpr[3]mask
-    OS.EmitIntValue(0, 8);  // ri_gp_value
-  } else {
-    const MCSectionELF *Sec =
-        Context.getELFSection(".reginfo", ELF::SHT_MIPS_REGINFO, ELF::SHF_ALLOC,
-                              SectionKind::getMetadata());
-    OS.SwitchSection(Sec);
+  TextSectionData.setAlignment(std::max(16u, TextSectionData.getAlignment()));
+  DataSectionData.setAlignment(std::max(16u, DataSectionData.getAlignment()));
+  BSSSectionData.setAlignment(std::max(16u, BSSSectionData.getAlignment()));
 
-    OS.EmitIntValue(0, 4); // ri_gprmask
-    OS.EmitIntValue(0, 4); // ri_cpr[0]mask
-    OS.EmitIntValue(0, 4); // ri_cpr[1]mask
-    OS.EmitIntValue(0, 4); // ri_cpr[2]mask
-    OS.EmitIntValue(0, 4); // ri_cpr[3]mask
-    OS.EmitIntValue(0, 4); // ri_gp_value
-  }
+  // Emit all the option records.
+  // At the moment we are only emitting .Mips.options (ODK_REGINFO) and
+  // .reginfo.
+  MipsELFStreamer &MEF = static_cast<MipsELFStreamer &>(Streamer);
+  MEF.EmitMipsOptionRecords();
+
   emitMipsAbiFlags();
 }
 
@@ -638,7 +633,7 @@ void MipsTargetELFStreamer::emitMipsAbiFlags() {
   MCStreamer &OS = getStreamer();
   const MCSectionELF *Sec =
       Context.getELFSection(".MIPS.abiflags", ELF::SHT_MIPS_ABIFLAGS,
-                            ELF::SHF_ALLOC, SectionKind::getMetadata());
+                            ELF::SHF_ALLOC, SectionKind::getMetadata(), 24, "");
   MCSectionData &ABIShndxSD = MCA.getOrCreateSectionData(*Sec);
   ABIShndxSD.setAlignment(8);
   OS.SwitchSection(Sec);

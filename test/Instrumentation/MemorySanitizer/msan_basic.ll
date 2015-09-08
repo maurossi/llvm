@@ -765,6 +765,27 @@ cond.end:                                         ; preds = %cond.false, %cond.t
 ; CHECK: store i32 0, i32* bitcast {{.*}} @__msan_retval_tls
 ; CHECK: ret i32 [[A]]
 
+cond.false:                                       ; preds = %entry
+  br label %cond.end
+
+; Test that there are no __msan_param_origin_tls stores when
+; argument shadow is a compile-time zero constant (which is always the case
+; in functions missing sanitize_memory attribute).
+
+define i32 @NoSanitizeMemoryParamTLS(i32* nocapture readonly %x) {
+entry:
+  %0 = load i32* %x, align 4
+  %call = tail call i32 @NoSanitizeMemoryParamTLSHelper(i32 %0)
+  ret i32 %call
+}
+
+declare i32 @NoSanitizeMemoryParamTLSHelper(i32 %x)
+
+; CHECK-LABEL: define i32 @NoSanitizeMemoryParamTLS(
+; CHECK-NOT: __msan_param_origin_tls
+; CHECK: ret i32
+
+; Test argument shadow alignment
 
 ; Test argument shadow alignment
 

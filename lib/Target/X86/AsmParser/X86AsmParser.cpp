@@ -696,6 +696,8 @@ private:
                                unsigned &ErrorInfo,
                                bool MatchingInlineAsm) override;
 
+  virtual bool OmitRegisterFromClobberLists(unsigned RegNo) override;
+
   /// doSrcDstMatch - Returns true if operands are matching in their
   /// word size (%si and %di, %esi and %edi, etc.). Order depends on
   /// the parsing mode (Intel vs. AT&T).
@@ -1664,6 +1666,8 @@ bool X86AsmParser::HandleAVX512Operand(OperandVector &Operands,
         // Recognize only reasonable suffixes.
         const char *BroadcastPrimitive =
           StringSwitch<const char*>(getLexer().getTok().getIdentifier())
+            .Case("to2",  "{1to2}")
+            .Case("to4",  "{1to4}")
             .Case("to8",  "{1to8}")
             .Case("to16", "{1to16}")
             .Default(nullptr);
@@ -2520,6 +2524,9 @@ bool X86AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
   return true;
 }
 
+bool X86AsmParser::OmitRegisterFromClobberLists(unsigned RegNo) {
+  return X86MCRegisterClasses[X86::SEGMENT_REGRegClassID].contains(RegNo);
+}
 
 bool X86AsmParser::ParseDirective(AsmToken DirectiveID) {
   StringRef IDVal = DirectiveID.getIdentifier();

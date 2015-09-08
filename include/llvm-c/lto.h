@@ -40,7 +40,7 @@ typedef bool lto_bool_t;
  * @{
  */
 
-#define LTO_API_VERSION 11
+#define LTO_API_VERSION 10
 
 /**
  * \since prior to LTO_API_VERSION=3

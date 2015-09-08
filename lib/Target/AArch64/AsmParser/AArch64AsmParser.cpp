@@ -25,6 +25,7 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/STLExtras.h"
@@ -1253,134 +1254,116 @@ public:
 
   void addSImm9Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addSImm7s4Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue() / 4));
   }
 
   void addSImm7s8Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue() / 8));
   }
 
   void addSImm7s16Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue() / 16));
   }
 
   void addImm0_7Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_8Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_15Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_16Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     assert(MCE && "Invalid constant immediate operand!");
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_31Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_31Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_32Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_63Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_63Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm1_64Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_127Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_255Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm0_65535Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addImm32_63Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid constant immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     Inst.addOperand(MCOperand::CreateImm(MCE->getValue()));
   }
 
   void addLogicalImm32Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid logical immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     uint64_t encoding =
         AArch64_AM::encodeLogicalImmediate(MCE->getValue() & 0xFFFFFFFF, 32);
     Inst.addOperand(MCOperand::CreateImm(encoding));
@@ -1388,8 +1371,7 @@ public:
 
   void addLogicalImm64Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid logical immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     uint64_t encoding = AArch64_AM::encodeLogicalImmediate(MCE->getValue(), 64);
     Inst.addOperand(MCOperand::CreateImm(encoding));
   }
@@ -1412,8 +1394,7 @@ public:
 
   void addSIMDImmType10Operands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
-    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
-    assert(MCE && "Invalid immediate operand!");
+    const MCConstantExpr *MCE = cast<MCConstantExpr>(getImm());
     uint64_t encoding = AArch64_AM::encodeAdvSIMDModImmType10(MCE->getValue());
     Inst.addOperand(MCOperand::CreateImm(encoding));
   }
@@ -3087,13 +3068,18 @@ bool AArch64AsmParser::parseOperand(OperandVector &Operands, bool isCondCode,
     if (getParser().parseExpression(SubExprVal))
       return true;
 
+    if (Operands.size() < 2 ||
+        !static_cast<AArch64Operand &>(*Operands[1]).isReg())
+      return true;
+
+    bool IsXReg =
+        AArch64MCRegisterClasses[AArch64::GPR64allRegClassID].contains(
+            Operands[1]->getReg());
+
     MCContext& Ctx = getContext();
     E = SMLoc::getFromPointer(Loc.getPointer() - 1);
     // If the op is an imm and can be fit into a mov, then replace ldr with mov.
-    if (isa<MCConstantExpr>(SubExprVal) && Operands.size() >= 2 &&
-        static_cast<AArch64Operand &>(*Operands[1]).isReg()) {
-      bool IsXReg =  AArch64MCRegisterClasses[AArch64::GPR64allRegClassID].contains(
-            Operands[1]->getReg());
+    if (isa<MCConstantExpr>(SubExprVal)) {
       uint64_t Imm = (cast<MCConstantExpr>(SubExprVal))->getValue();
       uint32_t ShiftAmt = 0, MaxShiftAmt = IsXReg ? 48 : 16;
       while(Imm > 0xFFFF && countTrailingZeros(Imm) >= 16) {
@@ -3109,9 +3095,14 @@ bool AArch64AsmParser::parseOperand(OperandVector &Operands, bool isCondCode,
                      ShiftAmt, true, S, E, Ctx));
         return false;
       }
+      APInt Simm = APInt(64, Imm << ShiftAmt);
+      // check if the immediate is an unsigned or signed 32-bit int for W regs
+      if (!IsXReg && !(Simm.isIntN(32) || Simm.isSignedIntN(32)))
+        return Error(Loc, "Immediate too large for register");
     }
     // If it is a label or an imm that cannot fit in a movz, put it into CP.
-    const MCExpr *CPLoc = getTargetStreamer().addConstantPoolEntry(SubExprVal);
+    const MCExpr *CPLoc =
+        getTargetStreamer().addConstantPoolEntry(SubExprVal, IsXReg ? 8 : 4);
     Operands.push_back(AArch64Operand::CreateImm(CPLoc, S, E, Ctx));
     return false;
   }
