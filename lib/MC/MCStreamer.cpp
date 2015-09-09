@@ -574,9 +574,6 @@ void MCStreamer::EmitWinCFIEndProlog() {
 void MCStreamer::EmitCOFFSectionIndex(MCSymbol const *Symbol) {
 }
 
-void MCStreamer::EmitCOFFSectionIndex(MCSymbol const *Symbol) {
-}
-
 void MCStreamer::EmitCOFFSecRel32(MCSymbol const *Symbol) {
 }
 
