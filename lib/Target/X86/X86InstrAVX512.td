@@ -2497,11 +2497,6 @@ defm VPTESTMDZ  : avx512_vptest<0x27, "vptestmd", VK16, VR512,  f512mem,
 defm VPTESTMQZ  : avx512_vptest<0x27, "vptestmq", VK8, VR512,  f512mem,
                               memopv8i64, X86testm, v8i64>, T8PD, EVEX_V512, VEX_W,
                               EVEX_CD8<64, CD8VF>;
-}
-
-def : Pat <(i16 (int_x86_avx512_mask_ptestm_d_512 (v16i32 VR512:$src1),
-                 (v16i32 VR512:$src2), (i16 -1))),
-                 (COPY_TO_REGCLASS (VPTESTMDZrr VR512:$src1, VR512:$src2), GR16)>;
 
 let Predicates = [HasCDI] in {
 defm VPTESTNMDZ  : avx512_vptest<0x27, "vptestnmd", VK16, VR512,  f512mem,
