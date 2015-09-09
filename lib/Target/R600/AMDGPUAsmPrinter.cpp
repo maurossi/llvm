@@ -248,9 +248,6 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
       // TODO: CodeSize should account for multiple functions.
       CodeSize += MI.getDesc().Size;
 
-      // TODO: CodeSize should account for multiple functions.
-      CodeSize += MI.getDesc().Size;
-
       unsigned numOperands = MI.getNumOperands();
       for (unsigned op_idx = 0; op_idx < numOperands; op_idx++) {
         const MachineOperand &MO = MI.getOperand(op_idx);

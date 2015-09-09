@@ -60,15 +60,8 @@ private:
   void EmitProgramInfoR600(const MachineFunction &MF);
   void EmitProgramInfoSI(const MachineFunction &MF, const SIProgramInfo &KernelInfo);
 
-    // Fields set in PGM_RSRC1 pm4 packet.
-    uint32_t NumVGPR;
-    uint32_t NumSGPR;
-    uint32_t Priority;
-    uint32_t FloatMode;
-    uint32_t Priv;
-    uint32_t DX10Clamp;
-    uint32_t DebugMode;
-    uint32_t IEEEMode;
+public:
+  explicit AMDGPUAsmPrinter(TargetMachine &TM, MCStreamer &Streamer);
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
