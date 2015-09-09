@@ -1667,147 +1667,6 @@ def SI_ADDR64_RSRC : InstSI <
   "", []
 >;
 
-def V_SUB_F64 : InstSI <
-  (outs VReg_64:$dst),
-  (ins VReg_64:$src0, VReg_64:$src1),
-  "V_SUB_F64 $dst, $src0, $src1",
-  [(set f64:$dst, (fsub f64:$src0, f64:$src1))]
->;
-
-} // end usesCustomInserter
-
-multiclass SI_SPILL_SGPR <RegisterClass sgpr_class> {
-
-  def _SAVE : InstSI <
-    (outs VReg_32:$dst),
-    (ins sgpr_class:$src, i32imm:$frame_idx),
-    "", []
-  >;
-
-  def _RESTORE : InstSI <
-    (outs sgpr_class:$dst),
-    (ins VReg_32:$src, i32imm:$frame_idx),
-    "", []
-  >;
-
-}
-
-defm SI_SPILL_S32  : SI_SPILL_SGPR <SReg_32>;
-defm SI_SPILL_S64  : SI_SPILL_SGPR <SReg_64>;
-defm SI_SPILL_S128 : SI_SPILL_SGPR <SReg_128>;
-defm SI_SPILL_S256 : SI_SPILL_SGPR <SReg_256>;
-defm SI_SPILL_S512 : SI_SPILL_SGPR <SReg_512>;
-
-} // end IsCodeGenOnly, isPseudo
-
-} // end SubtargetPredicate = SI
-
-let Predicates = [isSI] in {
-
-def : Pat<
-  (int_AMDGPU_cndlt f32:$src0, f32:$src1, f32:$src2),
-  (V_CNDMASK_B32_e64 $src2, $src1, (V_CMP_GT_F32_e64 0, $src0))
->;
-
-def : Pat <
-  (int_AMDGPU_kilp),
-  (SI_KILL 0xbf800000)
->;
-
-/* int_SI_vs_load_input */
-def : Pat<
-  (SIload_input v4i32:$tlst, imm:$attr_offset, i32:$buf_idx_vgpr),
-  (BUFFER_LOAD_FORMAT_XYZW_IDXEN $tlst, $buf_idx_vgpr, imm:$attr_offset, 0, 0, 0, 0)
->;
-
-/* int_SI_export */
-def : Pat <
-  (int_SI_export imm:$en, imm:$vm, imm:$done, imm:$tgt, imm:$compr,
-                 f32:$src0, f32:$src1, f32:$src2, f32:$src3),
-  (EXP imm:$en, imm:$tgt, imm:$compr, imm:$done, imm:$vm,
-       $src0, $src1, $src2, $src3)
->;
-
-//===----------------------------------------------------------------------===//
-// SMRD Patterns
-//===----------------------------------------------------------------------===//
-
-multiclass SMRD_Pattern <SMRD Instr_IMM, SMRD Instr_SGPR, ValueType vt> {
-
-  // 1. Offset as 8bit DWORD immediate
-  def : Pat <
-    (constant_load (add i64:$sbase, (i64 IMM8bitDWORD:$offset))),
-    (vt (Instr_IMM $sbase, (as_dword_i32imm $offset)))
-  >;
-
-  // 2. Offset loaded in an 32bit SGPR
-  def : Pat <
-    (constant_load (add i64:$sbase, (i64 IMM32bit:$offset))),
-    (vt (Instr_SGPR $sbase, (S_MOV_B32 (i32 (as_i32imm $offset)))))
-  >;
-
-  // 3. No offset at all
-  def : Pat <
-    (constant_load i64:$sbase),
-    (vt (Instr_IMM $sbase, 0))
-  >;
-}
-
-defm : SMRD_Pattern <S_LOAD_DWORD_IMM, S_LOAD_DWORD_SGPR, f32>;
-defm : SMRD_Pattern <S_LOAD_DWORD_IMM, S_LOAD_DWORD_SGPR, i32>;
-defm : SMRD_Pattern <S_LOAD_DWORDX2_IMM, S_LOAD_DWORDX2_SGPR, v2i32>;
-defm : SMRD_Pattern <S_LOAD_DWORDX4_IMM, S_LOAD_DWORDX4_SGPR, v4i32>;
-defm : SMRD_Pattern <S_LOAD_DWORDX8_IMM, S_LOAD_DWORDX8_SGPR, v32i8>;
-defm : SMRD_Pattern <S_LOAD_DWORDX8_IMM, S_LOAD_DWORDX8_SGPR, v8i32>;
-defm : SMRD_Pattern <S_LOAD_DWORDX16_IMM, S_LOAD_DWORDX16_SGPR, v16i32>;
-
-// 1. Offset as 8bit DWORD immediate
-def : Pat <
-  (SIload_constant v4i32:$sbase, IMM8bitDWORD:$offset),
-  (S_BUFFER_LOAD_DWORD_IMM $sbase, (as_dword_i32imm $offset))
->;
-
-// 2. Offset loaded in an 32bit SGPR
-def : Pat <
-  (SIload_constant v4i32:$sbase, imm:$offset),
-  (S_BUFFER_LOAD_DWORD_SGPR $sbase, (S_MOV_B32 imm:$offset))
->;
-
-} // Predicates = [isSI] in {
-
-//===----------------------------------------------------------------------===//
-// SOP1 Patterns
-//===----------------------------------------------------------------------===//
-
-let Predicates = [isSI, isCFDepth0] in {
-
-def : Pat <
-  (i64 (ctpop i64:$src)),
-  (INSERT_SUBREG (INSERT_SUBREG (i64 (IMPLICIT_DEF)),
-    (S_BCNT1_I32_B64 $src), sub0),
-    (S_MOV_B32 0), sub1)
->;
-
-} // Predicates = [isSI, isCFDepth0]
-
-def SI_INDIRECT_DST_V1 : SI_INDIRECT_DST<VReg_32>;
-def SI_INDIRECT_DST_V2 : SI_INDIRECT_DST<VReg_64>;
-def SI_INDIRECT_DST_V4 : SI_INDIRECT_DST<VReg_128>;
-def SI_INDIRECT_DST_V8 : SI_INDIRECT_DST<VReg_256>;
-def SI_INDIRECT_DST_V16 : SI_INDIRECT_DST<VReg_512>;
-
-} // Uses = [EXEC,VCC,M0], Defs = [EXEC,VCC,M0]
-
-let usesCustomInserter = 1 in {
-
-// This pseudo instruction takes a pointer as input and outputs a resource
-// constant that can be used with the ADDR64 MUBUF instructions.
-def SI_ADDR64_RSRC : InstSI <
-  (outs SReg_128:$srsrc),
-  (ins SSrc_64:$ptr),
-  "", []
->;
-
 def SI_BUFFER_RSRC : InstSI <
   (outs SReg_128:$srsrc),
   (ins SReg_32:$ptr_lo, SReg_32:$ptr_hi, SSrc_32:$data_lo, SSrc_32:$data_hi),
@@ -2654,12 +2513,12 @@ multiclass DSAtomicRetPat<DS inst, ValueType vt, PatFrag frag> {
     (frag (add i32:$ptr, (i32 IMM16bit:$offset)), vt:$value),
     (inst (i1 0), $ptr, $value, (as_i16imm $offset))
   >;
-}
 
   def : Pat <
     (frag i32:$ptr, vt:$val),
     (inst 0, $ptr, $val, 0)
   >;
+}
 
 // Special case of DSAtomicRetPat for add / sub 1 -> inc / dec
 //
