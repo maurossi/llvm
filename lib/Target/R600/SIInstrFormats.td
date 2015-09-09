@@ -61,16 +61,6 @@ class VOP3Common <dag outs, dag ins, string asm, list<dag> pattern> :
   int Size = 8;
 }
 
-class VOP3Common <dag outs, dag ins, string asm, list<dag> pattern> :
-    Enc64 <outs, ins, asm, pattern> {
-
-  let mayLoad = 0;
-  let mayStore = 0;
-  let hasSideEffects = 0;
-  let UseNamedOperandTable = 1;
-  let VOP3 = 1;
-}
-
 //===----------------------------------------------------------------------===//
 // Scalar operations
 //===----------------------------------------------------------------------===//
