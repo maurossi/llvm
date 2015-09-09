@@ -175,22 +175,6 @@ let TargetPrefix = "SI", isTarget = 1 in {
   // Deprecated image and sample intrinsics.
   class Sample : Intrinsic <[llvm_v4f32_ty], [llvm_anyvector_ty, llvm_v32i8_ty, llvm_anyint_ty, llvm_i32_ty], [IntrNoMem]>;
 
-  // Fully-flexible SAMPLE instruction.
-  class SampleRaw : Intrinsic <
-    [llvm_v4f32_ty],    // vdata(VGPR)
-    [llvm_anyint_ty,    // vaddr(VGPR)
-     llvm_v32i8_ty,     // rsrc(SGPR)
-     llvm_v16i8_ty,     // sampler(SGPR)
-     llvm_i32_ty,       // dmask(imm)
-     llvm_i32_ty,       // unorm(imm)
-     llvm_i32_ty,       // r128(imm)
-     llvm_i32_ty,       // da(imm)
-     llvm_i32_ty,       // glc(imm)
-     llvm_i32_ty,       // slc(imm)
-     llvm_i32_ty,       // tfe(imm)
-     llvm_i32_ty],      // lwe(imm)
-    [IntrNoMem]>;
-
   def int_SI_sample : Sample;
   def int_SI_sampleb : Sample;
   def int_SI_sampled : Sample;
