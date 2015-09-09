@@ -242,10 +242,6 @@ public:
     return WinFrameInfos;
   }
 
-  ArrayRef<MCWin64EHUnwindInfo *> getW64UnwindInfos() const {
-    return W64UnwindInfos;
-  }
-
   void generateCompactUnwindEncodings(MCAsmBackend *MAB);
 
   /// @name Assembly File Formatting.
