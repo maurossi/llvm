@@ -20,7 +20,7 @@
 #define ENABLE_PIC 1
 
 /* Define if timestamp information (e.g., __DATE___) is allowed */
-#define ENABLE_TIMESTAMPS 1
+/* #undef ENABLE_TIMESTAMPS */
 
 /* Directory where gcc is installed. */
 #define GCC_INSTALL_PREFIX ""
@@ -586,7 +586,7 @@
 #define LLVM_DATADIR "/opt/llvm-android/share/llvm"
 
 /* Target triple LLVM will generate code for by default */
-#define LLVM_DEFAULT_TARGET_TRIPLE "i386-unknown-linux"
+#define LLVM_DEFAULT_TARGET_TRIPLE "x86_64-unknown-linux"
 
 /* Installation directory for documentation */
 #define LLVM_DOCSDIR "/opt/llvm-android/share/doc/llvm"

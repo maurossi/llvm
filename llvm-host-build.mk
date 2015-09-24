@@ -1,8 +1,3 @@
-# Windows can't use Clang to build yet
-ifneq ($(HOST_OS),windows)
-LOCAL_CLANG := true
-endif
-
 ifeq ($(FORCE_BUILD_LLVM_DEBUG),true)
 local_optflags = -O0 -g
 else
@@ -17,9 +12,22 @@ LOCAL_CFLAGS +=	\
 	-Wall	\
 	-W	\
 	-Wno-unused-parameter	\
+	-Wno-maybe-uninitialized \
+	-Wno-missing-field-initializers \
 	-Wwrite-strings	\
+	-Werror \
 	-Dsprintf=sprintf \
 	$(LOCAL_CFLAGS)
+
+LOCAL_CFLAGS_darwin += -Wno-error=deprecated-declarations
+
+# Disable certain warnings as errors for use with mingw.
+# We also must undefine WIN32_LEAN_AND_MEAN, since it is being passed globally
+# on the command line, and LLVM defines this internally itself.
+LOCAL_CFLAGS_windows += -Wno-error=array-bounds \
+			-Wno-error=comment \
+			-Wno-error=return-type \
+			-UWIN32_LEAN_AND_MEAN
 
 ifeq ($(FORCE_BUILD_LLVM_DISABLE_NDEBUG),true)
 LOCAL_CFLAGS :=	\
@@ -55,19 +63,19 @@ LOCAL_C_INCLUDES :=	\
 	$(LOCAL_C_INCLUDES)
 
 # Add on ncurses to have support for terminfo
-ifneq ($(HOST_OS),windows)
-LOCAL_LDLIBS += -lncurses
-ifneq ($(HOST_OS),darwin)
-LOCAL_LDLIBS += -lgcc_s
-endif
-endif
+LOCAL_LDLIBS_darwin += -lncurses
+LOCAL_LDLIBS_linux += -lncurses
+LOCAL_LDLIBS_linux += -lgcc_s
 
 LOCAL_IS_HOST_MODULE := true
 
 ifeq ($(HOST_PREFER_32_BIT),true)
 LOCAL_MULTILIB := 32
 else
+ifeq (libLLVM, $(filter libLLVM,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
+# Skip building a 32-bit shared object if they are using libLLVM.
 LOCAL_MULTILIB := first
+endif
 endif
 
 ###########################################################
