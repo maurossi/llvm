@@ -47,6 +47,7 @@ analysis_SRC_FILES := \
   MemoryLocation.cpp \
   ModuleDebugInfoPrinter.cpp \
   NoAliasAnalysis.cpp \
+  OrderedBasicBlock.cpp \
   PHITransAddr.cpp \
   PostDominators.cpp \
   PtrUseVisitor.cpp \
@@ -63,7 +64,8 @@ analysis_SRC_FILES := \
   TargetTransformInfo.cpp \
   Trace.cpp \
   TypeBasedAliasAnalysis.cpp \
-  ValueTracking.cpp
+  ValueTracking.cpp \
+  VectorUtils.cpp
 
 # For the host
 # =====================================================

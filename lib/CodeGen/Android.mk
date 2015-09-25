@@ -32,6 +32,7 @@ codegen_SRC_FILES := \
   ImplicitNullChecks.cpp \
   InlineSpiller.cpp \
   InterferenceCache.cpp \
+  InterleavedAccessPass.cpp \
   IntrinsicLowering.cpp \
   LatencyPriorityQueue.cpp \
   LexicalScopes.cpp \
@@ -75,6 +76,7 @@ codegen_SRC_FILES := \
   MachineSSAUpdater.cpp \
   MachineTraceMetrics.cpp \
   MachineVerifier.cpp \
+  MIRPrinter.cpp \
   MIRPrintingPass.cpp \
   OcamlGC.cpp \
   OptimizePHIs.cpp \

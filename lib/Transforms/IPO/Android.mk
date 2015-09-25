@@ -5,6 +5,7 @@ transforms_ipo_SRC_FILES := \
   BarrierNoopPass.cpp \
   ConstantMerge.cpp \
   DeadArgumentElimination.cpp \
+  ElimAvailExtern.cpp \
   ExtractGV.cpp \
   FunctionAttrs.cpp \
   GlobalDCE.cpp \

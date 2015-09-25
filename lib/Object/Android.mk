@@ -16,7 +16,8 @@ object_SRC_FILES := \
   Object.cpp \
   ObjectFile.cpp \
   RecordStreamer.cpp \
-  SymbolicFile.cpp
+  SymbolicFile.cpp \
+  SymbolSize.cpp
 
 # For the host
 # =====================================================

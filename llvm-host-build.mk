@@ -26,6 +26,7 @@ LOCAL_CFLAGS_darwin += -Wno-error=deprecated-declarations
 # on the command line, and LLVM defines this internally itself.
 LOCAL_CFLAGS_windows += -Wno-error=array-bounds \
 			-Wno-error=comment \
+			-Wno-error=overloaded-virtual \
 			-Wno-error=return-type \
 			-UWIN32_LEAN_AND_MEAN
 

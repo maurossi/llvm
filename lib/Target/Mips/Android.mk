@@ -42,7 +42,6 @@ mips_codegen_SRC_FILES := \
   MipsSEISelLowering.cpp \
   MipsSEInstrInfo.cpp \
   MipsSERegisterInfo.cpp \
-  MipsSelectionDAGInfo.cpp \
   MipsSubtarget.cpp \
   MipsTargetMachine.cpp \
   MipsTargetObjectFile.cpp

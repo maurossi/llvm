@@ -1,6 +1,8 @@
 LOCAL_PATH:= $(call my-dir)
 
 MIRParser_SRC_FILES := \
+  MILexer.cpp \
+  MIParser.cpp \
   MIRParser.cpp
 
 # For the host
