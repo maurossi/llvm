@@ -24,7 +24,15 @@ llvm_x86_static_libraries := \
   libLLVMX86AsmParser \
   libLLVMX86AsmPrinter \
   libLLVMX86Utils \
-  libLLVMX86Disassembler
+  libLLVMX86Disassembler \
+  libLLVMExecutionEngine
+
+llvm_amdgpu_static_libraries := \
+  libLLVMR600CodeGen \
+  libLLVMR600Info \
+  libLLVMR600Desc \
+  libLLVMR600AsmParser \
+  libLLVMR600AsmPrinter
 
 llvm_mips_static_libraries := \
   libLLVMMipsCodeGen \
@@ -69,9 +77,11 @@ llvm_post_static_libraries := \
 
 llvm_host_static_libraries := \
   libLLVMExecutionEngine \
+  libLLVMMCDisassembler \
   libLLVMRuntimeDyld \
   libLLVMMCJIT \
-  libLLVMOrcJIT
+  libLLVMOrcJIT \
+  libLLVMProfileData
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
@@ -86,6 +96,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
   $(llvm_pre_static_libraries) \
   $(llvm_arm_static_libraries) \
   $(llvm_x86_static_libraries) \
+  $(llvm_amdgpu_static_libraries) \
   $(llvm_mips_static_libraries) \
   $(llvm_aarch64_static_libraries) \
   $(llvm_host_static_libraries) \
@@ -125,6 +136,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 LOCAL_WHOLE_STATIC_LIBRARIES_arm += $(llvm_arm_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86 += $(llvm_x86_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_x86_static_libraries)
+LOCAL_WHOLE_STATIC_LIBRARIES_amdgpu += $(llvm_amdgpu_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_mips += $(llvm_mips_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_mips64 += $(llvm_mips_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_arm64 += $(llvm_aarch64_static_libraries)
@@ -135,6 +147,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES_x86 += $(llvm_arm_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86 += $(llvm_aarch64_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_arm_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_aarch64_static_libraries)
+LOCAL_WHOLE_STATIC_LIBRARIES_amdgpu += $(llvm_amdgpu_static_libraries)
 endif
 
 LOCAL_WHOLE_STATIC_LIBRARIES += $(llvm_post_static_libraries)
