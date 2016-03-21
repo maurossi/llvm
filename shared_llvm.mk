@@ -28,11 +28,11 @@ llvm_x86_static_libraries := \
   libLLVMExecutionEngine
 
 llvm_amdgpu_static_libraries := \
-  libLLVMR600CodeGen \
-  libLLVMR600Info \
-  libLLVMR600Desc \
-  libLLVMR600AsmParser \
-  libLLVMR600AsmPrinter
+  libLLVMAMDGPUCodeGen \
+  libLLVMAMDGPUInfo \
+  libLLVMAMDGPUDesc \
+  libLLVMAMDGPUAsmParser \
+  libLLVMAMDGPUAsmPrinter
 
 llvm_mips_static_libraries := \
   libLLVMMipsCodeGen \
