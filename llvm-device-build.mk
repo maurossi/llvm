@@ -76,5 +76,5 @@ $(hide) $(LLVM_TBLGEN) \
 	-I $(LLVM_ROOT_PATH)/device/include	\
 	-I $(LLVM_ROOT_PATH)/lib/Target	\
     -gen-$(strip $(1)) \
-    -o $@ $<
+    -d $@.d -o $@ $<
 endef
