@@ -94,5 +94,5 @@ $(hide) $(LLVM_TBLGEN) \
 	-I $(LLVM_ROOT_PATH)/lib/Target	\
 	$(if $(strip $(CLANG_ROOT_PATH)),-I $(CLANG_ROOT_PATH)/include,)	\
 	-gen-$(strip $(1))	\
-	-o $@ $<
+	-d $@.d -o $@ $<
 endef
