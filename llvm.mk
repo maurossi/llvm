@@ -1,6 +1,4 @@
-ifeq ($(LLVM_ROOT_PATH),)
-$(error Must set variable LLVM_ROOT_PATH before including this! $(LOCAL_PATH))
-endif
+LLVM_ROOT_PATH := external/llvm
 
 CLEAR_TBLGEN_VARS := $(LLVM_ROOT_PATH)/clear_tblgen_vars.mk
 LLVM_HOST_BUILD_MK := $(LLVM_ROOT_PATH)/llvm-host-build.mk
