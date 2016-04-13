@@ -56,6 +56,9 @@ LOCAL_CPPFLAGS :=	\
 	-Wno-sign-promo         \
 	-std=c++11
 
+# Suppress clang-tidy warnings that should not apply to llvm.
+LOCAL_TIDY_CHECKS := -google-build-using-namespace,-google-explicit-constructor
+
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
 	bionic \

@@ -51,6 +51,9 @@ LOCAL_CPPFLAGS :=	\
 	-Wno-sign-promo         \
 	-std=c++11
 
+# Suppress clang-tidy warnings that should not apply to llvm.
+LOCAL_TIDY_CHECKS := -google-build-using-namespace,-google-explicit-constructor
+
 LOCAL_CPPFLAGS_linux := \
 	-Woverloaded-virtual
 
