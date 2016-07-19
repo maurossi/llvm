@@ -69,6 +69,7 @@ LOCAL_C_INCLUDES :=	\
 LOCAL_LDLIBS_darwin += -lncurses
 LOCAL_LDLIBS_linux += -lncurses
 LOCAL_LDLIBS_linux += -lgcc_s
+LOCAL_LDLIBS_windows += -luuid
 
 LOCAL_IS_HOST_MODULE := true
 
