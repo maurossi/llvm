@@ -164,13 +164,19 @@ endif
 genfile := $(filter $(generated_sources)/%GenIntrinsics.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
 $(eval $(call define-tblgen-rule, $(genfile), \
-    $(genfile:$(generated_sources)/%GenIntrinsics.inc=$(tblgen_source_dir)/%.td),tgt_intrinsics))
+    $(genfile:$(generated_sources)/%GenIntrinsics.inc=$(tblgen_source_dir)/%.td),tgt_intrinsic))
 endif
 
 genfile := $(filter $(generated_sources)/ARMGenDecoderTables.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
 $(eval $(call define-tblgen-rule, $(genfile), \
     $(genfile:$(generated_sources)/ARMGenDecoderTables.inc=$(tblgen_source_dir)/ARM.td),arm-decoder))
+endif
+
+genfile := $(filter $(generated_sources)/%GenDFAPacketizer.inc,$(tblgen_gen_tables))
+ifneq ($(genfile),)
+$(eval $(call define-tblgen-rule, $(genfile), \
+    $(genfile:$(generated_sources)/%GenDFAPacketizer.inc=$(tblgen_source_dir)/%.td),dfa-packetizer))
 endif
 
 genfile := $(filter $(generated_sources)/Options.inc,$(tblgen_gen_tables))

@@ -100,6 +100,17 @@ subdirs += \
   lib/Target/X86/TargetInfo \
   lib/Target/X86/Utils
 
+ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
+# AMDGPU Code Generation Libraries
+subdirs += \
+  lib/Target/AMDGPU \
+  lib/Target/AMDGPU/AsmParser \
+  lib/Target/AMDGPU/InstPrinter \
+  lib/Target/AMDGPU/MCTargetDesc \
+  lib/Target/AMDGPU/TargetInfo \
+  lib/Target/AMDGPU/Utils
+endif
+
 # LLVM Command Line Tools
 subdirs += \
   tools/bugpoint \

@@ -27,6 +27,19 @@ llvm_x86_static_libraries := \
   libLLVMX86Utils \
   libLLVMX86Disassembler
 
+ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
+llvm_x86_static_libraries += \
+  libLLVMAMDGPUCodeGen \
+  libLLVMAMDGPUInfo \
+  libLLVMAMDGPUDesc \
+  libLLVMAMDGPUAsmParser \
+  libLLVMAMDGPUAsmPrinter \
+  libLLVMAMDGPUUtils \
+  libLLVMExecutionEngine \
+  libLLVMMCJIT \
+  libLLVMRuntimeDyld
+endif
+
 llvm_mips_static_libraries := \
   libLLVMMipsCodeGen \
   libLLVMMipsInfo \
