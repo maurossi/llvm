@@ -37,6 +37,7 @@ llvm_sancov_STATIC_LIBRARIES := \
   libLLVMSymbolize \
   libLLVMDebugInfoDWARF \
   libLLVMDebugInfoPDB \
+  libLLVMDebugInfoCodeView \
   libLLVMAsmPrinter \
   libLLVMSelectionDAG \
   libLLVMCodeGen \

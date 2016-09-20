@@ -13,36 +13,15 @@ aarch64_codegen_TBLGEN_TABLES := \
   AArch64GenFastISel.inc \
   AArch64GenDisassemblerTables.inc \
   AArch64GenMCPseudoLowering.inc \
+  AArch64GenSystemOperands.inc \
 
-aarch64_codegen_SRC_FILES := \
-  AArch64A53Fix835769.cpp \
-  AArch64A57FPLoadBalancing.cpp \
-  AArch64AddressTypePromotion.cpp \
-  AArch64AdvSIMDScalarPass.cpp \
-  AArch64AsmPrinter.cpp \
-  AArch64BranchRelaxation.cpp \
-  AArch64CleanupLocalDynamicTLSPass.cpp \
-  AArch64CollectLOH.cpp \
-  AArch64ConditionalCompares.cpp \
-  AArch64ConditionOptimizer.cpp \
-  AArch64DeadRegisterDefinitionsPass.cpp \
-  AArch64ExpandPseudoInsts.cpp \
-  AArch64FastISel.cpp \
-  AArch64FrameLowering.cpp \
-  AArch64InstrInfo.cpp \
-  AArch64ISelDAGToDAG.cpp \
-  AArch64ISelLowering.cpp \
-  AArch64LoadStoreOptimizer.cpp \
-  AArch64MCInstLower.cpp \
-  AArch64PBQPRegAlloc.cpp \
-  AArch64PromoteConstant.cpp \
-  AArch64RegisterInfo.cpp \
-  AArch64SelectionDAGInfo.cpp \
-  AArch64StorePairSuppress.cpp \
-  AArch64Subtarget.cpp \
-  AArch64TargetMachine.cpp \
-  AArch64TargetObjectFile.cpp \
-  AArch64TargetTransformInfo.cpp
+aarch64_codegen_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
+
+# Global ISEL is an experimental feature.  If LLVM_BUILD_GLOBAL_ISEL is not
+# set, these files fail compilation based on a macro check.
+aarch64_global_isel_SRC_FILES := AArch64CallLowering.cpp \
+                                 AArch64RegisterBankInfo.cpp
+aarch64_codegen_SRC_FILES := $(filter-out $(aarch64_global_isel_SRC_FILES),$(aarch64_codegen_SRC_FILES))
 
 # For the host
 # =====================================================

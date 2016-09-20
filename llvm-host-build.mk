@@ -1,16 +1,10 @@
-ifeq ($(FORCE_BUILD_LLVM_DEBUG),true)
-local_optflags = -O0 -g
-else
-local_optflags = -O2
-endif
-
 LOCAL_CFLAGS +=	\
 	-D_GNU_SOURCE	\
 	-D__STDC_LIMIT_MACROS	\
-	$(local_optflags)	\
 	-fomit-frame-pointer	\
 	-Wall	\
 	-W	\
+	-Wno-sign-compare \
 	-Wno-unused-parameter	\
 	-Wno-maybe-uninitialized \
 	-Wno-missing-field-initializers \
@@ -25,6 +19,12 @@ LOCAL_CFLAGS +=	\
 LOCAL_CFLAGS_windows += -Wno-array-bounds \
 			-Wno-comment \
 			-UWIN32_LEAN_AND_MEAN
+
+# Enable debug build only on Linux and Darwin
+ifeq ($(FORCE_BUILD_LLVM_DEBUG),true)
+LOCAL_CFLAGS_linux += -O0 -g
+LOCAL_CFLAGS_darwin += -O0 -g
+endif
 
 ifeq ($(FORCE_BUILD_LLVM_DISABLE_NDEBUG),true)
 LOCAL_CFLAGS :=	\

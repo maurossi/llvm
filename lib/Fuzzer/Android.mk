@@ -16,17 +16,7 @@
 
 LOCAL_PATH := $(call my-dir)
 
-libfuzzer_srcs := \
-    FuzzerCrossOver.cpp \
-    FuzzerInterface.cpp \
-    FuzzerTraceState.cpp \
-    FuzzerDriver.cpp \
-    FuzzerIO.cpp \
-    FuzzerLoop.cpp \
-    FuzzerMutate.cpp \
-    FuzzerSanitizerOptions.cpp \
-    FuzzerSHA1.cpp \
-    FuzzerUtil.cpp \
+libfuzzer_srcs := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true

@@ -29,8 +29,10 @@ subdirs := \
   lib/Fuzzer \
   lib/CodeGen \
   lib/CodeGen/AsmPrinter \
+  lib/CodeGen/GlobalISel \
   lib/CodeGen/MIRParser \
   lib/CodeGen/SelectionDAG \
+  lib/DebugInfo/CodeView \
   lib/DebugInfo/DWARF \
   lib/DebugInfo/PDB \
   lib/DebugInfo/Symbolize \
@@ -43,9 +45,11 @@ subdirs := \
   lib/MC/MCDisassembler \
   lib/MC/MCParser \
   lib/Object \
+  lib/ObjectYAML \
   lib/Option \
   lib/Passes \
   lib/ProfileData \
+  lib/ProfileData/Coverage \
   lib/Support \
   lib/TableGen \
   lib/Target \
@@ -134,6 +138,7 @@ subdirs += \
   tools/obj2yaml \
   tools/opt \
   tools/sancov \
+  tools/sanstats \
   tools/verify-uselistorder \
   tools/yaml2obj \
 

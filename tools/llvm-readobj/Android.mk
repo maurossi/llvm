@@ -7,24 +7,14 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 # llvm-readobj command line tool
 #===---------------------------------------------------------------===
 
-llvm_readobj_SRC_FILES := \
-  ARMAttributeParser.cpp \
-  ARMWinEHPrinter.cpp \
-  COFFDumper.cpp \
-  COFFImportDumper.cpp \
-  ELFDumper.cpp \
-  Error.cpp \
-  llvm-readobj.cpp \
-  MachODumper.cpp \
-  ObjDumper.cpp \
-  StreamWriter.cpp \
-  Win64EHDumper.cpp \
+llvm_readobj_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_readobj_STATIC_LIBRARIES := \
   libLLVMARMInfo \
   libLLVMAArch64Info \
   libLLVMMipsInfo \
   libLLVMX86Info \
+  libLLVMDebugInfoCodeView \
   libLLVMObject \
   libLLVMBitReader \
   libLLVMMC \

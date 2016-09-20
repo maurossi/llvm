@@ -1,15 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-profiledata_SRC_FILES := \
-  CoverageMapping.cpp \
-  CoverageMappingReader.cpp \
-  CoverageMappingWriter.cpp \
-  InstrProf.cpp \
-  InstrProfReader.cpp \
-  InstrProfWriter.cpp \
-  SampleProf.cpp \
-  SampleProfReader.cpp \
-  SampleProfWriter.cpp
+profiledata_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

@@ -1,30 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-codegen_selectiondag_SRC_FILES := \
-  DAGCombiner.cpp \
-  FastISel.cpp \
-  FunctionLoweringInfo.cpp \
-  InstrEmitter.cpp \
-  LegalizeDAG.cpp \
-  LegalizeFloatTypes.cpp \
-  LegalizeIntegerTypes.cpp \
-  LegalizeTypes.cpp \
-  LegalizeTypesGeneric.cpp \
-  LegalizeVectorOps.cpp \
-  LegalizeVectorTypes.cpp \
-  ResourcePriorityQueue.cpp \
-  ScheduleDAGFast.cpp \
-  ScheduleDAGRRList.cpp \
-  ScheduleDAGSDNodes.cpp \
-  ScheduleDAGVLIW.cpp \
-  SelectionDAG.cpp \
-  SelectionDAGBuilder.cpp \
-  SelectionDAGDumper.cpp \
-  SelectionDAGISel.cpp \
-  SelectionDAGPrinter.cpp \
-  StatepointLowering.cpp \
-  TargetLowering.cpp \
-  TargetSelectionDAGInfo.cpp
+codegen_selectiondag_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

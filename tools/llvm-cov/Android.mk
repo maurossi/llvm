@@ -7,18 +7,11 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 # llvm-cov command line tool
 #===---------------------------------------------------------------===
 
-llvm_cov_SRC_FILES := \
-  CodeCoverage.cpp \
-  CoverageFilters.cpp \
-  CoverageReport.cpp \
-  CoverageSummaryInfo.cpp \
-  gcov.cpp \
-  llvm-cov.cpp \
-  SourceCoverageView.cpp \
-  TestingSupport.cpp
+llvm_cov_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_cov_STATIC_LIBRARIES := \
   libLLVMObject              \
+  libLLVMProfileDataCoverage \
   libLLVMProfileData         \
   libLLVMMC                  \
   libLLVMMCParser            \

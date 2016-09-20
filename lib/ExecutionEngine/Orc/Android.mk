@@ -4,11 +4,7 @@ LOCAL_PATH:= $(call my-dir)
 # =====================================================
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := \
-  ExecutionUtils.cpp \
-  IndirectionUtils.cpp \
-  OrcMCJITReplacement.cpp \
-  OrcTargetSupport.cpp
+LOCAL_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 LOCAL_MODULE:= libLLVMOrcJIT
 

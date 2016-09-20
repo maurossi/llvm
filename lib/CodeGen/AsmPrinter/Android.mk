@@ -1,30 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-codegen_asmprinter_SRC_FILES := \
-  AddressPool.cpp \
-  ARMException.cpp \
-  AsmPrinter.cpp \
-  AsmPrinterDwarf.cpp \
-  AsmPrinterInlineAsm.cpp \
-  DbgValueHistoryCalculator.cpp \
-  DebugLocStream.cpp \
-  DIE.cpp \
-  DIEHash.cpp \
-  DwarfAccelTable.cpp \
-  DwarfCFIException.cpp \
-  DwarfCompileUnit.cpp \
-  DwarfDebug.cpp \
-  DwarfExpression.cpp \
-  DwarfFile.cpp \
-  DwarfStringPool.cpp \
-  DwarfUnit.cpp \
-  EHStreamer.cpp \
-  ErlangGCPrinter.cpp \
-  OcamlGCPrinter.cpp \
-  WinException.cpp \
-  WinCodeViewLineTables.cpp
-
-
+codegen_asmprinter_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

@@ -10,9 +10,6 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 lli_SRC_FILES := \
   lli.cpp \
   OrcLazyJIT.cpp \
-  RemoteMemoryManager.cpp \
-  RemoteTarget.cpp \
-  RemoteTargetExternal.cpp \
 
 lli_STATIC_LIBRARIES := \
   libLLVMIRReader \
@@ -44,8 +41,11 @@ lli_STATIC_LIBRARIES := \
   libLLVMX86Utils \
   libLLVMX86Disassembler \
   libLLVMAsmPrinter \
+  libLLVMGlobalISel \
+  libLLVMDebugInfoCodeView \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
+  libLLVMProfileData \
   libLLVMInstrumentation \
   libLLVMLinker \
   libLLVMInterpreter \

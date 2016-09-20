@@ -1,10 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-transforms_vectorize_SRC_FILES := \
-  BBVectorize.cpp \
-  LoopVectorize.cpp \
-  SLPVectorizer.cpp \
-  Vectorize.cpp
+transforms_vectorize_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

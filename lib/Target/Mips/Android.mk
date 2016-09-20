@@ -12,39 +12,7 @@ mips_codegen_TBLGEN_TABLES := \
   MipsGenCallingConv.inc \
   MipsGenSubtargetInfo.inc
 
-mips_codegen_SRC_FILES := \
-  Mips16FrameLowering.cpp \
-  Mips16HardFloat.cpp \
-  Mips16HardFloatInfo.cpp \
-  Mips16ISelDAGToDAG.cpp \
-  Mips16ISelLowering.cpp \
-  Mips16InstrInfo.cpp \
-  Mips16RegisterInfo.cpp \
-  MipsAnalyzeImmediate.cpp \
-  MipsAsmPrinter.cpp \
-  MipsCCState.cpp \
-  MipsConstantIslandPass.cpp \
-  MipsDelaySlotFiller.cpp \
-  MipsFastISel.cpp \
-  MipsFrameLowering.cpp \
-  MipsInstrInfo.cpp \
-  MipsISelDAGToDAG.cpp \
-  MipsISelLowering.cpp \
-  MipsLongBranch.cpp \
-  MipsMachineFunction.cpp \
-  MipsMCInstLower.cpp \
-  MipsModuleISelDAGToDAG.cpp \
-  MipsOs16.cpp \
-  MipsOptimizePICCall.cpp \
-  MipsRegisterInfo.cpp \
-  MipsSEFrameLowering.cpp \
-  MipsSEISelDAGToDAG.cpp \
-  MipsSEISelLowering.cpp \
-  MipsSEInstrInfo.cpp \
-  MipsSERegisterInfo.cpp \
-  MipsSubtarget.cpp \
-  MipsTargetMachine.cpp \
-  MipsTargetObjectFile.cpp
+mips_codegen_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

@@ -7,16 +7,8 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 # llvm-c-test command line tool
 #===---------------------------------------------------------------===
 
-llvm_c_test_SRC_FILES := \
-  calc.c                 \
-  disassemble.c          \
-  helpers.c              \
-  include-all.c          \
-  main.c                 \
-  metadata.c             \
-  module.c               \
-  object.c               \
-  targets.c              \
+llvm_c_test_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
+llvm_c_test_SRC_FILES += $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.c)))
 
 llvm_c_test_STATIC_LIBRARIES := \
   libLLVMBitReader \
@@ -45,6 +37,8 @@ llvm_c_test_STATIC_LIBRARIES := \
   libLLVMAsmPrinter \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
+  libLLVMGlobalISel \
+  libLLVMProfileData \
   libLLVMInstrumentation \
   libLLVMScalarOpts \
   libLLVMTransformUtils \
