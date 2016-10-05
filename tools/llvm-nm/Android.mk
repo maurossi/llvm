@@ -51,6 +51,9 @@ llvm_nm_STATIC_LIBRARIES := \
 
 include $(CLEAR_VARS)
 
+# b/31938645, clang-tidy segmentation fault on llvm-nm.cpp.
+LOCAL_TIDY_CHECKS := -llvm-twine-local
+
 LOCAL_MODULE := llvm-nm
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := EXECUTABLES
