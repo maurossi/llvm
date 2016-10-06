@@ -55,6 +55,9 @@ llvm_objdump_STATIC_LIBRARIES := \
 
 include $(CLEAR_VARS)
 
+# b/31938382, clang-tidy segmentation fault on MachODump.cpp.
+LOCAL_TIDY_CHECKS := -readability-*,-google-readability-*
+
 LOCAL_MODULE := llvm-objdump
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := EXECUTABLES
