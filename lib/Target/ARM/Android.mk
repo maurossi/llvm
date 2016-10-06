@@ -51,6 +51,9 @@ arm_codegen_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
+# b/31559947, b/31938382 clang-tidy segmentation fault.
+LOCAL_TIDY_CHECKS := -clang-analyzer-*,-readability-*
+
 LOCAL_MODULE:= libLLVMARMCodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -69,6 +72,9 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
+
+# b/31559947, b/31938382 clang-tidy segmentation fault.
+LOCAL_TIDY_CHECKS := -clang-analyzer-*,-readability-*
 
 LOCAL_MODULE:= libLLVMARMCodeGen
 
