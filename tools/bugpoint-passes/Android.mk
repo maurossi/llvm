@@ -14,7 +14,8 @@ LOCAL_SRC_FILES := $(bugpoint_passes_SRC_FILES)
 LOCAL_MODULE := BugpointPasses
 
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES # needed for tblgen
-LOCAL_LDFLAGS_darwin := -Wl,-undefined -Wl,dynamic_lookup
+LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
+LOCAL_LDFLAGS_darwin := -Wl,dynamic_lookup
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
