@@ -1,32 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-transforms_ipo_SRC_FILES := \
-  ArgumentPromotion.cpp \
-  BarrierNoopPass.cpp \
-  ConstantMerge.cpp \
-  CrossDSOCFI.cpp \
-  DeadArgumentElimination.cpp \
-  ElimAvailExtern.cpp \
-  ExtractGV.cpp \
-  FunctionAttrs.cpp \
-  FunctionImport.cpp \
-  GlobalDCE.cpp \
-  GlobalOpt.cpp \
-  IPConstantPropagation.cpp \
-  IPO.cpp \
-  InlineAlways.cpp \
-  InlineSimple.cpp \
-  Inliner.cpp \
-  Internalize.cpp \
-  LoopExtractor.cpp \
-  LowerBitSets.cpp \
-  MergeFunctions.cpp \
-  PartialInlining.cpp \
-  PassManagerBuilder.cpp \
-  PruneEH.cpp \
-  SampleProfile.cpp \
-  StripDeadPrototypes.cpp \
-  StripSymbols.cpp
+transforms_ipo_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

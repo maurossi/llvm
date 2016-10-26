@@ -45,9 +45,11 @@ llvm_aarch64_static_libraries := \
   libLLVMAArch64Disassembler
 
 llvm_post_static_libraries := \
+  libLLVMLTO \
   libLLVMAsmPrinter \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
+  libLLVMDebugInfoCodeView \
   libLLVMObject \
   libLLVMScalarOpts \
   libLLVMInstCombine \
@@ -56,6 +58,7 @@ llvm_post_static_libraries := \
   libLLVMTransformUtils \
   libLLVMAnalysis \
   libLLVMTarget \
+  libLLVMGlobalISel \
   libLLVMMCDisassembler \
   libLLVMMC \
   libLLVMMCParser \
@@ -65,6 +68,7 @@ llvm_post_static_libraries := \
   libLLVMSupport \
   libLLVMVectorize \
   libLLVMProfileData \
+  libLLVMProfileDataCoverage \
   libLLVMLibDriver
 
 llvm_host_static_libraries := \
@@ -91,7 +95,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
   $(llvm_host_static_libraries) \
   $(llvm_post_static_libraries)
 
-LOCAL_LDLIBS_windows := -limagehlp -lpsapi -lole32
+LOCAL_LDLIBS_windows := -limagehlp -lpsapi -lole32 -lversion
 LOCAL_LDLIBS_darwin := -ldl -lpthread
 LOCAL_LDLIBS_linux := -ldl -lpthread
 

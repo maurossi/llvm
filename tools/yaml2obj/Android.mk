@@ -7,13 +7,11 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 # yaml2obj command line tool
 #===---------------------------------------------------------------===
 
-yaml2obj_SRC_FILES := \
-  yaml2obj.cpp        \
-  yaml2coff.cpp       \
-  yaml2elf.cpp        \
+yaml2obj_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 yaml2obj_STATIC_LIBRARIES := \
   libLLVMObject              \
+  libLLVMObjectYAML          \
   libLLVMMC                  \
   libLLVMMCParser            \
   libLLVMBitReader           \

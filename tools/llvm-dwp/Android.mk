@@ -7,8 +7,7 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 # llvm-dwp command line tool
 #===---------------------------------------------------------------===
 
-llvm_dwp_SRC_FILES := \
-  llvm-dwp.cpp
+llvm_dwp_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_dwp_STATIC_LIBRARIES := \
   libLLVMDebugInfoDWARF \
@@ -44,7 +43,9 @@ llvm_dwp_STATIC_LIBRARIES := \
   libLLVMRuntimeDyld \
   libLLVMMCJIT \
   libLLVMOrcJIT \
+  libLLVMGlobalISel \
   libLLVMAsmPrinter \
+  libLLVMDebugInfoCodeView \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
   libLLVMObject \
@@ -81,5 +82,6 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 
 include $(LLVM_ROOT_PATH)/llvm.mk
 include $(LLVM_HOST_BUILD_MK)
+include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

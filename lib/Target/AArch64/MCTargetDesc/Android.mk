@@ -4,7 +4,8 @@ aarch64_mc_desc_TBLGEN_TABLES := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenMCCodeEmitter.inc \
-  AArch64GenSubtargetInfo.inc
+  AArch64GenSubtargetInfo.inc \
+  AArch64GenSystemOperands.inc \
 
 aarch64_mc_desc_SRC_FILES := \
   AArch64AsmBackend.cpp \

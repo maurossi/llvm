@@ -42,7 +42,9 @@ llvm_opt_STATIC_LIBRARIES := \
   libLLVMX86AsmPrinter \
   libLLVMX86Utils \
   libLLVMX86Disassembler \
+  libLLVMGlobalISel \
   libLLVMAsmPrinter \
+  libLLVMDebugInfoCodeView \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
   libLLVMTransformObjCARC \
