@@ -45,6 +45,7 @@ llvm_lto_STATIC_LIBRARIES := \
   libLLVMARMCodeGen \
   libLLVMARMAsmParser \
   libLLVMARMAsmPrinter \
+  libLLVMDebugInfoCodeView \
   libLLVMARMInfo \
   libLLVMARMDesc \
   libLLVMARMDisassembler \
@@ -72,6 +73,7 @@ llvm_lto_STATIC_LIBRARIES := \
   libLLVMRuntimeDyld \
   libLLVMMCJIT \
   libLLVMOrcJIT \
+  libLLVMGlobalISel \
   libLLVMAsmPrinter \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
