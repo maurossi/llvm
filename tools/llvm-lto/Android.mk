@@ -41,6 +41,8 @@ llvm_lto_STATIC_LIBRARIES := \
   libLLVMSelectionDAG \
   libLLVMLTO \
   libLLVMCodeGen \
+  libLLVMGlobalISel \
+  libLLVMDebugInfoCodeView \
   libLLVMTarget \
   libLLVMBitReader \
   libLLVMBitWriter \
@@ -53,6 +55,7 @@ llvm_lto_STATIC_LIBRARIES := \
   libLLVMVectorize \
   libLLVMInstrumentation \
   libLLVMTransformUtils \
+  libLLVMProfileData \
   libLLVMAnalysis \
   libLLVMMC \
   libLLVMMCParser \

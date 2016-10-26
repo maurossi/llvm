@@ -1,45 +1,11 @@
 LOCAL_PATH:= $(call my-dir)
 
 # No dia support
-debuginfo_pdb_SRC_FILES := \
-  IPDBSourceFile.cpp \
-  PDB.cpp \
-  PDBContext.cpp \
-  PDBExtras.cpp \
-  PDBInterfaceAnchors.cpp \
-  PDBSymbolAnnotation.cpp \
-  PDBSymbolBlock.cpp \
-  PDBSymbolCompiland.cpp \
-  PDBSymbolCompilandDetails.cpp \
-  PDBSymbolCompilandEnv.cpp \
-  PDBSymbol.cpp \
-  PDBSymbolCustom.cpp \
-  PDBSymbolData.cpp \
-  PDBSymbolExe.cpp \
-  PDBSymbolFunc.cpp \
-  PDBSymbolFuncDebugEnd.cpp \
-  PDBSymbolFuncDebugStart.cpp \
-  PDBSymbolLabel.cpp \
-  PDBSymbolPublicSymbol.cpp \
-  PDBSymbolThunk.cpp \
-  PDBSymbolTypeArray.cpp \
-  PDBSymbolTypeBaseClass.cpp \
-  PDBSymbolTypeBuiltin.cpp \
-  PDBSymbolTypeCustom.cpp \
-  PDBSymbolTypeDimension.cpp \
-  PDBSymbolTypeEnum.cpp \
-  PDBSymbolTypeFriend.cpp \
-  PDBSymbolTypeFunctionArg.cpp \
-  PDBSymbolTypeFunctionSig.cpp \
-  PDBSymbolTypeManaged.cpp \
-  PDBSymbolTypePointer.cpp \
-  PDBSymbolTypeTypedef.cpp \
-  PDBSymbolTypeUDT.cpp \
-  PDBSymbolTypeVTable.cpp \
-  PDBSymbolTypeVTableShape.cpp \
-  PDBSymbolUnknown.cpp \
-  PDBSymbolUsingNamespace.cpp \
-  PDBSymDumper.cpp
+debuginfo_pdb_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
+
+# lib/PDB/Raw is included into libLLVMDebugInfoPDB instead of as a separate module
+debuginfo_pdb_raw_SRC_FILES = $(sort $(notdir $(wildcard $(LOCAL_PATH)/Raw/*.cpp)))
+debuginfo_pdb_SRC_FILES += $(debuginfo_pdb_raw_SRC_FILES:%=Raw/%)
 
 # For the host
 # =====================================================

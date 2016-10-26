@@ -8,8 +8,7 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../../../
 #===---------------------------------------------------------------===
 
 lli_child_target_SRC_FILES := \
-  ChildTarget.cpp \
-  ../RemoteTarget.cpp
+  ChildTarget.cpp
 
 include $(CLEAR_VARS)
 
@@ -21,11 +20,19 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_SRC_FILES := $(lli_child_target_SRC_FILES)
 
 LOCAL_STATIC_LIBRARIES := \
+  libLLVMOrcJIT \
+  libLLVMRuntimeDyld \
+  libLLVMObject \
+  libLLVMBitReader \
+  libLLVMMC \
+  libLLVMMCParser \
+  libLLVMCore \
   libLLVMSupport
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
 include $(LLVM_ROOT_PATH)/llvm.mk
 include $(LLVM_HOST_BUILD_MK)
+include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -40,8 +40,11 @@ llvm_dsymutil_STATIC_LIBRARIES := \
   libLLVMX86Disassembler \
   libLLVMX86CodeGen \
   libLLVMAsmPrinter \
+  libLLVMDebugInfoCodeView \
   libLLVMSelectionDAG \
   libLLVMCodeGen \
+  libLLVMProfileData \
+  libLLVMGlobalISel \
   libLLVMDebugInfoDWARF \
   libLLVMInstrumentation \
   libLLVMMCParser \
@@ -67,5 +70,6 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 LOCAL_STATIC_LIBRARIES := $(llvm_dsymutil_STATIC_LIBRARIES)
 
 include $(LLVM_HOST_BUILD_MK)
+include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

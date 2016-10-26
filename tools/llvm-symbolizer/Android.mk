@@ -18,6 +18,7 @@ LOCAL_STATIC_LIBRARIES := \
   libLLVMSymbolize \
   libLLVMDebugInfoDWARF \
   libLLVMDebugInfoPDB \
+  libLLVMDebugInfoCodeView \
   libLLVMObject \
   libLLVMBitReader \
   libLLVMMC \

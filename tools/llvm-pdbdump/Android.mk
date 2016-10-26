@@ -3,21 +3,11 @@ LOCAL_PATH := $(call my-dir)
 LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 include $(LLVM_ROOT_PATH)/llvm.mk
 
-llvm_pdbdump_SRC_FILES := \
-  llvm-pdbdump.cpp \
-  BuiltinDumper.cpp \
-  ClassDefinitionDumper.cpp \
-  CompilandDumper.cpp \
-  EnumDumper.cpp \
-  ExternalSymbolDumper.cpp \
-  FunctionDumper.cpp \
-  LinePrinter.cpp \
-  TypedefDumper.cpp \
-  TypeDumper.cpp \
-  VariableDumper.cpp
+llvm_pdbdump_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_pdbdump_STATIC_LIBRARIES := \
   libLLVMDebugInfoPDB \
+  libLLVMDebugInfoCodeView \
   libLLVMSupport
 
 include $(CLEAR_VARS)

@@ -35,7 +35,9 @@ llvm_llc_arm_STATIC_LIBRARIES := \
   libLLVMARMInfo
 
 llvm_llc_STATIC_LIBRARIES := \
+  libLLVMGlobalISel \
   libLLVMAsmPrinter \
+  libLLVMDebugInfoCodeView \
   libLLVMIRReader \
   libLLVMAsmParser \
   libLLVMBitReader \
@@ -43,6 +45,7 @@ llvm_llc_STATIC_LIBRARIES := \
   libLLVMSelectionDAG \
   libLLVMInstCombine \
   libLLVMCodeGen \
+  libLLVMProfileData \
   libLLVMInstrumentation \
   libLLVMObject \
   libLLVMipo \

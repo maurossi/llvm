@@ -1,8 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-lto_SRC_FILES := \
-  LTOModule.cpp \
-  LTOCodeGenerator.cpp \
+lto_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================
@@ -11,6 +9,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(lto_SRC_FILES)
 
 LOCAL_MODULE:= libLLVMLTO
+LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_MODULE_TAGS := optional
 

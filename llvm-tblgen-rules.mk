@@ -131,6 +131,12 @@ $(eval $(call define-tblgen-rule, $(genfile), \
     $(genfile:$(generated_sources)/%GenDisassemblerTables.inc=$(tblgen_source_dir)/%.td),disassembler))
 endif
 
+genfile := $(filter $(generated_sources)/%GenSystemOperands.inc,$(tblgen_gen_tables))
+ifneq ($(genfile),)
+$(eval $(call define-tblgen-rule, $(genfile), \
+    $(genfile:$(generated_sources)/%GenSystemOperands.inc=$(tblgen_source_dir)/%.td),searchable-tables))
+endif
+
 genfile := $(filter $(generated_sources)/%GenEDInfo.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
 $(eval $(call define-tblgen-rule, $(genfile), \
@@ -171,6 +177,12 @@ genfile := $(filter $(generated_sources)/Options.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
 $(eval $(call define-tblgen-rule, $(genfile), \
     $(genfile:$(generated_sources)/Options.inc=$(tblgen_source_dir)/Options.td),opt-parser-defs))
+endif
+
+genfile := $(filter $(generated_sources)/AttributesCompatFunc.inc,$(tblgen_gen_tables))
+ifneq ($(genfile),)
+$(eval $(call define-tblgen-rule, $(genfile), \
+    $(genfile:$(generated_sources)/AttributesCompatFunc.inc=$(tblgen_source_dir)/AttributesCompatFunc.td),attrs))
 endif
 
 # Reset local variables

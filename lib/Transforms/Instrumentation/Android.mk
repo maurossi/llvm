@@ -1,17 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-instrumentation_SRC_FILES := \
-  AddressSanitizer.cpp \
-  BoundsChecking.cpp \
-  DataFlowSanitizer.cpp \
-  GCOVProfiling.cpp \
-  InstrProfiling.cpp \
-  Instrumentation.cpp \
-  MemorySanitizer.cpp \
-  PGOInstrumentation.cpp \
-  SafeStack.cpp \
-  SanitizerCoverage.cpp \
-  ThreadSanitizer.cpp
+instrumentation_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

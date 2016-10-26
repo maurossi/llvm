@@ -5,17 +5,7 @@ x86_mc_desc_TBLGEN_TABLES := \
   X86GenInstrInfo.inc \
   X86GenSubtargetInfo.inc
 
-x86_mc_desc_SRC_FILES := \
-  X86AsmBackend.cpp \
-  X86ELFObjectWriter.cpp \
-  X86ELFRelocationInfo.cpp \
-  X86MCTargetDesc.cpp \
-  X86MCAsmInfo.cpp \
-  X86MCCodeEmitter.cpp \
-  X86MachORelocationInfo.cpp \
-  X86MachObjectWriter.cpp \
-  X86WinCOFFObjectWriter.cpp \
-  X86WinCOFFStreamer.cpp
+x86_mc_desc_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # For the host
 # =====================================================

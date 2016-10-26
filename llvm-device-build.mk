@@ -11,6 +11,7 @@ LOCAL_CFLAGS :=	\
 	-fomit-frame-pointer	\
 	-Wall	\
 	-W	\
+	-Wno-sign-compare \
 	-Wno-unused-parameter	\
 	-Wwrite-strings	\
 	-Werror \

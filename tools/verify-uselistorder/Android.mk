@@ -18,6 +18,7 @@ LOCAL_STATIC_LIBRARIES := \
   libLLVMAsmParser \
   libLLVMBitReader \
   libLLVMBitWriter \
+  libLLVMAnalysis \
   libLLVMCore \
   libLLVMIRReader \
   libLLVMSupport
