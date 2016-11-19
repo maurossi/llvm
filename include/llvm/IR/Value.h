@@ -280,10 +280,11 @@ public:
   // when using them since you might not get all uses.
   // The methods that don't start with materialized_ assert that modules is
   // fully materialized.
-  void assertModuleIsMaterialized() const;
 
   bool use_empty() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return UseList == nullptr;
   }
 
@@ -294,11 +295,15 @@ public:
     return const_use_iterator(UseList);
   }
   use_iterator use_begin() {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_use_begin();
   }
   const_use_iterator use_begin() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_use_begin();
   }
   use_iterator use_end() { return use_iterator(); }
@@ -310,16 +315,22 @@ public:
     return make_range(materialized_use_begin(), use_end());
   }
   iterator_range<use_iterator> uses() {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_uses();
   }
   iterator_range<const_use_iterator> uses() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_uses();
   }
 
   bool user_empty() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return UseList == nullptr;
   }
 
@@ -330,29 +341,41 @@ public:
     return const_user_iterator(UseList);
   }
   user_iterator user_begin() {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_user_begin();
   }
   const_user_iterator user_begin() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return materialized_user_begin();
   }
   user_iterator user_end() { return user_iterator(); }
   const_user_iterator user_end() const { return const_user_iterator(); }
   User *user_back() {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return *materialized_user_begin();
   }
   const User *user_back() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return *materialized_user_begin();
   }
   iterator_range<user_iterator> users() {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return make_range(materialized_user_begin(), user_end());
   }
   iterator_range<const_user_iterator> users() const {
+#ifndef NDEBUG
     assertModuleIsMaterialized();
+#endif
     return make_range(materialized_user_begin(), user_end());
   }
 
