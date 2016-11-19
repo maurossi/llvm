@@ -88,7 +88,7 @@ define <4 x i32> @or_4i32_commute(<4 x i32> %a0, <4 x i32> %a1) {
   ;CHECK-NEXT:   orps %xmm1, %xmm0
   ;CHECK-NEXT:   orps .LCPI7_0(%rip), %xmm0
   ;CHECK-NEXT:   retq
-  %1 = or <4 x i32> <i32 -2, i32 -2, i32  3, i32  3>, %a0 
+  %1 = or <4 x i32> <i32 -2, i32 -2, i32  3, i32  3>, %a0
   %2 = or <4 x i32> <i32 -1, i32 -1, i32  1, i32  1>, %a1
   %3 = or <4 x i32> %1, %2
   ret <4 x i32> %3

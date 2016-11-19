@@ -366,47 +366,21 @@ void Function::addDereferenceableOrNullAttr(unsigned i, uint64_t Bytes) {
   setAttributes(PAL);
 }
 
-// Maintain the GC name for each function in an on-the-side table. This saves
-// allocating an additional word in Function for programs which do not use GC
-// (i.e., most programs) at the cost of increased overhead for clients which do
-// use GC.
-static DenseMap<const Function*,PooledStringPtr> *GCNames;
-static StringPool *GCNamePool;
-static ManagedStatic<sys::SmartRWMutex<true> > GCLock;
-
-bool Function::hasGC() const {
-  sys::SmartScopedReader<true> Reader(*GCLock);
-  return GCNames && GCNames->count(this);
-}
-
-const char *Function::getGC() const {
+const std::string &Function::getGC() const {
   assert(hasGC() && "Function has no collector");
-  sys::SmartScopedReader<true> Reader(*GCLock);
-  return *(*GCNames)[this];
+  return getContext().getGC(*this);
 }
 
-void Function::setGC(const char *Str) {
-  sys::SmartScopedWriter<true> Writer(*GCLock);
-  if (!GCNamePool)
-    GCNamePool = new StringPool();
-  if (!GCNames)
-    GCNames = new DenseMap<const Function*,PooledStringPtr>();
-  (*GCNames)[this] = GCNamePool->intern(Str);
+void Function::setGC(const std::string Str) {
+  setValueSubclassDataBit(14, !Str.empty());
+  getContext().setGC(*this, std::move(Str));
 }
 
 void Function::clearGC() {
-  sys::SmartScopedWriter<true> Writer(*GCLock);
-  if (GCNames) {
-    GCNames->erase(this);
-    if (GCNames->empty()) {
-      delete GCNames;
-      GCNames = nullptr;
-      if (GCNamePool->empty()) {
-        delete GCNamePool;
-        GCNamePool = nullptr;
-      }
-    }
-  }
+  if (!hasGC())
+    return;
+  getContext().deleteGC(*this);
+  setValueSubclassDataBit(14, false);
 }
 
 /// Copy all additional attributes (those not needed to create a Function) from
@@ -942,8 +916,7 @@ Constant *Function::getPersonalityFn() const {
 }
 
 void Function::setPersonalityFn(Constant *Fn) {
-  if (Fn)
-    setHungoffOperand<0>(Fn);
+  setHungoffOperand<0>(Fn);
   setValueSubclassDataBit(3, Fn != nullptr);
 }
 
@@ -953,8 +926,7 @@ Constant *Function::getPrefixData() const {
 }
 
 void Function::setPrefixData(Constant *PrefixData) {
-  if (PrefixData)
-    setHungoffOperand<1>(PrefixData);
+  setHungoffOperand<1>(PrefixData);
   setValueSubclassDataBit(1, PrefixData != nullptr);
 }
 
@@ -964,8 +936,7 @@ Constant *Function::getPrologueData() const {
 }
 
 void Function::setPrologueData(Constant *PrologueData) {
-  if (PrologueData)
-    setHungoffOperand<2>(PrologueData);
+  setHungoffOperand<2>(PrologueData);
   setValueSubclassDataBit(2, PrologueData != nullptr);
 }
 
@@ -986,9 +957,13 @@ void Function::allocHungoffUselist() {
 
 template <int Idx>
 void Function::setHungoffOperand(Constant *C) {
-  assert(C && "Cannot set hungoff operand to nullptr");
-  allocHungoffUselist();
-  Op<Idx>().set(C);
+  if (C) {
+    allocHungoffUselist();
+    Op<Idx>().set(C);
+  } else if (getNumOperands()) {
+    Op<Idx>().set(
+        ConstantPointerNull::get(Type::getInt1PtrTy(getContext(), 0)));
+  }
 }
 
 void Function::setValueSubclassDataBit(unsigned Bit, bool On) {

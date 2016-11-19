@@ -436,7 +436,10 @@ SDValue DAGTypeLegalizer::PromoteIntRes_FP_TO_FP16(SDNode *N) {
   EVT NVT = TLI.getTypeToTransformTo(*DAG.getContext(), N->getValueType(0));
   SDLoc dl(N);
 
-  return DAG.getNode(N->getOpcode(), dl, NVT, N->getOperand(0));
+  SDValue Res = DAG.getNode(N->getOpcode(), dl, NVT, N->getOperand(0));
+
+  return DAG.getNode(ISD::AssertZext, dl,
+                     NVT, Res, DAG.getValueType(N->getValueType(0)));
 }
 
 SDValue DAGTypeLegalizer::PromoteIntRes_INT_EXTEND(SDNode *N) {

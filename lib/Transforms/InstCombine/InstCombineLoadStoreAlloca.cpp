@@ -91,21 +91,23 @@ isOnlyCopiedFromConstantGlobal(Value *V, MemTransferInst *&TheCopy,
         if (CS.isCallee(&U))
           continue;
 
+        unsigned DataOpNo = CS.getDataOperandNo(&U);
+        bool IsArgOperand = CS.isArgOperand(&U);
+
         // Inalloca arguments are clobbered by the call.
-        unsigned ArgNo = CS.getArgumentNo(&U);
-        if (CS.isInAllocaArgument(ArgNo))
+        if (IsArgOperand && CS.isInAllocaArgument(DataOpNo))
           return false;
 
         // If this is a readonly/readnone call site, then we know it is just a
         // load (but one that potentially returns the value itself), so we can
         // ignore it if we know that the value isn't captured.
         if (CS.onlyReadsMemory() &&
-            (CS.getInstruction()->use_empty() || CS.doesNotCapture(ArgNo)))
+            (CS.getInstruction()->use_empty() || CS.doesNotCapture(DataOpNo)))
           continue;
 
         // If this is being passed as a byval argument, the caller is making a
         // copy, so it is only a read of the alloca.
-        if (CS.isByValArgument(ArgNo))
+        if (IsArgOperand && CS.isByValArgument(DataOpNo))
           continue;
       }
 
@@ -521,16 +523,17 @@ static Instruction *unpackLoadToAggregate(InstCombiner &IC, LoadInst &LI) {
   if (!T->isAggregateType())
     return nullptr;
 
+  auto Name = LI.getName();
   assert(LI.getAlignment() && "Alignment must be set at this point");
 
   if (auto *ST = dyn_cast<StructType>(T)) {
     // If the struct only have one element, we unpack.
-    unsigned Count = ST->getNumElements();
-    if (Count == 1) {
+    auto NumElements = ST->getNumElements();
+    if (NumElements == 1) {
       LoadInst *NewLoad = combineLoadToNewType(IC, LI, ST->getTypeAtIndex(0U),
                                                ".unpack");
       return IC.ReplaceInstUsesWith(LI, IC.Builder->CreateInsertValue(
-        UndefValue::get(T), NewLoad, 0, LI.getName()));
+        UndefValue::get(T), NewLoad, 0, Name));
     }
 
     // We don't want to break loads with padding here as we'd loose
@@ -540,22 +543,29 @@ static Instruction *unpackLoadToAggregate(InstCombiner &IC, LoadInst &LI) {
     if (SL->hasPadding())
       return nullptr;
 
-    auto Name = LI.getName();
+    auto Align = LI.getAlignment();
+    if (!Align)
+      Align = DL.getABITypeAlignment(ST);
+
     SmallString<16> LoadName = Name;
     LoadName += ".unpack";
     SmallString<16> EltName = Name;
     EltName += ".elt";
+
     auto *Addr = LI.getPointerOperand();
-    Value *V = UndefValue::get(T);
-    auto *IdxType = Type::getInt32Ty(ST->getContext());
+    auto *IdxType = Type::getInt32Ty(T->getContext());
     auto *Zero = ConstantInt::get(IdxType, 0);
-    for (unsigned i = 0; i < Count; i++) {
+
+    Value *V = UndefValue::get(T);
+    for (unsigned i = 0; i < NumElements; i++) {
       Value *Indices[2] = {
         Zero,
         ConstantInt::get(IdxType, i),
       };
-      auto *Ptr = IC.Builder->CreateInBoundsGEP(ST, Addr, makeArrayRef(Indices), EltName);
-      auto *L = IC.Builder->CreateLoad(ST->getTypeAtIndex(i), Ptr, LoadName);
+      auto *Ptr = IC.Builder->CreateInBoundsGEP(ST, Addr,
+                                            makeArrayRef(Indices), EltName);
+      auto EltAlign = MinAlign(Align, SL->getElementOffset(i));
+      auto *L = IC.Builder->CreateAlignedLoad(Ptr, EltAlign, LoadName);
       V = IC.Builder->CreateInsertValue(V, L, i);
     }
 
@@ -947,11 +957,16 @@ static bool unpackStoreToAggregate(InstCombiner &IC, StoreInst &SI) {
     if (SL->hasPadding())
       return false;
 
+    auto Align = SI.getAlignment();
+    if (!Align)
+      Align = DL.getABITypeAlignment(ST);
+
     SmallString<16> EltName = V->getName();
     EltName += ".elt";
     auto *Addr = SI.getPointerOperand();
     SmallString<16> AddrName = Addr->getName();
     AddrName += ".repack";
+
     auto *IdxType = Type::getInt32Ty(ST->getContext());
     auto *Zero = ConstantInt::get(IdxType, 0);
     for (unsigned i = 0; i < Count; i++) {
@@ -959,9 +974,11 @@ static bool unpackStoreToAggregate(InstCombiner &IC, StoreInst &SI) {
         Zero,
         ConstantInt::get(IdxType, i),
       };
-      auto *Ptr = IC.Builder->CreateInBoundsGEP(ST, Addr, makeArrayRef(Indices), AddrName);
+      auto *Ptr = IC.Builder->CreateInBoundsGEP(ST, Addr,
+                                            makeArrayRef(Indices), AddrName);
       auto *Val = IC.Builder->CreateExtractValue(V, i, EltName);
-      IC.Builder->CreateStore(Val, Ptr);
+      auto EltAlign = MinAlign(Align, SL->getElementOffset(i));
+      IC.Builder->CreateAlignedStore(Val, Ptr, EltAlign);
     }
 
     return true;

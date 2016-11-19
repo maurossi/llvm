@@ -304,6 +304,9 @@ namespace llvm {
       // Vector signed/unsigned integer to double.
       CVTDQ2PD, CVTUDQ2PD,
 
+      // Convert a vector to mask, set bits base on MSB.
+      CVT2MASK,
+
       // 128-bit vector logical left / right shift
       VSHLDQ, VSRLDQ,
 
@@ -312,6 +315,9 @@ namespace llvm {
 
       // Vector shift elements by immediate
       VSHLI, VSRLI, VSRAI,
+
+      // Bit rotate by immediate
+      VROTLI, VROTRI,
 
       // Vector packed double/float comparison.
       CMPP,
@@ -504,6 +510,8 @@ namespace llvm {
       LCMPXCHG_DAG = ISD::FIRST_TARGET_MEMORY_OPCODE,
       LCMPXCHG8_DAG,
       LCMPXCHG16_DAG,
+      LCMPXCHG8_SAVE_EBX_DAG,
+      LCMPXCHG16_SAVE_RBX_DAG,
 
       // Load, scalar_to_vector, and zero extend.
       VZEXT_LOAD,
@@ -606,15 +614,6 @@ namespace llvm {
     bool isCalleePop(CallingConv::ID CallingConv,
                      bool is64Bit, bool IsVarArg, bool TailCallOpt);
 
-    /// AVX512 static rounding constants.  These need to match the values in
-    /// avx512fintrin.h.
-    enum STATIC_ROUNDING {
-      TO_NEAREST_INT = 0,
-      TO_NEG_INF = 1,
-      TO_POS_INF = 2,
-      TO_ZERO = 3,
-      CUR_DIRECTION = 4
-    };
   }
 
   //===--------------------------------------------------------------------===//
@@ -702,6 +701,10 @@ namespace llvm {
     /// i16 is legal, but undesirable since i16 instruction encodings are longer
     /// and some i16 instructions are slow.
     bool IsDesirableToPromoteOp(SDValue Op, EVT &PVT) const override;
+
+    /// Return true if the MachineFunction contains a COPY which would imply
+    /// HasOpaqueSPAdjustment.
+    bool hasCopyImplyingStackAdjustment(MachineFunction *MF) const override;
 
     MachineBasicBlock *
       EmitInstrWithCustomInserter(MachineInstr *MI,
@@ -839,6 +842,13 @@ namespace llvm {
     /// from i32 to i8 but not from i32 to i16.
     bool isNarrowingProfitable(EVT VT1, EVT VT2) const override;
 
+    /// Given an intrinsic, checks if on the target the intrinsic will need to map
+    /// to a MemIntrinsicNode (touches memory). If this is the case, it returns
+    /// true and stores the intrinsic information into the IntrinsicInfo that was
+    /// passed to the function.
+    bool getTgtMemIntrinsic(IntrinsicInfo &Info, const CallInst &I,
+                            unsigned Intrinsic) const override;
+
     /// Returns true if the target can instruction select the
     /// specified FP immediate natively. If false, the legalizer will
     /// materialize the FP immediate as a load from a constant pool.
@@ -932,9 +942,6 @@ namespace llvm {
     LegalizeTypeAction getPreferredVectorAction(EVT VT) const override;
 
     bool isIntDivCheap(EVT VT, AttributeSet Attr) const override;
-
-    void markInRegArguments(SelectionDAG &DAG, TargetLowering::ArgListTy& Args)
-      const override;
 
   protected:
     std::pair<const TargetRegisterClass *, uint8_t>
@@ -1062,6 +1069,15 @@ namespace llvm {
                         const SmallVectorImpl<SDValue> &OutVals,
                         SDLoc dl, SelectionDAG &DAG) const override;
 
+    bool supportSplitCSR(MachineFunction *MF) const override {
+      return MF->getFunction()->getCallingConv() == CallingConv::CXX_FAST_TLS &&
+          MF->getFunction()->hasFnAttribute(Attribute::NoUnwind);
+    }
+    void initializeSplitCSR(MachineBasicBlock *Entry) const override;
+    void insertCopiesSplitCSR(
+      MachineBasicBlock *Entry,
+      const SmallVectorImpl<MachineBasicBlock *> &Exits) const override;
+
     bool isUsedByReturnOnly(SDNode *N, SDValue &Chain) const override;
 
     bool mayBeEmittedAsTailCall(CallInst *CI) const override;
@@ -1114,6 +1130,9 @@ namespace llvm {
 
     MachineBasicBlock *EmitLoweredSegAlloca(MachineInstr *MI,
                                             MachineBasicBlock *BB) const;
+
+    MachineBasicBlock *EmitLoweredTLSAddr(MachineInstr *MI,
+                                          MachineBasicBlock *BB) const;
 
     MachineBasicBlock *EmitLoweredTLSCall(MachineInstr *MI,
                                           MachineBasicBlock *BB) const;

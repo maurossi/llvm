@@ -2269,6 +2269,12 @@ public:
     return false;
   }
 
+  /// Return true if the MachineFunction contains a COPY which would imply
+  /// HasCopyImplyingStackAdjustment.
+  virtual bool hasCopyImplyingStackAdjustment(MachineFunction *MF) const {
+    return false;
+  }
+
   /// Perform necessary initialization to handle a subset of CSRs explicitly
   /// via copies. This function is called at the beginning of instruction
   /// selection.
@@ -2452,13 +2458,6 @@ public:
     }
 
   };
-
-  // Mark inreg arguments for lib-calls. For normal calls this is done by
-  // the frontend ABI code.
-  virtual void markInRegArguments(SelectionDAG &DAG, 
-                 TargetLowering::ArgListTy &Args) const {
-    return;
-  }
 
   /// This function lowers an abstract call to a function into an actual call.
   /// This returns a pair of operands.  The first element is the return value

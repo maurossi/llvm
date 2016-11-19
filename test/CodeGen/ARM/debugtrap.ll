@@ -1,7 +1,7 @@
 ; This test ensures the @llvm.debugtrap() call is not removed when generating
 ; the 'pop' instruction to restore the callee saved registers on ARM.
 
-; RUN: llc < %s -mtriple=armv7 -O0 -filetype=asm | FileCheck %s 
+; RUN: llc < %s -mtriple=armv7 -O0 -filetype=asm | FileCheck %s
 
 declare void @llvm.debugtrap() nounwind
 declare void @foo() nounwind

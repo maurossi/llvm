@@ -6844,9 +6844,13 @@ SDValue DAGCombiner::ReduceLoadWidth(SDNode *N) {
   uint64_t PtrOff = ShAmt / 8;
   unsigned NewAlign = MinAlign(LN0->getAlignment(), PtrOff);
   SDLoc DL(LN0);
+  // The original load itself didn't wrap, so an offset within it doesn't.
+  SDNodeFlags Flags;
+  Flags.setNoUnsignedWrap(true);
   SDValue NewPtr = DAG.getNode(ISD::ADD, DL,
                                PtrType, LN0->getBasePtr(),
-                               DAG.getConstant(PtrOff, DL, PtrType));
+                               DAG.getConstant(PtrOff, DL, PtrType),
+                               &Flags);
   AddToWorklist(NewPtr.getNode());
 
   SDValue Load;
@@ -7322,6 +7326,7 @@ SDValue DAGCombiner::visitBITCAST(SDNode *N) {
   // fold (bitcast (fneg x)) ->
   //     flipbit = signbit
   //     (xor (bitcast x) (build_pair flipbit, flipbit))
+  //
   // fold (bitcast (fabs x)) ->
   //     flipbit = (and (extract_element (bitcast x), 0), signbit)
   //     (xor (bitcast x) (build_pair flipbit, flipbit))
@@ -8791,20 +8796,21 @@ SDValue DAGCombiner::visitFSQRT(SDNode *N) {
                      ZeroCmp, Zero, RV);
 }
 
+/// copysign(x, fp_extend(y)) -> copysign(x, y)
+/// copysign(x, fp_round(y)) -> copysign(x, y)
 static inline bool CanCombineFCOPYSIGN_EXTEND_ROUND(SDNode *N) {
-  // copysign(x, fp_extend(y)) -> copysign(x, y)
-  // copysign(x, fp_round(y)) -> copysign(x, y)
-  // Do not optimize out type conversion of f128 type yet.
-  // For some target like x86_64, configuration is changed
-  // to keep one f128 value in one SSE register, but
-  // instruction selection cannot handle FCOPYSIGN on
-  // SSE registers yet.
   SDValue N1 = N->getOperand(1);
-  EVT N1VT = N1->getValueType(0);
-  EVT N1Op0VT = N1->getOperand(0)->getValueType(0);
-  return (N1.getOpcode() == ISD::FP_EXTEND ||
-          N1.getOpcode() == ISD::FP_ROUND) &&
-         (N1VT == N1Op0VT || N1Op0VT != MVT::f128);
+  if ((N1.getOpcode() == ISD::FP_EXTEND ||
+       N1.getOpcode() == ISD::FP_ROUND)) {
+    // Do not optimize out type conversion of f128 type yet.
+    // For some targets like x86_64, configuration is changed to keep one f128
+    // value in one SSE register, but instruction selection cannot handle
+    // FCOPYSIGN on SSE registers yet.
+    EVT N1VT = N1->getValueType(0);
+    EVT N1Op0VT = N1->getOperand(0)->getValueType(0);
+    return (N1VT == N1Op0VT || N1Op0VT != MVT::f128);
+  }
+  return false;
 }
 
 SDValue DAGCombiner::visitFCOPYSIGN(SDNode *N) {
@@ -11191,26 +11197,34 @@ bool DAGCombiner::MergeStoresOfConstantsOrVecElts(
                                   false, false,
                                   FirstInChain->getAlignment());
 
-  // Replace the last store with the new store
-  CombineTo(LatestOp, NewStore);
-  // Erase all other stores.
-  for (unsigned i = 0; i < NumStores; ++i) {
-    if (StoreNodes[i].MemNode == LatestOp)
-      continue;
-    StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
-    // ReplaceAllUsesWith will replace all uses that existed when it was
-    // called, but graph optimizations may cause new ones to appear. For
-    // example, the case in pr14333 looks like
-    //
-    //  St's chain -> St -> another store -> X
-    //
-    // And the only difference from St to the other store is the chain.
-    // When we change it's chain to be St's chain they become identical,
-    // get CSEed and the net result is that X is now a use of St.
-    // Since we know that St is redundant, just iterate.
-    while (!St->use_empty())
-      DAG.ReplaceAllUsesWith(SDValue(St, 0), St->getChain());
-    deleteAndRecombine(St);
+  bool UseAA = CombinerAA.getNumOccurrences() > 0 ? CombinerAA
+                                                  : DAG.getSubtarget().useAA();
+  if (UseAA) {
+    // Replace all merged stores with the new store.
+    for (unsigned i = 0; i < NumStores; ++i)
+      CombineTo(StoreNodes[i].MemNode, NewStore);
+  } else {
+    // Replace the last store with the new store.
+    CombineTo(LatestOp, NewStore);
+    // Erase all other stores.
+    for (unsigned i = 0; i < NumStores; ++i) {
+      if (StoreNodes[i].MemNode == LatestOp)
+        continue;
+      StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
+      // ReplaceAllUsesWith will replace all uses that existed when it was
+      // called, but graph optimizations may cause new ones to appear. For
+      // example, the case in pr14333 looks like
+      //
+      //  St's chain -> St -> another store -> X
+      //
+      // And the only difference from St to the other store is the chain.
+      // When we change it's chain to be St's chain they become identical,
+      // get CSEed and the net result is that X is now a use of St.
+      // Since we know that St is redundant, just iterate.
+      while (!St->use_empty())
+        DAG.ReplaceAllUsesWith(SDValue(St, 0), St->getChain());
+      deleteAndRecombine(St);
+    }
   }
 
   return true;
@@ -11714,16 +11728,24 @@ bool DAGCombiner::MergeConsecutiveStores(StoreSDNode* St) {
                                   SDValue(NewLoad.getNode(), 1));
   }
 
-  // Replace the last store with the new store.
-  CombineTo(LatestOp, NewStore);
-  // Erase all other stores.
-  for (unsigned i = 0; i < NumElem ; ++i) {
-    // Remove all Store nodes.
-    if (StoreNodes[i].MemNode == LatestOp)
-      continue;
-    StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
-    DAG.ReplaceAllUsesOfValueWith(SDValue(St, 0), St->getChain());
-    deleteAndRecombine(St);
+  bool UseAA = CombinerAA.getNumOccurrences() > 0 ? CombinerAA
+    : DAG.getSubtarget().useAA();
+  if (UseAA) {
+    // Replace the all stores with the new store.
+    for (unsigned i = 0; i < NumElem; ++i)
+      CombineTo(StoreNodes[i].MemNode, NewStore);
+  } else {
+    // Replace the last store with the new store.
+    CombineTo(LatestOp, NewStore);
+    // Erase all other stores.
+    for (unsigned i = 0; i < NumElem; ++i) {
+      // Remove all Store nodes.
+      if (StoreNodes[i].MemNode == LatestOp)
+        continue;
+      StoreSDNode *St = cast<StoreSDNode>(StoreNodes[i].MemNode);
+      DAG.ReplaceAllUsesOfValueWith(SDValue(St, 0), St->getChain());
+      deleteAndRecombine(St);
+    }
   }
 
   return true;

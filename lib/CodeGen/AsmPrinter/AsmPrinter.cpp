@@ -192,22 +192,26 @@ bool AsmPrinter::doInitialization(Module &M) {
   // use the directive, where it would need the same conditionalization
   // anyway.
   Triple TT(getTargetTriple());
-  if (TT.isOSDarwin()) {
+  // If there is a version specified, Major will be non-zero.
+  if (TT.isOSDarwin() && TT.getOSMajorVersion() != 0) {
     unsigned Major, Minor, Update;
-    TT.getOSVersion(Major, Minor, Update);
-    // If there is a version specified, Major will be non-zero.
-    if (Major) {
-      MCVersionMinType VersionType;
-      if (TT.isWatchOS())
-        VersionType = MCVM_WatchOSVersionMin;
-      else if (TT.isTvOS())
-        VersionType = MCVM_TvOSVersionMin;
-      else if (TT.isMacOSX())
-        VersionType = MCVM_OSXVersionMin;
-      else
-        VersionType = MCVM_IOSVersionMin;
-      OutStreamer->EmitVersionMin(VersionType, Major, Minor, Update);
+    MCVersionMinType VersionType;
+    if (TT.isWatchOS()) {
+      VersionType = MCVM_WatchOSVersionMin;
+      TT.getWatchOSVersion(Major, Minor, Update);
+    } else if (TT.isTvOS()) {
+      VersionType = MCVM_TvOSVersionMin;
+      TT.getiOSVersion(Major, Minor, Update);
+    } else if (TT.isMacOSX()) {
+      VersionType = MCVM_OSXVersionMin;
+      if (!TT.getMacOSXVersion(Major, Minor, Update))
+        Major = 0;
+    } else {
+      VersionType = MCVM_IOSVersionMin;
+      TT.getiOSVersion(Major, Minor, Update);
     }
+    if (Major != 0)
+      OutStreamer->EmitVersionMin(VersionType, Major, Minor, Update);
   }
 
   // Allow the target to emit any magic that it wants at the start of the file.
@@ -729,6 +733,9 @@ static bool emitDebugValueComment(const MachineInstr *MI, AsmPrinter &AP) {
     if (Op == dwarf::DW_OP_deref) {
       Deref = true;
       continue;
+    } else if (Op == dwarf::DW_OP_bit_piece) {
+      // There can't be any operands after this in a valid expression
+      break;
     }
     uint64_t ExtraOffset = Expr->getElement(i++);
     if (Op == dwarf::DW_OP_plus)
@@ -2442,9 +2449,13 @@ void AsmPrinter::EmitBasicBlockStart(const MachineBasicBlock &MBB) const {
 
   // Print some verbose block comments.
   if (isVerbose()) {
-    if (const BasicBlock *BB = MBB.getBasicBlock())
-      if (BB->hasName())
-        OutStreamer->AddComment("%" + BB->getName());
+    if (const BasicBlock *BB = MBB.getBasicBlock()) {
+      if (BB->hasName()) {
+        BB->printAsOperand(OutStreamer->GetCommentOS(),
+                           /*PrintType=*/false, BB->getModule());
+        OutStreamer->GetCommentOS() << '\n';
+      }
+    }
     emitBasicBlockLoopComments(MBB, LI, *this);
   }
 

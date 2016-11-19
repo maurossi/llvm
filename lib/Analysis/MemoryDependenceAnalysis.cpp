@@ -57,6 +57,11 @@ static cl::opt<unsigned> BlockScanLimit(
     cl::desc("The number of instructions to scan in a block in memory "
              "dependency analysis (default = 100)"));
 
+static cl::opt<unsigned> BlockNumberLimit(
+    "memdep-block-number-limit", cl::Hidden, cl::init(1000),
+    cl::desc("The number of blocks to scan during memory "
+             "dependency analysis (default = 1000)"));
+
 // Limit on the number of memdep results to process.
 static const unsigned int NumResultsLimit = 100;
 
@@ -477,7 +482,7 @@ MemDepResult MemoryDependenceAnalysis::getSimplePointerDependencyFrom(
   // being 42. A key property of this program however is that if either
   // 1 or 4 were missing, there would be a race between the store of 42
   // either the store of 0 or the load (making the whole progam racy).
-  // The paper mentionned above shows that the same property is respected
+  // The paper mentioned above shows that the same property is respected
   // by every program that can detect any optimisation of that kind: either
   // it is racy (undefined) or there is a release followed by an acquire
   // between the pair of accesses under consideration.
@@ -685,13 +690,13 @@ MemDepResult MemoryDependenceAnalysis::getSimplePointerDependencyFrom(
         return MemDepResult::getDef(Inst);
       if (isInvariantLoad)
         continue;
-      // Be conservative if the accessed pointer may alias the allocation.
-      if (AA->alias(Inst, AccessPtr) != NoAlias)
-        return MemDepResult::getClobber(Inst);
-      // If the allocation is not aliased and does not read memory (like
-      // strdup), it is safe to ignore.
-      if (isa<AllocaInst>(Inst) ||
-          isMallocLikeFn(Inst, TLI) || isCallocLikeFn(Inst, TLI))
+      // Be conservative if the accessed pointer may alias the allocation -
+      // fallback to the generic handling below.
+      if ((AA->alias(Inst, AccessPtr) == NoAlias) &&
+          // If the allocation is not aliased and does not read memory (like
+          // strdup), it is safe to ignore.
+          (isa<AllocaInst>(Inst) || isMallocLikeFn(Inst, TLI) ||
+           isCallocLikeFn(Inst, TLI)))
         continue;
     }
 
@@ -792,10 +797,8 @@ MemDepResult MemoryDependenceAnalysis::getDependency(Instruction *QueryInst) {
 static void AssertSorted(MemoryDependenceAnalysis::NonLocalDepInfo &Cache,
                          int Count = -1) {
   if (Count == -1) Count = Cache.size();
-  if (Count == 0) return;
-
-  for (unsigned i = 1; i != unsigned(Count); ++i)
-    assert(!(Cache[i] < Cache[i-1]) && "Cache isn't sorted!");
+  assert(std::is_sorted(Cache.begin(), Cache.begin() + Count) &&
+         "Cache isn't sorted!");
 }
 #endif
 
@@ -1248,6 +1251,8 @@ bool MemoryDependenceAnalysis::getNonLocalPointerDepFromBB(
   // won't get any reuse from currently inserted values, because we don't
   // revisit blocks after we insert info for them.
   unsigned NumSortedEntries = Cache->size();
+  unsigned WorklistEntries = BlockNumberLimit;
+  bool GotWorklistLimit = false;
   DEBUG(AssertSorted(*Cache));
 
   while (!Worklist.empty()) {
@@ -1326,6 +1331,15 @@ bool MemoryDependenceAnalysis::getNonLocalPointerDepFromBB(
           goto PredTranslationFailure;
         }
       }
+      if (NewBlocks.size() > WorklistEntries) {
+        // Make sure to clean up the Visited map before continuing on to
+        // PredTranslationFailure.
+        for (unsigned i = 0; i < NewBlocks.size(); i++)
+          Visited.erase(NewBlocks[i]);
+        GotWorklistLimit = true;
+        goto PredTranslationFailure;
+      }
+      WorklistEntries -= NewBlocks.size();
       Worklist.append(NewBlocks.begin(), NewBlocks.end());
       continue;
     }
@@ -1471,18 +1485,22 @@ bool MemoryDependenceAnalysis::getNonLocalPointerDepFromBB(
     if (SkipFirstBlock)
       return true;
 
-    for (NonLocalDepInfo::reverse_iterator I = Cache->rbegin(); ; ++I) {
-      assert(I != Cache->rend() && "Didn't find current block??");
-      if (I->getBB() != BB)
+    bool foundBlock = false;
+    for (NonLocalDepEntry &I: llvm::reverse(*Cache)) {
+      if (I.getBB() != BB)
         continue;
 
-      assert((I->getResult().isNonLocal() || !DT->isReachableFromEntry(BB)) &&
+      assert((GotWorklistLimit || I.getResult().isNonLocal() || \
+              !DT->isReachableFromEntry(BB)) &&
              "Should only be here with transparent block");
-      I->setResult(MemDepResult::getUnknown());
-      Result.push_back(NonLocalDepResult(I->getBB(), I->getResult(),
+      foundBlock = true;
+      I.setResult(MemDepResult::getUnknown());
+      Result.push_back(NonLocalDepResult(I.getBB(), I.getResult(),
                                          Pointer.getAddr()));
       break;
     }
+    (void)foundBlock;
+    assert((foundBlock || GotWorklistLimit) && "Current block not in cache?");
   }
 
   // Okay, we're done now.  If we added new values to the cache, re-sort it.

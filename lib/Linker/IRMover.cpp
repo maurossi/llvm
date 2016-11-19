@@ -415,7 +415,7 @@ class IRLinker {
   /// the value id. Used to correlate temporary metadata created during
   /// function importing with the final metadata parsed during the subsequent
   /// metadata linking postpass.
-  DenseMap<const Metadata *, unsigned> MDValueToValIDMap;
+  DenseMap<const Metadata *, unsigned> MetadataToIDs;
 
   /// Association between metadata value id and temporary metadata that
   /// remains unmapped after function importing. Saved during function
@@ -522,6 +522,23 @@ public:
     // temporary metadata.
     if (!shouldLinkMetadata())
       ValueMapperFlags = ValueMapperFlags | RF_HaveUnmaterializedMetadata;
+  }
+
+  ~IRLinker() {
+    // In the case where we are not linking metadata, we unset the CanReplace
+    // flag on all temporary metadata in the MetadataToIDs map to ensure
+    // none was replaced while being a map key. Now that we are destructing
+    // the map, set the flag back to true, so that it is replaceable during
+    // metadata linking.
+    if (!shouldLinkMetadata()) {
+      for (auto MDI : MetadataToIDs) {
+        Metadata *MD = const_cast<Metadata *>(MDI.first);
+        MDNode *Node = dyn_cast<MDNode>(MD);
+        assert((Node && Node->isTemporary()) &&
+               "Found non-temp metadata in map when not linking metadata");
+        Node->setCanReplace(true);
+      }
+    }
   }
 
   bool run();
@@ -642,8 +659,8 @@ Metadata *IRLinker::mapTemporaryMetadata(Metadata *MD) {
     return nullptr;
   // If this temporary metadata has a value id recorded during function
   // parsing, record that in the ValIDToTempMDMap if one was provided.
-  if (MDValueToValIDMap.count(MD)) {
-    unsigned Idx = MDValueToValIDMap[MD];
+  if (MetadataToIDs.count(MD)) {
+    unsigned Idx = MetadataToIDs[MD];
     // Check if we created a temp MD when importing a different function from
     // this module. If so, reuse it the same temporary metadata, otherwise
     // add this temporary metadata to the map.
@@ -669,8 +686,8 @@ void IRLinker::replaceTemporaryMetadata(const Metadata *OrigMD,
   // created during function importing was provided, and the source
   // metadata has a value id recorded during metadata parsing, replace
   // the temporary metadata with the final mapped metadata now.
-  if (MDValueToValIDMap.count(OrigMD)) {
-    unsigned Idx = MDValueToValIDMap[OrigMD];
+  if (MetadataToIDs.count(OrigMD)) {
+    unsigned Idx = MetadataToIDs[OrigMD];
     // Nothing to do if we didn't need to create a temporary metadata during
     // function importing.
     if (!ValIDToTempMDMap->count(Idx))
@@ -756,6 +773,16 @@ GlobalValue *IRLinker::copyGlobalValueProto(const GlobalValue *SGV,
     NewGV->setLinkage(GlobalValue::ExternalWeakLinkage);
 
   NewGV->copyAttributesFrom(SGV);
+
+  // Remove these copied constants in case this stays a declaration, since
+  // they point to the source module. If the def is linked the values will
+  // be mapped in during linkFunctionBody.
+  if (auto *NewF = dyn_cast<Function>(NewGV)) {
+    NewF->setPersonalityFn(nullptr);
+    NewF->setPrefixData(nullptr);
+    NewF->setPrologueData(nullptr);
+  }
+
   return NewGV;
 }
 
@@ -1111,7 +1138,8 @@ bool IRLinker::linkFunctionBody(Function &Dst, Function &Src) {
     // a function and before remapping metadata on instructions below
     // in RemapInstruction, as the saved mapping is used to handle
     // the temporary metadata hanging off instructions.
-    SrcM.getMaterializer()->saveMDValueList(MDValueToValIDMap, true);
+    SrcM.getMaterializer()->saveMetadataList(MetadataToIDs,
+                                             /* OnlyTempMD = */ true);
 
   // Link in the prefix data.
   if (Src.hasPrefixData())
@@ -1193,6 +1221,18 @@ void IRLinker::findNeededSubprograms(ValueToValueMapTy &ValueMap) {
   for (unsigned I = 0, E = CompileUnits->getNumOperands(); I != E; ++I) {
     auto *CU = cast<DICompileUnit>(CompileUnits->getOperand(I));
     assert(CU && "Expected valid compile unit");
+    // Ensure that we don't remove subprograms referenced by DIImportedEntity.
+    // It is not legal to have a DIImportedEntity with a null entity or scope.
+    // FIXME: The DISubprogram for functions not linked in but kept due to
+    // being referenced by a DIImportedEntity should also get their
+    // IsDefinition flag is unset.
+    SmallPtrSet<DISubprogram *, 8> ImportedEntitySPs;
+    for (auto *IE : CU->getImportedEntities()) {
+      if (auto *SP = dyn_cast<DISubprogram>(IE->getEntity()))
+        ImportedEntitySPs.insert(SP);
+      if (auto *SP = dyn_cast<DISubprogram>(IE->getScope()))
+        ImportedEntitySPs.insert(SP);
+    }
     for (auto *Op : CU->getSubprograms()) {
       // Unless we were doing function importing and deferred metadata linking,
       // any needed SPs should have been mapped as they would be reached
@@ -1200,7 +1240,7 @@ void IRLinker::findNeededSubprograms(ValueToValueMapTy &ValueMap) {
       // function bodies, or from DILocation on inlined instructions).
       assert(!(ValueMap.MD()[Op] && IsMetadataLinkingPostpass) &&
              "DISubprogram shouldn't be mapped yet");
-      if (!ValueMap.MD()[Op])
+      if (!ValueMap.MD()[Op] && !ImportedEntitySPs.count(Op))
         UnneededSubprograms.insert(Op);
     }
   }
@@ -1210,7 +1250,7 @@ void IRLinker::findNeededSubprograms(ValueToValueMapTy &ValueMap) {
   // importing), see which DISubprogram MD from the source has an associated
   // temporary metadata node, which means the SP was needed by an imported
   // function.
-  for (auto MDI : MDValueToValIDMap) {
+  for (auto MDI : MetadataToIDs) {
     const MDNode *Node = dyn_cast<MDNode>(MDI.first);
     if (!Node)
       continue;
@@ -1514,7 +1554,8 @@ bool IRLinker::run() {
       // Ensure metadata materialized
       if (SrcM.getMaterializer()->materializeMetadata())
         return true;
-      SrcM.getMaterializer()->saveMDValueList(MDValueToValIDMap, false);
+      SrcM.getMaterializer()->saveMetadataList(MetadataToIDs,
+                                               /* OnlyTempMD = */ false);
     }
 
     linkNamedMDNodes();
@@ -1523,10 +1564,10 @@ bool IRLinker::run() {
       // Handle anything left in the ValIDToTempMDMap, such as metadata nodes
       // not reached by the dbg.cu NamedMD (i.e. only reached from
       // instructions).
-      // Walk the MDValueToValIDMap once to find the set of new (imported) MD
+      // Walk the MetadataToIDs once to find the set of new (imported) MD
       // that still has corresponding temporary metadata, and invoke metadata
       // mapping on each one.
-      for (auto MDI : MDValueToValIDMap) {
+      for (auto MDI : MetadataToIDs) {
         if (!ValIDToTempMDMap->count(MDI.second))
           continue;
         MapMetadata(MDI.first, ValueMap, ValueMapperFlags, &TypeMap,

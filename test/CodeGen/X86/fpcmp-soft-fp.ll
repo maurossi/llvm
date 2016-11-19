@@ -1,4 +1,4 @@
-; RUN: llc < %s -march=x86 -mcpu=pentium -mtriple=x86-linux-gnu -float-abi=soft | FileCheck %s 
+; RUN: llc < %s -march=x86 -mcpu=pentium -mtriple=x86-linux-gnu -float-abi=soft | FileCheck %s
 
 define i1 @test1(double %d) #0 {
 entry:
@@ -9,7 +9,7 @@ entry:
 ; CHECK: calll __gtdf2
 ; CHECK: setle
 ; CHECK: retl
- 
+
 define i1 @test2(double %d) #0 {
 entry:
   %cmp = fcmp ult double %d, 0.000000e+00
@@ -45,7 +45,7 @@ entry:
   %cmp = fcmp ole double %d, 0.000000e+00
   ret i1 %cmp
 }
-; CHECK-LABEL: test5:  
+; CHECK-LABEL: test5:
 ; CHECK: calll __ledf2
 ; CHECK: setle
 ; CHECK: retl

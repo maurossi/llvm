@@ -1003,7 +1003,7 @@ class IndirectBranch<string opstr, RegisterOperand RO> : JumpFR<opstr, RO> {
 let isCall=1, hasDelaySlot=1, Defs = [RA] in {
   class JumpLink<string opstr, DAGOperand opnd> :
     InstSE<(outs), (ins opnd:$target), !strconcat(opstr, "\t$target"),
-           [(MipsJmpLink imm:$target)], II_JAL, FrmJ, opstr> {
+           [(MipsJmpLink tglobaladdr:$target)], II_JAL, FrmJ, opstr> {
     let DecoderMethod = "DecodeJumpTarget";
   }
 
@@ -1507,7 +1507,7 @@ def SC : SCBase<"sc", GPR32Opnd>, LW_FM<0x38>, ISA_MIPS2_NOT_32R6_64R6;
 /// Jump and Branch Instructions
 def J       : MMRel, JumpFJ<jmptarget, "j", br, bb, "j">, FJ<2>,
               AdditionalRequires<[RelocStatic]>, IsBranch;
-def JR      : MMRel, IndirectBranch<"jr", GPR32Opnd>, MTLO_FM<8>;
+def JR      : MMRel, IndirectBranch<"jr", GPR32Opnd>, MTLO_FM<8>, ISA_MIPS1_NOT_32R6_64R6;
 def BEQ     : MMRel, CBranch<"beq", brtarget, seteq, GPR32Opnd>, BEQ_FM<4>;
 def BEQL    : MMRel, CBranch<"beql", brtarget, seteq, GPR32Opnd, 0>,
               BEQ_FM<20>, ISA_MIPS2_NOT_32R6_64R6;
@@ -2075,8 +2075,6 @@ def : MipsPat<(MipsSync (i32 immz)),
               (SYNC 0)>, ISA_MIPS2;
 
 // Call
-def : MipsPat<(MipsJmpLink (i32 tglobaladdr:$dst)),
-              (JAL tglobaladdr:$dst)>;
 def : MipsPat<(MipsJmpLink (i32 texternalsym:$dst)),
               (JAL texternalsym:$dst)>;
 //def : MipsPat<(MipsJmpLink GPR32:$dst),

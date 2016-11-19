@@ -74,7 +74,9 @@ unsigned AMDGPUTTIImpl::getNumberOfRegisters(bool Vec) {
   return 4 * 128; // XXX - 4 channels. Should these count as vector instead?
 }
 
-unsigned AMDGPUTTIImpl::getRegisterBitWidth(bool) { return 32; }
+unsigned AMDGPUTTIImpl::getRegisterBitWidth(bool Vector) {
+  return Vector ? 0 : 32;
+}
 
 unsigned AMDGPUTTIImpl::getMaxInterleaveFactor(unsigned VF) {
   // Semi-arbitrary large amount.
@@ -129,6 +131,7 @@ static bool isIntrinsicSourceOfDivergence(const TargetIntrinsicInfo *TII,
     return false;
   case AMDGPUIntrinsic::SI_tid:
   case AMDGPUIntrinsic::SI_fs_interp:
+  case AMDGPUIntrinsic::SI_fs_constant:
     return true;
   }
 }

@@ -1310,7 +1310,14 @@ def tInt_eh_sjlj_longjmp : XI<(outs), (ins GPR:$src, GPR:$scratch),
                               AddrModeNone, 0, IndexModeNone,
                               Pseudo, NoItinerary, "", "",
                               [(ARMeh_sjlj_longjmp GPR:$src, GPR:$scratch)]>,
-                             Requires<[IsThumb]>;
+                             Requires<[IsThumb,IsNotWindows]>;
+
+let isBarrier = 1, hasSideEffects = 1, isTerminator = 1, isCodeGenOnly = 1,
+    Defs = [ R11, LR, SP ] in
+def tInt_WIN_eh_sjlj_longjmp
+  : XI<(outs), (ins GPR:$src, GPR:$scratch), AddrModeNone, 0, IndexModeNone,
+       Pseudo, NoItinerary, "", "", [(ARMeh_sjlj_longjmp GPR:$src, GPR:$scratch)]>,
+    Requires<[IsThumb,IsWindows]>;
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns
@@ -1365,6 +1372,14 @@ def tLDRLIT_ga_abs : PseudoInst<(outs tGPR:$dst), (ins i32imm:$src),
                                 [(set tGPR:$dst,
                                       (ARMWrapper tglobaladdr:$src))]>,
                      Requires<[IsThumb, DontUseMovt]>;
+
+// TLS globals
+def : Pat<(ARMWrapperPIC tglobaltlsaddr:$addr),
+          (tLDRLIT_ga_pcrel tglobaltlsaddr:$addr)>,
+      Requires<[IsThumb, DontUseMovt]>;
+def : Pat<(ARMWrapper tglobaltlsaddr:$addr),
+          (tLDRLIT_ga_abs tglobaltlsaddr:$addr)>,
+      Requires<[IsThumb, DontUseMovt]>;
 
 
 // JumpTable

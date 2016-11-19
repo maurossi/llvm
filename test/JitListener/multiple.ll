@@ -13,7 +13,7 @@
 ;  8:   }
 ;  9:   return 100/a;
 ; 10: }
-; 11: 
+; 11:
 ; 12: int fubar(int a) {
 ; 13:   switch (a) {
 ; 14:     case 0:

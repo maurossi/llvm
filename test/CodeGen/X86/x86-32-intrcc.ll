@@ -76,4 +76,3 @@ define x86_intrcc void @test_isr_clobbers(%struct.interrupt_frame* %frame, i32 %
   ; CHECK0-SSE-NEXT: iretl
   ret void
 }
-
