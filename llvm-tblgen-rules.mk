@@ -219,6 +219,13 @@ $(generated_sources)/Options.inc: $(tblgen_source_dir)/Options.td \
 	$(call transform-td-to-out,opt-parser-defs)
 endif
 
+ifneq ($(findstring AttributesCompatFunc.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/AttributesCompatFunc.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/AttributesCompatFunc.inc: $(tblgen_source_dir)/AttributesCompatFunc.td \
+                                          $(tblgen_td_deps) $(LLVM_TBLGEN)
+	$(call transform-td-to-out,attrs)
+endif
+
 # Reset local variables
 tblgen_td_deps :=
 
