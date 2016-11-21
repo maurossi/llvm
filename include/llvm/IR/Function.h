@@ -66,8 +66,7 @@ private:
    * bit 2      : HasPrologueData
    * bit 3      : HasPersonalityFn
    * bits 4-13  : CallingConvention
-   * bits 14    : HasGC
-   * bits 15 : [reserved]
+   * bits 14-15 : [reserved]
    */
 
   /// Bits from GlobalObject::GlobalObjectSubclassData.
@@ -221,11 +220,9 @@ public:
 
   /// hasGC/getGC/setGC/clearGC - The name of the garbage collection algorithm
   ///                             to use during code generation.
-  bool hasGC() const {
-    return getSubclassDataFromValue() & (1<<14);
-  }
-  const std::string &getGC() const;
-  void setGC(const std::string Str);
+  bool hasGC() const;
+  const char *getGC() const;
+  void setGC(const char *Str);
   void clearGC();
 
   /// @brief adds the attribute to the list of attributes.

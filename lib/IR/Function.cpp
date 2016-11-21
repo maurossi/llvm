@@ -366,21 +366,47 @@ void Function::addDereferenceableOrNullAttr(unsigned i, uint64_t Bytes) {
   setAttributes(PAL);
 }
 
-const std::string &Function::getGC() const {
-  assert(hasGC() && "Function has no collector");
-  return getContext().getGC(*this);
+// Maintain the GC name for each function in an on-the-side table. This saves
+// allocating an additional word in Function for programs which do not use GC
+// (i.e., most programs) at the cost of increased overhead for clients which do
+// use GC.
+static DenseMap<const Function*,PooledStringPtr> *GCNames;
+static StringPool *GCNamePool;
+static ManagedStatic<sys::SmartRWMutex<true> > GCLock;
+
+bool Function::hasGC() const {
+  sys::SmartScopedReader<true> Reader(*GCLock);
+  return GCNames && GCNames->count(this);
 }
 
-void Function::setGC(const std::string Str) {
-  setValueSubclassDataBit(14, !Str.empty());
-  getContext().setGC(*this, std::move(Str));
+const char *Function::getGC() const {
+  assert(hasGC() && "Function has no collector");
+  sys::SmartScopedReader<true> Reader(*GCLock);
+  return *(*GCNames)[this];
+}
+
+void Function::setGC(const char *Str) {
+  sys::SmartScopedWriter<true> Writer(*GCLock);
+  if (!GCNamePool)
+    GCNamePool = new StringPool();
+  if (!GCNames)
+    GCNames = new DenseMap<const Function*,PooledStringPtr>();
+  (*GCNames)[this] = GCNamePool->intern(Str);
 }
 
 void Function::clearGC() {
-  if (!hasGC())
-    return;
-  getContext().deleteGC(*this);
-  setValueSubclassDataBit(14, false);
+  sys::SmartScopedWriter<true> Writer(*GCLock);
+  if (GCNames) {
+    GCNames->erase(this);
+    if (GCNames->empty()) {
+      delete GCNames;
+      GCNames = nullptr;
+      if (GCNamePool->empty()) {
+        delete GCNamePool;
+        GCNamePool = nullptr;
+      }
+    }
+  }
 }
 
 /// Copy all additional attributes (those not needed to create a Function) from
