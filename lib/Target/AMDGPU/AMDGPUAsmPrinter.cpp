@@ -91,6 +91,25 @@ AMDGPUAsmPrinter::AMDGPUAsmPrinter(TargetMachine &TM,
                                    std::unique_ptr<MCStreamer> Streamer)
     : AsmPrinter(TM, std::move(Streamer)) {}
 
+void AMDGPUAsmPrinter::EmitStartOfAsmFile(Module &M) {
+  if (TM.getTargetTriple().getOS() != Triple::AMDHSA)
+    return;
+
+  // Need to construct an MCSubtargetInfo here in case we have no functions
+  // in the module.
+  std::unique_ptr<MCSubtargetInfo> STI(TM.getTarget().createMCSubtargetInfo(
+        TM.getTargetTriple().str(), TM.getTargetCPU(),
+        TM.getTargetFeatureString()));
+
+  AMDGPUTargetStreamer *TS =
+      static_cast<AMDGPUTargetStreamer *>(OutStreamer->getTargetStreamer());
+
+  TS->EmitDirectiveHSACodeObjectVersion(1, 0);
+  AMDGPU::IsaVersion ISA = AMDGPU::getIsaVersion(STI->getFeatureBits());
+  TS->EmitDirectiveHSACodeObjectISA(ISA.Major, ISA.Minor, ISA.Stepping,
+                                    "AMD", "AMDGPU");
+}
+
 void AMDGPUAsmPrinter::EmitFunctionBodyStart() {
   const AMDGPUSubtarget &STM = MF->getSubtarget<AMDGPUSubtarget>();
   SIProgramInfo KernelInfo;
@@ -148,11 +167,15 @@ void AMDGPUAsmPrinter::EmitGlobalVariable(const GlobalVariable *GV) {
     TS->EmitAMDGPUHsaProgramScopeGlobal(GV->getName());
   }
 
+  MCSymbolELF *GVSym = cast<MCSymbolELF>(getSymbol(GV));
   const DataLayout &DL = getDataLayout();
+
+  // Emit the size
+  uint64_t Size = DL.getTypeAllocSize(GV->getType()->getElementType());
+  OutStreamer->emitELFSize(GVSym, MCConstantExpr::create(Size, OutContext));
   OutStreamer->PushSection();
   OutStreamer->SwitchSection(
       getObjFileLowering().SectionForGlobal(GV, *Mang, TM));
-  MCSymbol *GVSym = getSymbol(GV);
   const Constant *C = GV->getInitializer();
   OutStreamer->EmitLabel(GVSym);
   EmitGlobalConstant(DL, C);
@@ -178,13 +201,6 @@ bool AMDGPUAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
     if (!STM.isAmdHsaOS()) {
       EmitProgramInfoSI(MF, KernelInfo);
     }
-    // Emit directives
-    AMDGPUTargetStreamer *TS =
-        static_cast<AMDGPUTargetStreamer *>(OutStreamer->getTargetStreamer());
-    TS->EmitDirectiveHSACodeObjectVersion(1, 0);
-    AMDGPU::IsaVersion ISA = STM.getIsaVersion();
-    TS->EmitDirectiveHSACodeObjectISA(ISA.Major, ISA.Minor, ISA.Stepping,
-                                      "AMD", "AMDGPU");
   } else {
     EmitProgramInfoR600(MF);
   }
@@ -350,6 +366,8 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
         unsigned reg = MO.getReg();
         switch (reg) {
         case AMDGPU::EXEC:
+        case AMDGPU::EXEC_LO:
+        case AMDGPU::EXEC_HI:
         case AMDGPU::SCC:
         case AMDGPU::M0:
           continue;
@@ -417,15 +435,23 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
     }
   }
 
-  if (VCCUsed || FlatUsed)
-    MaxSGPR += 2;
+  unsigned ExtraSGPRs = 0;
 
-  if (FlatUsed) {
-    MaxSGPR += 2;
-    // 2 additional for VI+.
-    if (STM.getGeneration() >= AMDGPUSubtarget::VOLCANIC_ISLANDS)
-      MaxSGPR += 2;
+  if (VCCUsed)
+    ExtraSGPRs = 2;
+
+  if (STM.getGeneration() < AMDGPUSubtarget::VOLCANIC_ISLANDS) {
+    if (FlatUsed)
+      ExtraSGPRs = 4;
+  } else {
+    if (STM.isXNACKEnabled())
+      ExtraSGPRs = 4;
+
+    if (FlatUsed)
+      ExtraSGPRs = 6;
   }
+
+  MaxSGPR += ExtraSGPRs;
 
   // We found the maximum register index. They start at 0, so add one to get the
   // number of registers.
@@ -459,7 +485,7 @@ void AMDGPUAsmPrinter::getSIProgramInfo(SIProgramInfo &ProgInfo,
   ProgInfo.DX10Clamp = 0;
 
   const MachineFrameInfo *FrameInfo = MF.getFrameInfo();
-  ProgInfo.ScratchSize = FrameInfo->estimateStackSize(MF);
+  ProgInfo.ScratchSize = FrameInfo->getStackSize();
 
   ProgInfo.FlatUsed = FlatUsed;
   ProgInfo.VCCUsed = VCCUsed;
@@ -563,7 +589,23 @@ void AMDGPUAsmPrinter::EmitProgramInfoSI(const MachineFunction &MF,
     OutStreamer->EmitIntValue(R_00B02C_SPI_SHADER_PGM_RSRC2_PS, 4);
     OutStreamer->EmitIntValue(S_00B02C_EXTRA_LDS_SIZE(KernelInfo.LDSBlocks), 4);
     OutStreamer->EmitIntValue(R_0286CC_SPI_PS_INPUT_ENA, 4);
-    OutStreamer->EmitIntValue(MFI->PSInputAddr, 4);
+    OutStreamer->EmitIntValue(MFI->PSInputEna, 4);
+    OutStreamer->EmitIntValue(R_0286D0_SPI_PS_INPUT_ADDR, 4);
+    OutStreamer->EmitIntValue(MFI->getPSInputAddr(), 4);
+  }
+}
+
+// This is supposed to be log2(Size)
+static amd_element_byte_size_t getElementByteSizeValue(unsigned Size) {
+  switch (Size) {
+  case 4:
+    return AMD_ELEMENT_4_BYTES;
+  case 8:
+    return AMD_ELEMENT_8_BYTES;
+  case 16:
+    return AMD_ELEMENT_16_BYTES;
+  default:
+    llvm_unreachable("invalid private_element_size");
   }
 }
 
@@ -579,6 +621,11 @@ void AMDGPUAsmPrinter::EmitAmdKernelCodeT(const MachineFunction &MF,
       KernelInfo.ComputePGMRSrc1 |
       (KernelInfo.ComputePGMRSrc2 << 32);
   header.code_properties = AMD_CODE_PROPERTY_IS_PTR64;
+
+
+  AMD_HSA_BITS_SET(header.code_properties,
+                   AMD_CODE_PROPERTY_PRIVATE_ELEMENT_SIZE,
+                   getElementByteSizeValue(STM.getMaxPrivateElementSize()));
 
   if (MFI->hasPrivateSegmentBuffer()) {
     header.code_properties |=
@@ -619,6 +666,9 @@ void AMDGPUAsmPrinter::EmitAmdKernelCodeT(const MachineFunction &MF,
 
   if (MFI->hasDispatchPtr())
     header.code_properties |= AMD_CODE_PROPERTY_ENABLE_SGPR_DISPATCH_PTR;
+
+  if (STM.isXNACKEnabled())
+    header.code_properties |= AMD_CODE_PROPERTY_IS_XNACK_SUPPORTED;
 
   header.kernarg_segment_byte_size = MFI->ABIArgOffset;
   header.wavefront_sgpr_count = KernelInfo.NumSGPR;
