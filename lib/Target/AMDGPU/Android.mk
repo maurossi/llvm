@@ -58,6 +58,7 @@ amdgpu_codegen_SRC_FILES := \
   SILowerControlFlow.cpp \
   SILowerI1Copies.cpp \
   SIMachineFunctionInfo.cpp \
+  SIMachineScheduler.cpp \
   SIRegisterInfo.cpp \
   SIShrinkInstructions.cpp \
   SITypeRewriter.cpp
