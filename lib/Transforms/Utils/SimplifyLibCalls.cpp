@@ -1131,7 +1131,7 @@ Value *LibCallSimplifier::optimizePow(CallInst *CI, IRBuilder<> &B) {
       IRBuilder<>::FastMathFlagGuard Guard(B);
       FastMathFlags FMF;
       FMF.setUnsafeAlgebra();
-      B.SetFastMathFlags(FMF);
+      B.setFastMathFlags(FMF);
 
       LibFunc::Func Func;
       Function *OpCCallee = OpC->getCalledFunction();
@@ -1323,7 +1323,7 @@ Value *LibCallSimplifier::optimizeFMinFMax(CallInst *CI, IRBuilder<> &B) {
     FMF.setNoSignedZeros();
     FMF.setNoNaNs();
   }
-  B.SetFastMathFlags(FMF);
+  B.setFastMathFlags(FMF);
 
   // We have a relaxed floating-point environment. We can ignore NaN-handling
   // and transform to a compare and select. We do not have to consider errno or
@@ -1364,7 +1364,7 @@ Value *LibCallSimplifier::optimizeLog(CallInst *CI, IRBuilder<> &B) {
   IRBuilder<>::FastMathFlagGuard Guard(B);
   FastMathFlags FMF;
   FMF.setUnsafeAlgebra();
-  B.SetFastMathFlags(FMF);
+  B.setFastMathFlags(FMF);
 
   LibFunc::Func Func;
   Function *F = OpC->getCalledFunction();
@@ -1430,7 +1430,7 @@ Value *LibCallSimplifier::optimizeSqrt(CallInst *CI, IRBuilder<> &B) {
         // FIXME: We're not checking the sqrt because it doesn't have
         // fast-math-flags (see earlier comment).
         IRBuilder<>::FastMathFlagGuard Guard(B);
-        B.SetFastMathFlags(I->getFastMathFlags());
+        B.setFastMathFlags(I->getFastMathFlags());
         // If we found a repeated factor, hoist it out of the square root and
         // replace it with the fabs of that factor.
         Module *M = Callee->getParent();
