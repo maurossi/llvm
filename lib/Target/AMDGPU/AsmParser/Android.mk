@@ -1,10 +1,13 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_asmparser_SRC_FILES := \
+amdgpu_asm_parser_SRC_FILES := \
   AMDGPUAsmParser.cpp
 
-amdgpu_asmparser_TBLGEN_TABLES := \
-  AMDGPUGenAsmMatcher.inc
+amdgpu_asm_parser_TBLGEN_TABLES := \
+  AMDGPUGenAsmMatcher.inc \
+  AMDGPUGenInstrInfo.inc \
+  AMDGPUGenRegisterInfo.inc \
+  AMDGPUGenSubtargetInfo.inc
 
 amdgpu_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
