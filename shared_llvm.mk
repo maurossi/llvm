@@ -34,10 +34,7 @@ llvm_x86_static_libraries += \
   libLLVMAMDGPUDesc \
   libLLVMAMDGPUAsmParser \
   libLLVMAMDGPUAsmPrinter \
-  libLLVMAMDGPUUtils \
-  libLLVMExecutionEngine \
-  libLLVMMCJIT \
-  libLLVMRuntimeDyld
+  libLLVMAMDGPUUtils
 endif
 
 llvm_mips_static_libraries := \
@@ -85,6 +82,11 @@ llvm_host_static_libraries := \
   libLLVMRuntimeDyld \
   libLLVMMCJIT \
   libLLVMOrcJIT
+
+llvm_device_static_libraries := \
+  libLLVMExecutionEngine \
+  libLLVMRuntimeDyld \
+  libLLVMMCJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
@@ -150,7 +152,9 @@ LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_arm_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_aarch64_static_libraries)
 endif
 
-LOCAL_WHOLE_STATIC_LIBRARIES += $(llvm_post_static_libraries)
+LOCAL_WHOLE_STATIC_LIBRARIES += \
+  $(llvm_device_static_libraries) \
+  $(llvm_post_static_libraries)
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(BUILD_SHARED_LIBRARY)
