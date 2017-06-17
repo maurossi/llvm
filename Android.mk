@@ -96,7 +96,7 @@ subdirs += \
   lib/Target/X86/TargetInfo \
   lib/Target/X86/Utils
 
-ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
+ifneq ($(filter r600g radeonsi,$(BOARD_GPU_DRIVERS)),)
 # AMDGPU Code Generation Libraries
 subdirs += \
   lib/Target/AMDGPU \

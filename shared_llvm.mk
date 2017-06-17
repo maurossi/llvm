@@ -27,7 +27,7 @@ llvm_x86_static_libraries := \
   libLLVMX86Utils \
   libLLVMX86Disassembler
 
-ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
+ifneq ($(filter r600g radeonsi,$(BOARD_GPU_DRIVERS)),)
 llvm_x86_static_libraries += \
   libLLVMAMDGPUCodeGen \
   libLLVMAMDGPUInfo \
