@@ -5,13 +5,15 @@ instrumentation_SRC_FILES := \
   BoundsChecking.cpp \
   DataFlowSanitizer.cpp \
   GCOVProfiling.cpp \
-  InstrProfiling.cpp \
-  Instrumentation.cpp \
   MemorySanitizer.cpp \
+  IndirectCallPromotion.cpp \
+  Instrumentation.cpp \
+  InstrProfiling.cpp \
   PGOInstrumentation.cpp \
-  SafeStack.cpp \
+  PGOMemOPSizeOpt.cpp \
   SanitizerCoverage.cpp \
-  ThreadSanitizer.cpp
+  ThreadSanitizer.cpp \
+  EfficiencySanitizer.cpp
 
 # For the host
 # =====================================================
