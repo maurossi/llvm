@@ -96,16 +96,16 @@
 #define LLVM_PREFIX "/opt/llvm-android"
 
 /* Major version of the LLVM API */
-#define LLVM_VERSION_MAJOR 3
+#define LLVM_VERSION_MAJOR 5
 
 /* Minor version of the LLVM API */
-#define LLVM_VERSION_MINOR 8
+#define LLVM_VERSION_MINOR 0
 
 /* Patch version of the LLVM API */
-#define LLVM_VERSION_PATCH 256229
+#define LLVM_VERSION_PATCH 0
 
 /* LLVM version string */
-#define LLVM_VERSION_STRING "3.8.256229"
+#define LLVM_VERSION_STRING "5.0.0"
 
 #include "llvm/Config/llvm-platform-config.h"
 
