@@ -10,16 +10,15 @@ vmcore_SRC_FILES := \
   ConstantRange.cpp \
   Constants.cpp \
   Core.cpp \
+  DIBuilder.cpp \
   DataLayout.cpp \
   DebugInfo.cpp \
   DebugInfoMetadata.cpp \
   DebugLoc.cpp \
   DiagnosticInfo.cpp \
   DiagnosticPrinter.cpp \
-  DIBuilder.cpp \
   Dominators.cpp \
   Function.cpp \
-  FunctionInfo.cpp \
   GCOV.cpp \
   GVMaterializer.cpp \
   Globals.cpp \
@@ -32,15 +31,18 @@ vmcore_SRC_FILES := \
   LLVMContext.cpp \
   LLVMContextImpl.cpp \
   LegacyPassManager.cpp \
-  Mangler.cpp \
   MDBuilder.cpp \
+  Mangler.cpp \
   Metadata.cpp \
-  MetadataTracking.cpp \
   Module.cpp \
+  ModuleSummaryIndex.cpp \
   Operator.cpp \
+  OptBisect.cpp \
   Pass.cpp \
   PassManager.cpp \
   PassRegistry.cpp \
+  SafepointIRVerifier.cpp \
+  ProfileSummary.cpp \
   Statepoint.cpp \
   Type.cpp \
   TypeFinder.cpp \
@@ -66,6 +68,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
+include $(LOCAL_PATH)/llvm-gen-local.mk
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -84,5 +87,6 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := $(call local-generated-sources-dir)
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
+include $(LOCAL_PATH)/llvm-gen-local.mk
 include $(BUILD_STATIC_LIBRARY)
 endif

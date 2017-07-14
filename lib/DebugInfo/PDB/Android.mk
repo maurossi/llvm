@@ -2,17 +2,18 @@ LOCAL_PATH:= $(call my-dir)
 
 # No dia support
 debuginfo_pdb_SRC_FILES := \
+  GenericError.cpp \
   IPDBSourceFile.cpp \
   PDB.cpp \
   PDBContext.cpp \
   PDBExtras.cpp \
   PDBInterfaceAnchors.cpp \
+  PDBSymbol.cpp \
   PDBSymbolAnnotation.cpp \
   PDBSymbolBlock.cpp \
   PDBSymbolCompiland.cpp \
   PDBSymbolCompilandDetails.cpp \
   PDBSymbolCompilandEnv.cpp \
-  PDBSymbol.cpp \
   PDBSymbolCustom.cpp \
   PDBSymbolData.cpp \
   PDBSymbolExe.cpp \
@@ -39,7 +40,40 @@ debuginfo_pdb_SRC_FILES := \
   PDBSymbolTypeVTableShape.cpp \
   PDBSymbolUnknown.cpp \
   PDBSymbolUsingNamespace.cpp \
-  PDBSymDumper.cpp
+  PDBSymDumper.cpp \
+  UDTLayout.cpp \
+  Native/DbiModuleDescriptor.cpp \
+  Native/DbiModuleDescriptorBuilder.cpp \
+  Native/DbiModuleList.cpp \
+  Native/DbiStream.cpp \
+  Native/DbiStreamBuilder.cpp \
+  Native/EnumTables.cpp \
+  Native/GlobalsStream.cpp \
+  Native/GSI.cpp \
+  Native/Hash.cpp \
+  Native/HashTable.cpp \
+  Native/InfoStream.cpp \
+  Native/InfoStreamBuilder.cpp \
+  Native/ModuleDebugStream.cpp \
+  Native/NativeBuiltinSymbol.cpp \
+  Native/NativeCompilandSymbol.cpp \
+  Native/NativeEnumModules.cpp \
+  Native/NativeExeSymbol.cpp \
+  Native/NativeRawSymbol.cpp \
+  Native/NamedStreamMap.cpp \
+  Native/NativeSession.cpp \
+  Native/PDBFile.cpp \
+  Native/PDBFileBuilder.cpp \
+  Native/PDBStringTable.cpp \
+  Native/PDBStringTableBuilder.cpp \
+  Native/PDBTypeServerHandler.cpp \
+  Native/PublicsStream.cpp \
+  Native/PublicsStreamBuilder.cpp \
+  Native/RawError.cpp \
+  Native/SymbolStream.cpp \
+  Native/TpiHashing.cpp \
+  Native/TpiStream.cpp \
+  Native/TpiStreamBuilder.cpp
 
 # For the host
 # =====================================================
