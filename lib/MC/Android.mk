@@ -8,15 +8,17 @@ mc_SRC_FILES := \
   MCAsmInfoCOFF.cpp \
   MCAsmInfoDarwin.cpp \
   MCAsmInfoELF.cpp \
+  MCAsmInfoWasm.cpp \
   MCAsmStreamer.cpp \
   MCAssembler.cpp \
   MCCodeEmitter.cpp \
-  MCCodeGenInfo.cpp \
+  MCCodeView.cpp \
   MCContext.cpp \
   MCDwarf.cpp \
   MCELFObjectTargetWriter.cpp \
   MCELFStreamer.cpp \
   MCExpr.cpp \
+  MCFragment.cpp \
   MCInst.cpp \
   MCInstPrinter.cpp \
   MCInstrAnalysis.cpp \
@@ -35,21 +37,23 @@ mc_SRC_FILES := \
   MCSectionCOFF.cpp \
   MCSectionELF.cpp \
   MCSectionMachO.cpp \
+  MCSectionWasm.cpp \
   MCStreamer.cpp \
   MCSubtargetInfo.cpp \
   MCSymbol.cpp \
   MCSymbolELF.cpp \
-  MCSymbolizer.cpp \
   MCTargetOptions.cpp \
   MCValue.cpp \
+  MCWasmObjectTargetWriter.cpp \
+  MCWasmStreamer.cpp \
   MCWin64EH.cpp \
+  MCWinCOFFStreamer.cpp \
   MCWinEH.cpp \
   MachObjectWriter.cpp \
   StringTableBuilder.cpp \
   SubtargetFeature.cpp \
-  WinCOFFObjectWriter.cpp \
-  WinCOFFStreamer.cpp \
-  YAML.cpp
+  WasmObjectWriter.cpp \
+  WinCOFFObjectWriter.cpp
 
 # For the host
 # =====================================================

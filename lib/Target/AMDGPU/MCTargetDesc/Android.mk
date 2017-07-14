@@ -8,14 +8,15 @@ amdgpu_mc_desc_TBLGEN_TABLES := \
 
 amdgpu_mc_desc_SRC_FILES := \
   AMDGPUAsmBackend.cpp \
+  AMDGPUCodeObjectMetadataStreamer.cpp \
   AMDGPUELFObjectWriter.cpp \
   AMDGPUELFStreamer.cpp \
+  AMDGPUMCAsmInfo.cpp \
   AMDGPUMCCodeEmitter.cpp \
   AMDGPUMCTargetDesc.cpp \
-  AMDGPUMCAsmInfo.cpp \
   AMDGPUTargetStreamer.cpp \
   R600MCCodeEmitter.cpp \
-  SIMCCodeEmitter.cpp \
+  SIMCCodeEmitter.cpp
 
 # For the host
 # =====================================================

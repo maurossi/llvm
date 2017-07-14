@@ -12,7 +12,10 @@ arm_codegen_TBLGEN_TABLES := \
   ARMGenFastISel.inc \
   ARMGenCallingConv.inc \
   ARMGenSubtargetInfo.inc \
-  ARMGenDisassemblerTables.inc
+  ARMGenDisassemblerTables.inc \
+  \
+#  ARMGenRegisterBank.inc \
+#  ARMGenGlobalISel.inc
 
 arm_codegen_SRC_FILES := \
   A15SDOptimizer.cpp \
@@ -31,8 +34,9 @@ arm_codegen_SRC_FILES := \
   ARMLoadStoreOptimizer.cpp \
   ARMMCInstLower.cpp \
   ARMMachineFunctionInfo.cpp \
-  ARMOptimizeBarriersPass.cpp \
+  ARMMacroFusion.cpp \
   ARMRegisterInfo.cpp \
+  ARMOptimizeBarriersPass.cpp \
   ARMSelectionDAGInfo.cpp \
   ARMSubtarget.cpp \
   ARMTargetMachine.cpp \
@@ -44,7 +48,13 @@ arm_codegen_SRC_FILES := \
   ThumbRegisterInfo.cpp \
   Thumb2ITBlockPass.cpp \
   Thumb2InstrInfo.cpp \
-  Thumb2SizeReduction.cpp
+  Thumb2SizeReduction.cpp \
+  ARMComputeBlockSize.cpp \
+  \
+#  ARMCallLowering.cpp \
+#  ARMInstructionSelector.cpp \
+#  ARMLegalizerInfo.cpp \
+#  ARMRegisterBankInfo.cpp
 
 # For the host
 # =====================================================

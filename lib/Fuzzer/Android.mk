@@ -17,16 +17,28 @@
 LOCAL_PATH := $(call my-dir)
 
 libfuzzer_srcs := \
-    FuzzerCrossOver.cpp \
-    FuzzerInterface.cpp \
-    FuzzerTraceState.cpp \
-    FuzzerDriver.cpp \
-    FuzzerIO.cpp \
-    FuzzerLoop.cpp \
-    FuzzerMutate.cpp \
-    FuzzerSanitizerOptions.cpp \
-    FuzzerSHA1.cpp \
-    FuzzerUtil.cpp \
+      FuzzerCrossOver.cpp \
+      FuzzerDriver.cpp \
+      FuzzerExtFunctionsDlsym.cpp \
+      FuzzerExtFunctionsDlsymWin.cpp \
+      FuzzerExtFunctionsWeak.cpp \
+      FuzzerExtraCounters.cpp \
+      FuzzerIO.cpp \
+      FuzzerIOPosix.cpp \
+      FuzzerIOWindows.cpp \
+      FuzzerLoop.cpp \
+      FuzzerMerge.cpp \
+      FuzzerMutate.cpp \
+      FuzzerSHA1.cpp \
+      FuzzerShmemPosix.cpp \
+      FuzzerShmemWindows.cpp \
+      FuzzerTracePC.cpp \
+      FuzzerTraceState.cpp \
+      FuzzerUtil.cpp \
+      FuzzerUtilDarwin.cpp \
+      FuzzerUtilLinux.cpp \
+      FuzzerUtilPosix.cpp \
+      FuzzerUtilWindows.cpp
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true

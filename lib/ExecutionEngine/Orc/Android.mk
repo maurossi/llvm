@@ -3,8 +3,12 @@ LOCAL_PATH:= $(call my-dir)
 orcjit_SRC_FILES := \
   ExecutionUtils.cpp \
   IndirectionUtils.cpp \
+  NullResolver.cpp \
+  OrcABISupport.cpp \
+  OrcCBindings.cpp \
+  OrcError.cpp \
   OrcMCJITReplacement.cpp \
-  OrcTargetSupport.cpp
+  RPCUtils.cpp
 
 # For the host
 # =====================================================
