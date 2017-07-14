@@ -1,15 +1,15 @@
 LOCAL_PATH:= $(call my-dir)
 
 transforms_objcarc_SRC_FILES := \
-  DependencyAnalysis.cpp \
+  ObjCARC.cpp \
+  ObjCARCOpts.cpp \
+  ObjCARCExpand.cpp \
   ObjCARCAPElim.cpp \
   ObjCARCContract.cpp \
-  ObjCARC.cpp \
-  ObjCARCExpand.cpp \
-  ObjCARCOpts.cpp \
-  PtrState.cpp \
+  DependencyAnalysis.cpp \
   ProvenanceAnalysis.cpp \
-  ProvenanceAnalysisEvaluator.cpp
+  ProvenanceAnalysisEvaluator.cpp \
+  PtrState.cpp
 
 # For the host
 # =====================================================

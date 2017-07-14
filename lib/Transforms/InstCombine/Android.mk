@@ -1,6 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 
 transforms_inst_combine_SRC_FILES := \
+  InstructionCombining.cpp \
   InstCombineAddSub.cpp \
   InstCombineAndOrXor.cpp \
   InstCombineCalls.cpp \
@@ -12,8 +13,7 @@ transforms_inst_combine_SRC_FILES := \
   InstCombineSelect.cpp \
   InstCombineShifts.cpp \
   InstCombineSimplifyDemanded.cpp \
-  InstCombineVectorOps.cpp \
-  InstructionCombining.cpp
+  InstCombineVectorOps.cpp
 
 # For the host
 # =====================================================

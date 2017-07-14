@@ -3,7 +3,8 @@ LOCAL_PATH := $(call my-dir)
 aarch64_utils_TBLGEN_TABLES := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
-  AArch64GenSubtargetInfo.inc
+  AArch64GenSubtargetInfo.inc \
+  AArch64GenSystemOperands.inc
 
 aarch64_utils_SRC_FILES := \
   AArch64BaseInfo.cpp

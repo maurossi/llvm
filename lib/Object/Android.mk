@@ -4,21 +4,25 @@ object_SRC_FILES := \
   Archive.cpp \
   ArchiveWriter.cpp \
   Binary.cpp \
+  COFFImportFile.cpp \
+  COFFModuleDefinition.cpp \
   COFFObjectFile.cpp \
-  COFFYAML.cpp \
+  Decompressor.cpp \
   ELF.cpp \
   ELFObjectFile.cpp \
-  ELFYAML.cpp \
   Error.cpp \
-  FunctionIndexObjectFile.cpp \
   IRObjectFile.cpp \
+  IRSymtab.cpp \
   MachOObjectFile.cpp \
   MachOUniversal.cpp \
+  ModuleSymbolTable.cpp \
   Object.cpp \
   ObjectFile.cpp \
   RecordStreamer.cpp \
   SymbolicFile.cpp \
-  SymbolSize.cpp
+  SymbolSize.cpp \
+  WasmObjectFile.cpp \
+  WindowsResource.cpp
 
 # For the host
 # =====================================================

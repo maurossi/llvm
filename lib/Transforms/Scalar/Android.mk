@@ -2,38 +2,51 @@ LOCAL_PATH:= $(call my-dir)
 
 transforms_scalar_SRC_FILES := \
   ADCE.cpp \
-  BDCE.cpp \
   AlignmentFromAssumptions.cpp \
-  ConstantProp.cpp \
+  BDCE.cpp \
   ConstantHoisting.cpp \
+  ConstantProp.cpp \
   CorrelatedValuePropagation.cpp \
   DCE.cpp \
   DeadStoreElimination.cpp \
   EarlyCSE.cpp \
   FlattenCFGPass.cpp \
   Float2Int.cpp \
+  GuardWidening.cpp \
   GVN.cpp \
-  IndVarSimplify.cpp \
+  GVNHoist.cpp \
+  GVNSink.cpp \
+  IVUsersPrinter.cpp \
   InductiveRangeCheckElimination.cpp \
+  IndVarSimplify.cpp \
+  InferAddressSpaces.cpp \
   JumpThreading.cpp \
   LICM.cpp \
-  LoadCombine.cpp \
+  LoopAccessAnalysisPrinter.cpp \
+  LoopSink.cpp \
   LoopDeletion.cpp \
+  LoopDataPrefetch.cpp \
   LoopDistribute.cpp \
   LoopIdiomRecognize.cpp \
   LoopInstSimplify.cpp \
   LoopInterchange.cpp \
   LoopLoadElimination.cpp \
+  LoopPassManager.cpp \
+  LoopPredication.cpp \
   LoopRerollPass.cpp \
   LoopRotation.cpp \
+  LoopSimplifyCFG.cpp \
   LoopStrengthReduce.cpp \
   LoopUnrollPass.cpp \
   LoopUnswitch.cpp \
+  LoopVersioningLICM.cpp \
   LowerAtomic.cpp \
   LowerExpectIntrinsic.cpp \
+  LowerGuardIntrinsic.cpp \
   MemCpyOptimizer.cpp \
   MergedLoadStoreMotion.cpp \
   NaryReassociate.cpp \
+  NewGVN.cpp \
   PartiallyInlineLibCalls.cpp \
   PlaceSafepoints.cpp \
   Reassociate.cpp \
@@ -43,8 +56,8 @@ transforms_scalar_SRC_FILES := \
   SROA.cpp \
   Scalar.cpp \
   Scalarizer.cpp \
-  ScalarReplAggregates.cpp \
   SeparateConstOffsetFromGEP.cpp \
+  SimpleLoopUnswitch.cpp \
   SimplifyCFGPass.cpp \
   Sink.cpp \
   SpeculativeExecution.cpp \

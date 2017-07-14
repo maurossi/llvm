@@ -4,7 +4,8 @@ aarch64_disassembler_TBLGEN_TABLES := \
   AArch64GenDisassemblerTables.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenSubtargetInfo.inc \
-  AArch64GenRegisterInfo.inc
+  AArch64GenRegisterInfo.inc \
+  AArch64GenSystemOperands.inc
 
 aarch64_disassembler_SRC_FILES := \
   AArch64Disassembler.cpp \

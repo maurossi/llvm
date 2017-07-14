@@ -5,6 +5,7 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFAcceleratorTable.cpp \
   DWARFCompileUnit.cpp \
   DWARFContext.cpp \
+  DWARFDataExtractor.cpp \
   DWARFDebugAbbrev.cpp \
   DWARFDebugArangeSet.cpp \
   DWARFDebugAranges.cpp \
@@ -13,11 +14,15 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFDebugLine.cpp \
   DWARFDebugLoc.cpp \
   DWARFDebugMacro.cpp \
+  DWARFDebugPubTable.cpp \
   DWARFDebugRangeList.cpp \
+  DWARFDie.cpp \
   DWARFFormValue.cpp \
+  DWARFGdbIndex.cpp \
   DWARFTypeUnit.cpp \
-  DWARFUnit.cpp \
   DWARFUnitIndex.cpp \
+  DWARFUnit.cpp \
+  DWARFVerifier.cpp \
   SyntaxHighlighting.cpp
 
 # For the host

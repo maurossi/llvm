@@ -1,8 +1,13 @@
 LOCAL_PATH:= $(call my-dir)
 
 lto_SRC_FILES := \
+  Caching.cpp \
+  LTO.cpp \
+  LTOBackend.cpp \
   LTOModule.cpp \
   LTOCodeGenerator.cpp \
+  UpdateCompilerUsed.cpp \
+  ThinLTOCodeGenerator.cpp
 
 # For the host
 # =====================================================

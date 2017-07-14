@@ -4,18 +4,21 @@ aarch64_mc_desc_TBLGEN_TABLES := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenMCCodeEmitter.inc \
-  AArch64GenSubtargetInfo.inc
+  AArch64GenSubtargetInfo.inc \
+  AArch64GenSystemOperands.inc
 
 aarch64_mc_desc_SRC_FILES := \
   AArch64AsmBackend.cpp \
   AArch64ELFObjectWriter.cpp \
   AArch64ELFStreamer.cpp \
-  AArch64MachObjectWriter.cpp \
   AArch64MCAsmInfo.cpp \
   AArch64MCCodeEmitter.cpp \
   AArch64MCExpr.cpp \
   AArch64MCTargetDesc.cpp \
-  AArch64TargetStreamer.cpp
+  AArch64MachObjectWriter.cpp \
+  AArch64TargetStreamer.cpp \
+  AArch64WinCOFFObjectWriter.cpp \
+  AArch64WinCOFFStreamer.cpp
 
 # For the host
 # =====================================================

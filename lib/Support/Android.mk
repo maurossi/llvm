@@ -3,66 +3,68 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 include $(LLVM_ROOT_PATH)/llvm.mk
 
 support_SRC_FILES := \
-  Allocator.cpp \
+  AMDGPUCodeObjectMetadata.cpp \
   APFloat.cpp \
   APInt.cpp \
   APSInt.cpp \
   ARMBuildAttrs.cpp \
+  ARMAttributeParser.cpp \
   ARMWinEH.cpp \
-  Atomic.cpp \
+  Allocator.cpp \
+  BinaryStreamError.cpp \
+  BinaryStreamReader.cpp \
+  BinaryStreamRef.cpp \
+  BinaryStreamWriter.cpp \
   BlockFrequency.cpp \
   BranchProbability.cpp \
+  CachePruning.cpp \
+  circular_raw_ostream.cpp \
+  Chrono.cpp \
   COM.cpp \
   CommandLine.cpp \
   Compression.cpp \
-  ConvertUTF.c \
+  ConvertUTF.cpp \
   ConvertUTFWrapper.cpp \
   CrashRecoveryContext.cpp \
-  DAGDeltaAlgorithm.cpp \
-  DataStream.cpp \
   DataExtractor.cpp \
   Debug.cpp \
+  DebugCounter.cpp \
   DeltaAlgorithm.cpp \
-  Dwarf.cpp \
-  DynamicLibrary.cpp \
-  Errno.cpp \
+  DAGDeltaAlgorithm.cpp \
+  Error.cpp \
   ErrorHandling.cpp \
   FileUtilities.cpp \
+  FileOutputBuffer.cpp \
   FoldingSet.cpp \
   FormattedStream.cpp \
+  FormatVariadic.cpp \
+  GlobPattern.cpp \
   GraphWriter.cpp \
   Hashing.cpp \
-  Host.cpp \
-  IntervalMap.cpp \
   IntEqClasses.cpp \
-  IntrusiveRefCntPtr.cpp \
+  IntervalMap.cpp \
   JamCRC.cpp \
   LEB128.cpp \
   LineIterator.cpp \
   Locale.cpp \
   LockFileManager.cpp \
-  MD5.cpp \
+  LowLevelType.cpp \
   ManagedStatic.cpp \
   MathExtras.cpp \
-  Memory.cpp \
   MemoryBuffer.cpp \
-  MemoryObject.cpp \
-  Mutex.cpp \
+  MD5.cpp \
+  NativeFormatting.cpp \
   Options.cpp \
-  Path.cpp \
+  Parallel.cpp \
   PluginLoader.cpp \
   PrettyStackTrace.cpp \
-  Process.cpp \
-  Program.cpp \
   RandomNumberGenerator.cpp \
   Regex.cpp \
-  RWMutex.cpp \
   ScaledNumber.cpp \
-  SearchForAddressOfSpecialSymbol.cpp \
-  Signals.cpp \
+  ScopedPrinter.cpp \
+  SHA1.cpp \
   SmallPtrSet.cpp \
   SmallVector.cpp \
-  StreamingMemoryObject.cpp \
   SourceMgr.cpp \
   SpecialCaseList.cpp \
   Statistic.cpp \
@@ -72,29 +74,41 @@ support_SRC_FILES := \
   StringSaver.cpp \
   StringRef.cpp \
   SystemUtils.cpp \
+  TarWriter.cpp \
   TargetParser.cpp \
-  TargetRegistry.cpp \
-  Threading.cpp \
-  ThreadLocal.cpp \
+  ThreadPool.cpp \
   Timer.cpp \
-  TimeValue.cpp \
   ToolOutputFile.cpp \
+  TrigramIndex.cpp \
   Triple.cpp \
   Twine.cpp \
   Unicode.cpp \
-  Valgrind.cpp \
-  Watchdog.cpp \
   YAMLParser.cpp \
   YAMLTraits.cpp \
-  circular_raw_ostream.cpp \
   raw_os_ostream.cpp \
   raw_ostream.cpp \
   regcomp.c \
   regerror.c \
   regexec.c \
   regfree.c \
-  regstrlcpy.c
-
+  regstrlcpy.c \
+  xxhash.cpp \
+  Atomic.cpp \
+  DynamicLibrary.cpp \
+  Errno.cpp \
+  Host.cpp \
+  Memory.cpp \
+  Mutex.cpp \
+  Path.cpp \
+  Process.cpp \
+  Program.cpp \
+  RWMutex.cpp \
+  Signals.cpp \
+  TargetRegistry.cpp \
+  ThreadLocal.cpp \
+  Threading.cpp \
+  Valgrind.cpp \
+  Watchdog.cpp
 
 # For the host
 # =====================================================
