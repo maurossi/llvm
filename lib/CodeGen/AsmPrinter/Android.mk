@@ -7,6 +7,7 @@ codegen_asmprinter_SRC_FILES := \
   AsmPrinterDwarf.cpp \
   AsmPrinterInlineAsm.cpp \
   DbgValueHistoryCalculator.cpp \
+  DebugHandlerBase.cpp \
   DebugLocStream.cpp \
   DIE.cpp \
   DIEHash.cpp \
@@ -22,9 +23,7 @@ codegen_asmprinter_SRC_FILES := \
   ErlangGCPrinter.cpp \
   OcamlGCPrinter.cpp \
   WinException.cpp \
-  WinCodeViewLineTables.cpp
-
-
+  CodeViewDebug.cpp
 
 # For the host
 # =====================================================
