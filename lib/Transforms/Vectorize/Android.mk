@@ -1,7 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 
 transforms_vectorize_SRC_FILES := \
-  BBVectorize.cpp \
+  LoadStoreVectorizer.cpp \
   LoopVectorize.cpp \
   SLPVectorizer.cpp \
   Vectorize.cpp

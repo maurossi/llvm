@@ -1,12 +1,14 @@
 LOCAL_PATH:= $(call my-dir)
 
 runtimedyld_SRC_FILES := \
+  JITSymbol.cpp \
   RTDyldMemoryManager.cpp \
-  RuntimeDyldChecker.cpp \
   RuntimeDyld.cpp \
+  RuntimeDyldChecker.cpp \
   RuntimeDyldCOFF.cpp \
   RuntimeDyldELF.cpp \
-  RuntimeDyldMachO.cpp
+  RuntimeDyldMachO.cpp \
+  Targets/RuntimeDyldELFMips.cpp
 
 # For the host
 # =====================================================

@@ -89,7 +89,6 @@ $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
 	$(call transform-td-to-out,subtarget)
 endif
 
-
 ifneq ($(filter %GenRegisterInfo.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/%.td \
@@ -154,6 +153,13 @@ $(generated_sources)/%GenDAGISel.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out,dag-isel)
 endif
 
+ifneq ($(filter %GenRegisterBank.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenRegisterBank.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenRegisterBank.inc: $(tblgen_source_dir)/%.td \
+                                  $(tblgen_td_deps) $(LLVM_TBLGEN)
+	$(call transform-td-to-out,register-bank)
+endif
+
 ifneq ($(filter %GenDisassemblerTables.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenDisassemblerTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenDisassemblerTables.inc: $(tblgen_source_dir)/%.td \
@@ -173,6 +179,13 @@ $(generated_sources)/%GenFastISel.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenFastISel.inc: $(tblgen_source_dir)/%.td \
                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
 	$(call transform-td-to-out,fast-isel)
+endif
+
+ifneq ($(filter %GenGlobalISel.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenGlobalISel.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenGlobalISel.inc: $(tblgen_source_dir)/%.td \
+                                   $(tblgen_td_deps) $(LLVM_TBLGEN)
+	$(call transform-td-to-out,global-isel)
 endif
 
 ifneq ($(filter %GenSubtargetInfo.inc,$(tblgen_gen_tables)),)
@@ -196,6 +209,13 @@ $(generated_sources)/%GenIntrinsics.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out,tgt-intrinsic)
 endif
 
+ifneq ($(filter %GenSystemOperands.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenSystemOperands.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenSystemOperands.inc: $(tblgen_source_dir)/%.td \
+                                     $(tblgen_td_deps) $(LLVM_TBLGEN)
+	$(call transform-td-to-out,searchable-tables)
+endif
+
 ifneq ($(filter %GenDFAPacketizer.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenDFAPacketizer.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenDFAPacketizer.inc: $(tblgen_source_dir)/%.td \
@@ -217,6 +237,13 @@ $(generated_sources)/Options.inc: $(tblgen_source_dir)/Options.td \
                                      $(LLVM_TBLGEN) \
                                      $(LLVM_ROOT_PATH)/include/llvm/Option/OptParser.td
 	$(call transform-td-to-out,opt-parser-defs)
+endif
+
+ifneq ($(findstring X86GenEVEX2VEXTables.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/X86GenEVEX2VEXTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/X86GenEVEX2VEXTables.inc: $(tblgen_source_dir)/X86.td \
+                                          $(tblgen_td_deps) $(LLVM_TBLGEN)
+	$(call transform-td-to-out,x86-EVEX2VEX-tables)
 endif
 
 # Reset local variables

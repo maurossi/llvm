@@ -4,8 +4,8 @@ mc_disassembler_SRC_FILES := \
   Disassembler.cpp \
   MCDisassembler.cpp \
   MCExternalSymbolizer.cpp \
-  MCRelocationInfo.cpp
-
+  MCRelocationInfo.cpp \
+  MCSymbolizer.cpp
 
 # For the host
 # =====================================================

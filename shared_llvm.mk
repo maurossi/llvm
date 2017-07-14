@@ -6,9 +6,12 @@ llvm_pre_static_libraries := \
   libLLVMDebugInfoDWARF \
   libLLVMDebugInfoPDB \
   libLLVMSymbolize \
+  libLLVMDebugInfoMSF \
+  libLLVMDebugInfoCodeView \
   libLLVMIRReader \
   libLLVMBitWriter \
-  libLLVMBitReader
+  libLLVMBitReader \
+  libLLVMGlobalISel
 
 llvm_arm_static_libraries := \
   libLLVMARMCodeGen \
@@ -75,7 +78,8 @@ llvm_post_static_libraries := \
   libLLVMSupport \
   libLLVMVectorize \
   libLLVMProfileData \
-  libLLVMLibDriver
+  libLLVMLibDriver \
+  libLLVMBinaryFormat
 
 llvm_host_static_libraries := \
   libLLVMExecutionEngine \
