@@ -19,6 +19,7 @@ include $(CLEAR_VARS)
 subdirs := \
   lib/Analysis \
   lib/AsmParser \
+  lib/BinaryFormat \
   lib/Bitcode/Reader \
   lib/Bitcode/Writer \
   lib/ExecutionEngine \
@@ -34,21 +35,27 @@ subdirs := \
   lib/DebugInfo/DWARF \
   lib/DebugInfo/PDB \
   lib/DebugInfo/Symbolize \
+  lib/DebugInfo/MSF \
+  lib/DebugInfo/CodeView \
+  lib/Demangle \
   lib/IR \
   lib/IRReader \
-  lib/LibDriver \
+  lib/ToolDrivers/llvm-lib \
   lib/Linker \
   lib/LTO \
+  lib/LineEditor \
   lib/MC \
   lib/MC/MCDisassembler \
   lib/MC/MCParser \
   lib/Object \
+  lib/ObjectYAML \
   lib/Option \
   lib/Passes \
   lib/ProfileData \
   lib/Support \
   lib/TableGen \
   lib/Target \
+  lib/Transforms/Coroutines \
   lib/Transforms/Hello \
   lib/Transforms/IPO \
   lib/Transforms/InstCombine \
@@ -57,6 +64,8 @@ subdirs := \
   lib/Transforms/Scalar \
   lib/Transforms/Utils \
   lib/Transforms/Vectorize \
+  lib/XRay \
+  lib/CodeGen/GlobalISel
 
 # ARM Code Generation Libraries
 subdirs += \
@@ -102,6 +111,7 @@ subdirs += \
   lib/Target/AMDGPU \
   lib/Target/AMDGPU/AsmParser \
   lib/Target/AMDGPU/InstPrinter \
+  lib/Target/AMDGPU/Disassembler \
   lib/Target/AMDGPU/MCTargetDesc \
   lib/Target/AMDGPU/TargetInfo \
   lib/Target/AMDGPU/Utils
@@ -133,7 +143,6 @@ subdirs += \
   tools/llvm-mcmarkup \
   tools/llvm-nm \
   tools/llvm-objdump \
-  tools/llvm-pdbdump \
   tools/llvm-profdata \
   tools/llvm-readobj \
   tools/llvm-rtdyld \

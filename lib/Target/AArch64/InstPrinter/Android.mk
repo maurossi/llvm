@@ -5,7 +5,8 @@ aarch64_asm_printer_TBLGEN_TABLES := \
   AArch64GenAsmWriter1.inc \
   AArch64GenRegisterInfo.inc \
   AArch64GenSubtargetInfo.inc \
-  AArch64GenInstrInfo.inc
+  AArch64GenInstrInfo.inc \
+  AArch64GenSystemOperands.inc
 
 aarch64_asm_printer_SRC_FILES := \
   AArch64InstPrinter.cpp

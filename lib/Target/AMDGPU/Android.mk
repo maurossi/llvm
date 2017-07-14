@@ -10,21 +10,30 @@ amdgpu_codegen_TBLGEN_TABLES := \
   AMDGPUGenIntrinsics.inc \
   AMDGPUGenDFAPacketizer.inc \
   AMDGPUGenAsmWriter.inc \
-  AMDGPUGenAsmMatcher.inc
+  AMDGPUGenAsmMatcher.inc \
+  AMDGPUGenDisassemblerTables.inc \
+  AMDGPUGenMCPseudoLowering.inc \
+  \
+#  AMDGPUGenRegisterBank.inc
 
 amdgpu_codegen_SRC_FILES := \
   AMDILCFGStructurizer.cpp \
+  AMDGPUAliasAnalysis.cpp \
   AMDGPUAlwaysInlinePass.cpp \
   AMDGPUAnnotateKernelFeatures.cpp \
   AMDGPUAnnotateUniformValues.cpp \
   AMDGPUAsmPrinter.cpp \
-  AMDGPUDiagnosticInfoUnsupported.cpp \
+  AMDGPUCodeGenPrepare.cpp \
   AMDGPUFrameLowering.cpp \
   AMDGPUTargetObjectFile.cpp \
   AMDGPUIntrinsicInfo.cpp \
   AMDGPUISelDAGToDAG.cpp \
+  AMDGPULowerIntrinsics.cpp \
+  AMDGPUMacroFusion.cpp \
   AMDGPUMCInstLower.cpp \
+  AMDGPUMachineCFGStructurizer.cpp \
   AMDGPUMachineFunction.cpp \
+  AMDGPUUnifyMetadata.cpp \
   AMDGPUOpenCLImageTypeLoweringPass.cpp \
   AMDGPUSubtarget.cpp \
   AMDGPUTargetMachine.cpp \
@@ -32,11 +41,16 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUISelLowering.cpp \
   AMDGPUInstrInfo.cpp \
   AMDGPUPromoteAlloca.cpp \
+  AMDGPURegAsmNames.inc.cpp \
   AMDGPURegisterInfo.cpp \
+  AMDGPUUnifyDivergentExitNodes.cpp \
+  GCNHazardRecognizer.cpp \
+  GCNSchedStrategy.cpp \
   R600ClauseMergePass.cpp \
   R600ControlFlowFinalizer.cpp \
   R600EmitClauseMarkers.cpp \
   R600ExpandSpecialInstrs.cpp \
+  R600FrameLowering.cpp \
   R600InstrInfo.cpp \
   R600ISelLowering.cpp \
   R600MachineFunctionInfo.cpp \
@@ -44,14 +58,16 @@ amdgpu_codegen_SRC_FILES := \
   R600OptimizeVectorRegisters.cpp \
   R600Packetizer.cpp \
   R600RegisterInfo.cpp \
-  R600TextureIntrinsicsReplacer.cpp \
   SIAnnotateControlFlow.cpp \
+  SIDebuggerInsertNops.cpp \
   SIFixControlFlowLiveIntervals.cpp \
   SIFixSGPRCopies.cpp \
-  SIFixSGPRLiveRanges.cpp \
+  SIFixVGPRCopies.cpp \
   SIFoldOperands.cpp \
   SIFrameLowering.cpp \
+  SIInsertSkips.cpp \
   SIInsertWaits.cpp \
+  SIInsertWaitcnts.cpp \
   SIInstrInfo.cpp \
   SIISelLowering.cpp \
   SILoadStoreOptimizer.cpp \
@@ -59,9 +75,19 @@ amdgpu_codegen_SRC_FILES := \
   SILowerI1Copies.cpp \
   SIMachineFunctionInfo.cpp \
   SIMachineScheduler.cpp \
+  SIOptimizeExecMasking.cpp \
+  SIPeepholeSDWA.cpp \
   SIRegisterInfo.cpp \
   SIShrinkInstructions.cpp \
-  SITypeRewriter.cpp
+  SIWholeQuadMode.cpp \
+  GCNIterativeScheduler.cpp \
+  GCNMinRegStrategy.cpp \
+  GCNRegPressure.cpp \
+  \
+#  AMDGPUCallLowering.cpp \
+#  AMDGPUInstructionSelector.cpp \
+#  AMDGPULegalizerInfo.cpp \
+#  AMDGPURegisterBankInfo.cpp
 
 # For the host
 # =====================================================
