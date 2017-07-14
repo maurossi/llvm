@@ -11,7 +11,8 @@ aarch64_asm_parser_TBLGEN_TABLES := \
   AArch64GenInstrInfo.inc \
   AArch64GenRegisterInfo.inc \
   AArch64GenAsmMatcher.inc \
-  AArch64GenSubtargetInfo.inc
+  AArch64GenSubtargetInfo.inc \
+  AArch64GenSystemOperands.inc
 
 aarch64_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 

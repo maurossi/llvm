@@ -17,14 +17,16 @@ codegen_selectiondag_SRC_FILES := \
   ScheduleDAGRRList.cpp \
   ScheduleDAGSDNodes.cpp \
   ScheduleDAGVLIW.cpp \
-  SelectionDAG.cpp \
   SelectionDAGBuilder.cpp \
+  SelectionDAG.cpp \
+  SelectionDAGAddressAnalysis.cpp \
   SelectionDAGDumper.cpp \
   SelectionDAGISel.cpp \
   SelectionDAGPrinter.cpp \
+  SelectionDAGTargetInfo.cpp \
   StatepointLowering.cpp \
-  TargetLowering.cpp \
-  TargetSelectionDAGInfo.cpp
+  TargetLowering.cpp
+
 
 # For the host
 # =====================================================

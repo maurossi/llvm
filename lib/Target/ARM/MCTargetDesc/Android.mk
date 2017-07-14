@@ -10,16 +10,16 @@ arm_mc_desc_SRC_FILES := \
   ARMAsmBackend.cpp \
   ARMELFObjectWriter.cpp \
   ARMELFStreamer.cpp \
+  ARMMachObjectWriter.cpp \
+  ARMMachORelocationInfo.cpp \
   ARMMCAsmInfo.cpp \
   ARMMCCodeEmitter.cpp \
   ARMMCExpr.cpp \
   ARMMCTargetDesc.cpp \
-  ARMMachObjectWriter.cpp \
-  ARMMachORelocationInfo.cpp \
   ARMTargetStreamer.cpp \
   ARMUnwindOpAsm.cpp \
   ARMWinCOFFObjectWriter.cpp \
-  ARMWinCOFFStreamer.cpp \
+  ARMWinCOFFStreamer.cpp
 
 # For the host
 # =====================================================

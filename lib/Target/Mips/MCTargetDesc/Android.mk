@@ -7,8 +7,8 @@ mips_mc_desc_TBLGEN_TABLES := \
   MipsGenSubtargetInfo.inc
 
 mips_mc_desc_SRC_FILES := \
-  MipsABIFlagsSection.cpp \
   MipsABIInfo.cpp \
+  MipsABIFlagsSection.cpp \
   MipsAsmBackend.cpp \
   MipsELFObjectWriter.cpp \
   MipsELFStreamer.cpp \
@@ -16,8 +16,8 @@ mips_mc_desc_SRC_FILES := \
   MipsMCCodeEmitter.cpp \
   MipsMCExpr.cpp \
   MipsMCTargetDesc.cpp \
-  MipsOptionRecord.cpp \
   MipsNaClELFStreamer.cpp \
+  MipsOptionRecord.cpp \
   MipsTargetStreamer.cpp
 
 # For the host

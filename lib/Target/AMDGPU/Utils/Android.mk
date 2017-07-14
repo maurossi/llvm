@@ -2,10 +2,13 @@ LOCAL_PATH := $(call my-dir)
 
 amdgpu_utils_TBLGEN_TABLES := \
   AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+  AMDGPUGenSubtargetInfo.inc \
+  AMDGPUGenInstrInfo.inc
 
 amdgpu_utils_SRC_FILES := \
-  AMDGPUBaseInfo.cpp
+  AMDGPUBaseInfo.cpp \
+  AMDKernelCodeTUtils.cpp \
+  AMDGPUAsmUtils.cpp
 
 # For the host
 # =====================================================
@@ -25,6 +28,7 @@ TBLGEN_TABLES := $(amdgpu_utils_TBLGEN_TABLES)
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -44,5 +48,6 @@ TBLGEN_TABLES := $(amdgpu_utils_TBLGEN_TABLES)
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
