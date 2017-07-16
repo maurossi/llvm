@@ -12,9 +12,7 @@ amdgpu_codegen_TBLGEN_TABLES := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenAsmMatcher.inc \
   AMDGPUGenDisassemblerTables.inc \
-  AMDGPUGenMCPseudoLowering.inc \
-  \
-#  AMDGPUGenRegisterBank.inc
+  AMDGPUGenMCPseudoLowering.inc
 
 amdgpu_codegen_SRC_FILES := \
   AMDILCFGStructurizer.cpp \
@@ -82,12 +80,18 @@ amdgpu_codegen_SRC_FILES := \
   SIWholeQuadMode.cpp \
   GCNIterativeScheduler.cpp \
   GCNMinRegStrategy.cpp \
-  GCNRegPressure.cpp \
-  \
-#  AMDGPUCallLowering.cpp \
-#  AMDGPUInstructionSelector.cpp \
-#  AMDGPULegalizerInfo.cpp \
-#  AMDGPURegisterBankInfo.cpp
+  GCNRegPressure.cpp
+
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+amdgpu_codegen_TBLGEN_TABLES += \
+  AMDGPUGenRegisterBank.inc
+
+amdgpu_codegen_SRC_FILES += \
+  AMDGPUCallLowering.cpp \
+  AMDGPUInstructionSelector.cpp \
+  AMDGPULegalizerInfo.cpp \
+  AMDGPURegisterBankInfo.cpp
+endif
 
 # For the host
 # =====================================================
