@@ -19,6 +19,11 @@ LOCAL_CFLAGS +=	\
 	-Dsprintf=sprintf \
 	$(LOCAL_CFLAGS)
 
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+LOCAL_CFLAGS += \
+	-DLLVM_BUILD_GLOBAL_ISEL
+endif
+
 # Disable certain warnings for use with mingw.
 # We also must undefine WIN32_LEAN_AND_MEAN, since it is being passed globally
 # on the command line, and LLVM defines this internally itself.

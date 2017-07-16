@@ -13,6 +13,12 @@ ifneq "$(words $(FORCE_BUILD_LLVM_DEBUG))$(words $(filter-out true false,$(FORCE
   $(error FORCE_BUILD_LLVM_DEBUG may only be true, false, or unset)
 endif
 
+FORCE_BUILD_LLVM_GLOBAL_ISEL ?= true
+# Legality check: FORCE_BUILD_LLVM_GLOBAL_ISEL should consist of one word -- either "true" or "false".
+ifneq "$(words $(FORCE_BUILD_LLVM_GLOBAL_ISEL))$(words $(filter-out true false,$(FORCE_BUILD_LLVM_GLOBAL_ISEL)))" "10"
+  $(error FORCE_BUILD_LLVM_GLOBAL_ISEL may only be true, false, or unset)
+endif
+
 include $(CLEAR_VARS)
 
 # LLVM Libraries
