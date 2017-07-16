@@ -17,6 +17,11 @@ LOCAL_CFLAGS :=	\
         -Dsprintf=sprintf \
 	$(LOCAL_CFLAGS)
 
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+LOCAL_CFLAGS += \
+	-DLLVM_BUILD_GLOBAL_ISEL
+endif
+
 # The three inline options together reduce libbcc.so almost 1MB.
 # We move them from global build/core/combo/TARGET_linux-arm.mk
 # to here.
