@@ -11,10 +11,7 @@ x86_codegen_TBLGEN_TABLES := \
   X86GenFastISel.inc \
   X86GenSubtargetInfo.inc \
   X86GenCallingConv.inc \
-  X86GenEVEX2VEXTables.inc \
-  \
-#  X86GenRegisterBank.inc \
-#  X86GenGlobalISel.inc
+  X86GenEVEX2VEXTables.inc
 
 x86_codegen_SRC_FILES := \
   X86AsmPrinter.cpp \
@@ -47,12 +44,19 @@ x86_codegen_SRC_FILES := \
   X86VZeroUpper.cpp \
   X86WinAllocaExpander.cpp \
   X86WinEHState.cpp \
-  X86CallingConv.cpp \
-  \
-#  X86CallLowering.cpp \
-#  X86LegalizerInfo.cpp \
-#  X86RegisterBankInfo.cpp \
-#  X86InstructionSelector.cpp
+  X86CallingConv.cpp
+
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+x86_codegen_TBLGEN_TABLES += \
+  X86GenRegisterBank.inc \
+  X86GenGlobalISel.inc
+
+x86_codegen_SRC_FILES += \
+  X86CallLowering.cpp \
+  X86LegalizerInfo.cpp \
+  X86RegisterBankInfo.cpp \
+  X86InstructionSelector.cpp
+endif
 
 # For the host
 # =====================================================

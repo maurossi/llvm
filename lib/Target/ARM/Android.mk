@@ -12,10 +12,7 @@ arm_codegen_TBLGEN_TABLES := \
   ARMGenFastISel.inc \
   ARMGenCallingConv.inc \
   ARMGenSubtargetInfo.inc \
-  ARMGenDisassemblerTables.inc \
-  \
-#  ARMGenRegisterBank.inc \
-#  ARMGenGlobalISel.inc
+  ARMGenDisassemblerTables.inc
 
 arm_codegen_SRC_FILES := \
   A15SDOptimizer.cpp \
@@ -49,12 +46,19 @@ arm_codegen_SRC_FILES := \
   Thumb2ITBlockPass.cpp \
   Thumb2InstrInfo.cpp \
   Thumb2SizeReduction.cpp \
-  ARMComputeBlockSize.cpp \
-  \
-#  ARMCallLowering.cpp \
-#  ARMInstructionSelector.cpp \
-#  ARMLegalizerInfo.cpp \
-#  ARMRegisterBankInfo.cpp
+  ARMComputeBlockSize.cpp
+
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+arm_codegen_TBLGEN_TABLES += \
+  ARMGenRegisterBank.inc \
+  ARMGenGlobalISel.inc
+
+arm_codegen_SRC_FILES += \
+  ARMCallLowering.cpp \
+  ARMInstructionSelector.cpp \
+  ARMLegalizerInfo.cpp \
+  ARMRegisterBankInfo.cpp
+endif
 
 # For the host
 # =====================================================
