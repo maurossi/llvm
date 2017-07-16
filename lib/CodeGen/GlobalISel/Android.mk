@@ -1,20 +1,24 @@
 LOCAL_PATH:= $(call my-dir)
 
 global_isel_SRC_FILES := \
-      GlobalISel.cpp \
-#      CallLowering.cpp \
-#      IRTranslator.cpp \
-#      InstructionSelect.cpp \
-#      InstructionSelector.cpp \
-#      MachineIRBuilder.cpp \
-#      LegalizerHelper.cpp \
-#      Legalizer.cpp \
-#      LegalizerInfo.cpp \
-#      Localizer.cpp \
-#      RegBankSelect.cpp \
-#      RegisterBank.cpp \
-#      RegisterBankInfo.cpp \
-#      Utils.cpp
+      GlobalISel.cpp
+
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+global_isel_SRC_FILES += \
+      CallLowering.cpp \
+      IRTranslator.cpp \
+      InstructionSelect.cpp \
+      InstructionSelector.cpp \
+      MachineIRBuilder.cpp \
+      LegalizerHelper.cpp \
+      Legalizer.cpp \
+      LegalizerInfo.cpp \
+      Localizer.cpp \
+      RegBankSelect.cpp \
+      RegisterBank.cpp \
+      RegisterBankInfo.cpp \
+      Utils.cpp
+endif
 
 # For the host
 # =====================================================
@@ -28,6 +32,7 @@ LOCAL_MODULE_TAGS := optional
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -43,5 +48,6 @@ LOCAL_MODULE_TAGS := optional
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
