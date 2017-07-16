@@ -13,10 +13,7 @@ aarch64_codegen_TBLGEN_TABLES := \
   AArch64GenFastISel.inc \
   AArch64GenDisassemblerTables.inc \
   AArch64GenMCPseudoLowering.inc \
-  AArch64GenSystemOperands.inc \
-  \
-#  AArch64GenRegisterBank.inc \
-#  AArch64GenGlobalISel.inc
+  AArch64GenSystemOperands.inc
 
 aarch64_codegen_SRC_FILES := \
   AArch64A57FPLoadBalancing.cpp \
@@ -48,12 +45,19 @@ aarch64_codegen_SRC_FILES := \
   AArch64TargetMachine.cpp \
   AArch64TargetObjectFile.cpp \
   AArch64TargetTransformInfo.cpp \
-  AArch64VectorByElementOpt.cpp \
-  \
-#  AArch64CallLowering.cpp \
-#  AArch64InstructionSelector.cpp \
-#  AArch64LegalizerInfo.cpp \
-#  AArch64RegisterBankInfo.cpp
+  AArch64VectorByElementOpt.cpp
+
+ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
+aarch64_codegen_TBLGEN_TABLES += \
+  AArch64GenRegisterBank.inc \
+  AArch64GenGlobalISel.inc
+
+aarch64_codegen_SRC_FILES += \
+  AArch64CallLowering.cpp \
+  AArch64InstructionSelector.cpp \
+  AArch64LegalizerInfo.cpp \
+  AArch64RegisterBankInfo.cpp
+endif
 
 # For the host
 # =====================================================
