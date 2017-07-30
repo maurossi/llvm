@@ -51,6 +51,15 @@ $(eval $(call define-tblgen-rule, $(generated_sources)/ARMGenSubtargetInfo.inc, 
     $(tblgen_source_dir)/../ARM.td,subtarget))
 endif
 
+ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/AArch64/MCTargetDesc)
+$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenRegisterInfo.inc, \
+    $(tblgen_source_dir)/../AArch64.td,register-info))
+$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenInstrInfo.inc, \
+    $(tblgen_source_dir)/../AArch64.td,instr-info))
+$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenSubtargetInfo.inc, \
+    $(tblgen_source_dir)/../AArch64.td,subtarget))
+endif
+
 ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
 $(eval $(call define-tblgen-rule, $(generated_sources)/X86GenRegisterInfo.inc, \
     $(tblgen_source_dir)/../X86.td,register-info))
