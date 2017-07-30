@@ -111,6 +111,10 @@ subdirs += \
   lib/Target/AMDGPU/Utils
 endif
 
+# LLVM Command Line Utilities
+subdirs += \
+  utils/TableGen \
+
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk
 
