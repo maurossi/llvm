@@ -18,7 +18,7 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUAnnotateKernelFeatures.cpp \
   AMDGPUAnnotateUniformValues.cpp \
   AMDGPUAsmPrinter.cpp \
-  AMDGPUDiagnosticInfoUnsupported.cpp \
+  AMDGPUCodeGenPrepare.cpp \
   AMDGPUFrameLowering.cpp \
   AMDGPUTargetObjectFile.cpp \
   AMDGPUIntrinsicInfo.cpp \
@@ -33,10 +33,12 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUInstrInfo.cpp \
   AMDGPUPromoteAlloca.cpp \
   AMDGPURegisterInfo.cpp \
+  GCNHazardRecognizer.cpp \
   R600ClauseMergePass.cpp \
   R600ControlFlowFinalizer.cpp \
   R600EmitClauseMarkers.cpp \
   R600ExpandSpecialInstrs.cpp \
+  R600FrameLowering.cpp \
   R600InstrInfo.cpp \
   R600ISelLowering.cpp \
   R600MachineFunctionInfo.cpp \
@@ -44,11 +46,10 @@ amdgpu_codegen_SRC_FILES := \
   R600OptimizeVectorRegisters.cpp \
   R600Packetizer.cpp \
   R600RegisterInfo.cpp \
-  R600TextureIntrinsicsReplacer.cpp \
   SIAnnotateControlFlow.cpp \
+  SIDebuggerInsertNops.cpp \
   SIFixControlFlowLiveIntervals.cpp \
   SIFixSGPRCopies.cpp \
-  SIFixSGPRLiveRanges.cpp \
   SIFoldOperands.cpp \
   SIFrameLowering.cpp \
   SIInsertWaits.cpp \
@@ -58,9 +59,11 @@ amdgpu_codegen_SRC_FILES := \
   SILowerControlFlow.cpp \
   SILowerI1Copies.cpp \
   SIMachineFunctionInfo.cpp \
+  SIMachineScheduler.cpp \
   SIRegisterInfo.cpp \
   SIShrinkInstructions.cpp \
-  SITypeRewriter.cpp
+  SITypeRewriter.cpp \
+  SIWholeQuadMode.cpp
 
 # For the host
 # =====================================================
