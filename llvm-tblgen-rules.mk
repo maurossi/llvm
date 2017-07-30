@@ -164,7 +164,7 @@ endif
 genfile := $(filter $(generated_sources)/%GenIntrinsics.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
 $(eval $(call define-tblgen-rule, $(genfile), \
-    $(genfile:$(generated_sources)/%GenIntrinsics.inc=$(tblgen_source_dir)/%.td),tgt_intrinsic))
+    $(genfile:$(generated_sources)/%GenIntrinsics.inc=$(tblgen_source_dir)/%.td),tgt-intrinsic))
 endif
 
 genfile := $(filter $(generated_sources)/ARMGenDecoderTables.inc,$(tblgen_gen_tables))
