@@ -7,7 +7,7 @@ orcjit_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(orcjit_SRC_FILES)
-LOCAL_MODULE := libLLVMOrcJIT
+LOCAL_MODULE := libLL39OrcJIT
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -22,7 +22,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(orcjit_SRC_FILES)
-LOCAL_MODULE := libLLVMOrcJIT
+LOCAL_MODULE := libLL39OrcJIT
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

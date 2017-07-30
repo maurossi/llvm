@@ -54,7 +54,7 @@ include $(CLEAR_TBLGEN_VARS)
 # b/31559947, b/31938382 clang-tidy segmentation fault.
 LOCAL_TIDY_CHECKS := -clang-analyzer-*,-readability-*
 
-LOCAL_MODULE:= libLLVMARMCodeGen
+LOCAL_MODULE:= libLL39ARMCodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
@@ -76,7 +76,7 @@ include $(CLEAR_TBLGEN_VARS)
 # b/31559947, b/31938382 clang-tidy segmentation fault.
 LOCAL_TIDY_CHECKS := -clang-analyzer-*,-readability-*
 
-LOCAL_MODULE:= libLLVMARMCodeGen
+LOCAL_MODULE:= libLL39ARMCodeGen
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc

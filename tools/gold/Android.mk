@@ -24,7 +24,7 @@ include $(LLVM_ROOT_PATH)/llvm.mk
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE := LLVMgold
+LOCAL_MODULE := LL39gold
 
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 
@@ -33,7 +33,7 @@ llvm_gold_SRC_FILES := \
 
 LOCAL_SRC_FILES := $(llvm_gold_SRC_FILES)
 
-LOCAL_SHARED_LIBRARIES := libLLVM
+LOCAL_SHARED_LIBRARIES := libLL39
 
 ifndef USE_MINGW
 LOCAL_LDLIBS += -lpthread -ldl

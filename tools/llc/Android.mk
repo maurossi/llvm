@@ -11,66 +11,66 @@ llvm_llc_SRC_FILES := \
   llc.cpp
 
 llvm_llc_mips_STATIC_LIBRARIES := \
-  libLLVMMipsAsmParser \
-  libLLVMMipsInfo \
-  libLLVMMipsCodeGen \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmPrinter \
+  libLL39MipsAsmParser \
+  libLL39MipsInfo \
+  libLL39MipsCodeGen \
+  libLL39MipsDesc \
+  libLL39MipsAsmPrinter \
 
 llvm_llc_x86_STATIC_LIBRARIES := \
-  libLLVMX86Info \
-  libLLVMX86AsmParser \
-  libLLVMX86CodeGen \
-  libLLVMX86Disassembler \
-  libLLVMX86Desc \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils
+  libLL39X86Info \
+  libLL39X86AsmParser \
+  libLL39X86CodeGen \
+  libLL39X86Disassembler \
+  libLL39X86Desc \
+  libLL39X86AsmPrinter \
+  libLL39X86Utils
 
 llvm_llc_arm_STATIC_LIBRARIES := \
-  libLLVMARMCodeGen \
-  libLLVMARMDisassembler \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMDesc \
-  libLLVMARMInfo
+  libLL39ARMCodeGen \
+  libLL39ARMDisassembler \
+  libLL39ARMAsmParser \
+  libLL39ARMAsmPrinter \
+  libLL39ARMDesc \
+  libLL39ARMInfo
 
 llvm_llc_STATIC_LIBRARIES := \
-  libLLVMGlobalISel \
-  libLLVMAsmPrinter \
-  libLLVMDebugInfoCodeView \
-  libLLVMIRReader \
-  libLLVMAsmParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMSelectionDAG \
-  libLLVMInstCombine \
-  libLLVMCodeGen \
-  libLLVMProfileData \
-  libLLVMInstrumentation \
-  libLLVMObject \
-  libLLVMipo \
-  libLLVMLinker \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMIRParser \
-  libLLVMMCParser \
-  libLLVMScalarOpts \
-  libLLVMTransformUtils \
-  libLLVMVectorize \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMSupport \
-  libLLVMObject
+  libLL39GlobalISel \
+  libLL39AsmPrinter \
+  libLL39DebugInfoCodeView \
+  libLL39IRReader \
+  libLL39AsmParser \
+  libLL39BitReader \
+  libLL39BitWriter \
+  libLL39SelectionDAG \
+  libLL39InstCombine \
+  libLL39CodeGen \
+  libLL39ProfileData \
+  libLL39Instrumentation \
+  libLL39Object \
+  libLL39ipo \
+  libLL39Linker \
+  libLL39MCDisassembler \
+  libLL39MC \
+  libLL39MIRParser \
+  libLL39MCParser \
+  libLL39ScalarOpts \
+  libLL39TransformUtils \
+  libLL39Vectorize \
+  libLL39Analysis \
+  libLL39Target \
+  libLL39Core \
+  libLL39Support \
+  libLL39Object
 
 llvm_llc_aarch64_STATIC_LIBRARIES := \
-  libLLVMAArch64Info \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Disassembler \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils
+  libLL39AArch64Info \
+  libLL39AArch64AsmParser \
+  libLL39AArch64CodeGen \
+  libLL39AArch64Disassembler \
+  libLL39AArch64Desc \
+  libLL39AArch64AsmPrinter \
+  libLL39AArch64Utils
 
 
 

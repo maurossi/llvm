@@ -20,14 +20,14 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_SRC_FILES := $(lli_child_target_SRC_FILES)
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMOrcJIT \
-  libLLVMRuntimeDyld \
-  libLLVMObject \
-  libLLVMBitReader \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMSupport
+  libLL39OrcJIT \
+  libLL39RuntimeDyld \
+  libLL39Object \
+  libLL39BitReader \
+  libLL39MC \
+  libLL39MCParser \
+  libLL39Core \
+  libLL39Support
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 

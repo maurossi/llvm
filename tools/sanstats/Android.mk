@@ -11,16 +11,16 @@ llvm_sanstats_SRC_FILES := \
   sanstats.cpp
 
 llvm_sanstats_STATIC_LIBRARIES := \
-  libLLVMSymbolize \
-  libLLVMDebugInfoDWARF \
-  libLLVMDebugInfoPDB \
-  libLLVMDebugInfoCodeView \
-  libLLVMObject \
-  libLLVMBitReader \
-  libLLVMCore \
-  libLLVMMCParser \
-  libLLVMMC \
-  libLLVMSupport
+  libLL39Symbolize \
+  libLL39DebugInfoDWARF \
+  libLL39DebugInfoPDB \
+  libLL39DebugInfoCodeView \
+  libLL39Object \
+  libLL39BitReader \
+  libLL39Core \
+  libLL39MCParser \
+  libLL39MC \
+  libLL39Support
 
 include $(CLEAR_VARS)
 

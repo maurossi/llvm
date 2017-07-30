@@ -11,14 +11,14 @@ llvm_dwarfdump_SRC_FILES := \
   llvm-dwarfdump.cpp
 
 llvm_dwarfdump_STATIC_LIBRARIES := \
-  libLLVMDebugInfoDWARF            \
-  libLLVMDebugInfoPDB              \
-  libLLVMObject                    \
-  libLLVMBitReader                 \
-  libLLVMMC                        \
-  libLLVMMCParser                  \
-  libLLVMCore                      \
-  libLLVMSupport                   \
+  libLL39DebugInfoDWARF            \
+  libLL39DebugInfoPDB              \
+  libLL39Object                    \
+  libLL39BitReader                 \
+  libLL39MC                        \
+  libLL39MCParser                  \
+  libLL39Core                      \
+  libLL39Support                   \
 
 include $(CLEAR_VARS)
 

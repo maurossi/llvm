@@ -1,102 +1,102 @@
 LOCAL_PATH:= $(call my-dir)
 
 llvm_pre_static_libraries := \
-  libLLVMLinker \
-  libLLVMipo \
-  libLLVMDebugInfoDWARF \
-  libLLVMDebugInfoPDB \
-  libLLVMSymbolize \
-  libLLVMIRReader \
-  libLLVMBitWriter \
-  libLLVMBitReader
+  libLL39Linker \
+  libLL39ipo \
+  libLL39DebugInfoDWARF \
+  libLL39DebugInfoPDB \
+  libLL39Symbolize \
+  libLL39IRReader \
+  libLL39BitWriter \
+  libLL39BitReader
 
 llvm_arm_static_libraries := \
-  libLLVMARMCodeGen \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMInfo \
-  libLLVMARMDesc \
-  libLLVMARMDisassembler
+  libLL39ARMCodeGen \
+  libLL39ARMAsmParser \
+  libLL39ARMAsmPrinter \
+  libLL39ARMInfo \
+  libLL39ARMDesc \
+  libLL39ARMDisassembler
 
 llvm_x86_static_libraries := \
-  libLLVMX86CodeGen \
-  libLLVMX86Info \
-  libLLVMX86Desc \
-  libLLVMX86AsmParser \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils \
-  libLLVMX86Disassembler
+  libLL39X86CodeGen \
+  libLL39X86Info \
+  libLL39X86Desc \
+  libLL39X86AsmParser \
+  libLL39X86AsmPrinter \
+  libLL39X86Utils \
+  libLL39X86Disassembler
 
 ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
 llvm_x86_static_libraries += \
-  libLLVMAMDGPUCodeGen \
-  libLLVMAMDGPUInfo \
-  libLLVMAMDGPUDesc \
-  libLLVMAMDGPUAsmParser \
-  libLLVMAMDGPUAsmPrinter \
-  libLLVMAMDGPUUtils
+  libLL39AMDGPUCodeGen \
+  libLL39AMDGPUInfo \
+  libLL39AMDGPUDesc \
+  libLL39AMDGPUAsmParser \
+  libLL39AMDGPUAsmPrinter \
+  libLL39AMDGPUUtils
 endif
 
 llvm_mips_static_libraries := \
-  libLLVMMipsCodeGen \
-  libLLVMMipsInfo \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmParser \
-  libLLVMMipsAsmPrinter \
-  libLLVMMipsDisassembler
+  libLL39MipsCodeGen \
+  libLL39MipsInfo \
+  libLL39MipsDesc \
+  libLL39MipsAsmParser \
+  libLL39MipsAsmPrinter \
+  libLL39MipsDisassembler
 
 llvm_aarch64_static_libraries := \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Info \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils \
-  libLLVMAArch64Disassembler
+  libLL39AArch64CodeGen \
+  libLL39AArch64Info \
+  libLL39AArch64Desc \
+  libLL39AArch64AsmParser \
+  libLL39AArch64AsmPrinter \
+  libLL39AArch64Utils \
+  libLL39AArch64Disassembler
 
 llvm_post_static_libraries := \
-  libLLVMLTO \
-  libLLVMAsmPrinter \
-  libLLVMSelectionDAG \
-  libLLVMCodeGen \
-  libLLVMDebugInfoCodeView \
-  libLLVMObject \
-  libLLVMScalarOpts \
-  libLLVMInstCombine \
-  libLLVMInstrumentation \
-  libLLVMTransformObjCARC \
-  libLLVMTransformUtils \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMGlobalISel \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMAsmParser \
-  libLLVMOption \
-  libLLVMSupport \
-  libLLVMVectorize \
-  libLLVMProfileData \
-  libLLVMProfileDataCoverage \
-  libLLVMLibDriver
+  libLL39LTO \
+  libLL39AsmPrinter \
+  libLL39SelectionDAG \
+  libLL39CodeGen \
+  libLL39DebugInfoCodeView \
+  libLL39Object \
+  libLL39ScalarOpts \
+  libLL39InstCombine \
+  libLL39Instrumentation \
+  libLL39TransformObjCARC \
+  libLL39TransformUtils \
+  libLL39Analysis \
+  libLL39Target \
+  libLL39GlobalISel \
+  libLL39MCDisassembler \
+  libLL39MC \
+  libLL39MCParser \
+  libLL39Core \
+  libLL39AsmParser \
+  libLL39Option \
+  libLL39Support \
+  libLL39Vectorize \
+  libLL39ProfileData \
+  libLL39ProfileDataCoverage \
+  libLL39LibDriver
 
 llvm_host_static_libraries := \
-  libLLVMExecutionEngine \
-  libLLVMRuntimeDyld \
-  libLLVMMCJIT \
-  libLLVMOrcJIT
+  libLL39ExecutionEngine \
+  libLL39RuntimeDyld \
+  libLL39MCJIT \
+  libLL39OrcJIT
 
 llvm_device_static_libraries := \
-  libLLVMExecutionEngine \
-  libLLVMRuntimeDyld \
-  libLLVMMCJIT
+  libLL39ExecutionEngine \
+  libLL39RuntimeDyld \
+  libLL39MCJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
 LOCAL_IS_HOST_MODULE := true
 
-LOCAL_MODULE:= libLLVM
+LOCAL_MODULE:= libLL39
 
 LOCAL_MODULE_TAGS := optional
 
@@ -133,7 +133,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 # DEVICE LLVM shared library build
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVM
+LOCAL_MODULE:= libLL39
 
 LOCAL_MODULE_TAGS := optional
 

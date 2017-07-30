@@ -11,10 +11,10 @@ llvm_profdata_SRC_FILES := \
   llvm-profdata.cpp
 
 llvm_profdata_STATIC_LIBRARIES := \
-  libLLVMObject                   \
-  libLLVMProfileData              \
-  libLLVMCore                     \
-  libLLVMSupport                  \
+  libLL39Object                   \
+  libLL39ProfileData              \
+  libLL39Core                     \
+  libLL39Support                  \
 
 include $(CLEAR_VARS)
 

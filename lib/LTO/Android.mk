@@ -8,7 +8,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(lto_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLTO
+LOCAL_MODULE:= libLL39LTO
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_MODULE_TAGS := optional
@@ -25,7 +25,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(lto_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLTO
+LOCAL_MODULE:= libLL39LTO
 
 LOCAL_MODULE_TAGS := optional
 

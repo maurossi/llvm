@@ -7,7 +7,7 @@ objectyaml_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMObjectYAML
+LOCAL_MODULE:= libLL39ObjectYAML
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(objectyaml_SRC_FILES)
@@ -22,7 +22,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVMObjectYAML
+LOCAL_MODULE:= libLL39ObjectYAML
 
 LOCAL_SRC_FILES := $(objectyaml_SRC_FILES)
 

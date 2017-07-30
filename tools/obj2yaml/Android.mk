@@ -10,13 +10,13 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 obj2yaml_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 obj2yaml_STATIC_LIBRARIES := \
-  libLLVMObject             \
-  libLLVMObjectYAML         \
-  libLLVMMC                 \
-  libLLVMMCParser           \
-  libLLVMBitReader          \
-  libLLVMCore               \
-  libLLVMSupport            \
+  libLL39Object             \
+  libLL39ObjectYAML         \
+  libLL39MC                 \
+  libLL39MCParser           \
+  libLL39BitReader          \
+  libLL39Core               \
+  libLL39Support            \
 
 include $(CLEAR_VARS)
 

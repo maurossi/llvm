@@ -15,13 +15,13 @@ LOCAL_SRC_FILES := $(verify_uselistorder_SRC_FILES)
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMAsmParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMAnalysis \
-  libLLVMCore \
-  libLLVMIRReader \
-  libLLVMSupport
+  libLL39AsmParser \
+  libLL39BitReader \
+  libLL39BitWriter \
+  libLL39Analysis \
+  libLL39Core \
+  libLL39IRReader \
+  libLL39Support
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

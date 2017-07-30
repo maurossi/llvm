@@ -28,7 +28,7 @@ aarch64_codegen_SRC_FILES := $(filter-out $(aarch64_global_isel_SRC_FILES),$(aar
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMAArch64CodeGen
+LOCAL_MODULE:= libLL39AArch64CodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
@@ -47,7 +47,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMAArch64CodeGen
+LOCAL_MODULE:= libLL39AArch64CodeGen
 
 LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc

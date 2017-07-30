@@ -14,7 +14,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(mc_disassembler_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMMCDisassembler
+LOCAL_MODULE:= libLL39MCDisassembler
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -29,7 +29,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(mc_disassembler_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMMCDisassembler
+LOCAL_MODULE:= libLL39MCDisassembler
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 

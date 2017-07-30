@@ -9,7 +9,7 @@ globalisel_SRC_FILES := GlobalISel.cpp
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(globalisel_SRC_FILES)
-LOCAL_MODULE:= libLLVMGlobalISel
+LOCAL_MODULE:= libLL39GlobalISel
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -24,7 +24,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(globalisel_SRC_FILES)
-LOCAL_MODULE:= libLLVMGlobalISel
+LOCAL_MODULE:= libLL39GlobalISel
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
