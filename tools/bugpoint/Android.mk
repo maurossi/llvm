@@ -1,13 +1,13 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM39_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
 # bugpoint command line tool
 #===---------------------------------------------------------------===
 
-bugpoint_SRC_FILES := \
+bugpoint_SRC_FILES39 := \
   BugDriver.cpp       \
   CrashDebugger.cpp   \
   ExecutionDriver.cpp \
@@ -47,7 +47,7 @@ LOCAL_MODULE := bugpoint
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_IS_HOST_MODULE := true
 
-LOCAL_SRC_FILES := $(bugpoint_SRC_FILES)
+LOCAL_SRC_FILES := $(bugpoint_SRC_FILES39)
 
 LOCAL_STATIC_LIBRARIES := $(bugpoint_STATIC_LIBRARIES)
 
@@ -55,8 +55,8 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 LOCAL_LDFLAGS_darwin := -Wl,-export_dynamic
 LOCAL_LDFLAGS_linux := -Wl,--export-dynamic
 
-include $(LLVM_ROOT_PATH)/llvm.mk
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_ROOT_PATH)/llvm.mk
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)
