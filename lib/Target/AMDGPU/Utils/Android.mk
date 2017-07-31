@@ -5,7 +5,9 @@ amdgpu_utils_TBLGEN_TABLES := \
   AMDGPUGenSubtargetInfo.inc
 
 amdgpu_utils_SRC_FILES := \
-  AMDGPUBaseInfo.cpp
+  AMDGPUBaseInfo.cpp \
+  AMDKernelCodeTUtils.cpp \
+  AMDGPUAsmUtils.cpp
 
 # For the host
 # =====================================================
