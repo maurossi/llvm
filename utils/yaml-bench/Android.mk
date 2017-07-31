@@ -7,7 +7,7 @@ yaml_bench_SRC_FILES := \
   YAMLBench.cpp
 
 yaml_bench_STATIC_LIBRARIES := \
-  libLLVMSupport \
+  libLLVM39Support \
 
 # yaml-bench executable for the host
 # =====================================================

@@ -20,7 +20,7 @@ libfuzzer_srcs := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVMFuzzerNoMain
+LOCAL_MODULE := libLLVM39FuzzerNoMain
 LOCAL_C_INCLUDES := external/compiler-rt/include
 LOCAL_SRC_FILES := $(libfuzzer_srcs)
 LOCAL_SANITIZE := never
@@ -29,16 +29,16 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVMFuzzer
+LOCAL_MODULE := libLLVM39Fuzzer
 LOCAL_SRC_FILES := FuzzerMain.cpp
-LOCAL_WHOLE_STATIC_LIBRARIES := libLLVMFuzzerNoMain
+LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM39FuzzerNoMain
 LOCAL_SANITIZE := never
 LOCAL_MULTILIB := both
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVMFuzzerNoMain
+LOCAL_MODULE := libLLVM39FuzzerNoMain
 LOCAL_C_INCLUDES := external/compiler-rt/include
 LOCAL_SRC_FILES := $(libfuzzer_srcs)
 LOCAL_SANITIZE := never
@@ -47,9 +47,9 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVMFuzzer
+LOCAL_MODULE := libLLVM39Fuzzer
 LOCAL_SRC_FILES := FuzzerMain.cpp
-LOCAL_WHOLE_STATIC_LIBRARIES := libLLVMFuzzerNoMain
+LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM39FuzzerNoMain
 LOCAL_SANITIZE := never
 LOCAL_MULTILIB := both
 include $(BUILD_HOST_STATIC_LIBRARY)

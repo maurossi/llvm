@@ -4,19 +4,19 @@ llvm_link_SRC_FILES := \
   llvm-link.cpp
 
 llvm_link_STATIC_LIBRARIES := \
-  libLLVMLinker \
-  libLLVMIRReader \
-  libLLVMObject \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMAsmParser \
-  libLLVMTransformUtils \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMSupport
+  libLLVM39Linker \
+  libLLVM39IRReader \
+  libLLVM39Object \
+  libLLVM39MC \
+  libLLVM39MCParser \
+  libLLVM39BitReader \
+  libLLVM39BitWriter \
+  libLLVM39AsmParser \
+  libLLVM39TransformUtils \
+  libLLVM39Analysis \
+  libLLVM39Target \
+  libLLVM39Core \
+  libLLVM39Support
 
 #===---------------------------------------------------------------===
 # llvm-link command line tool (host)

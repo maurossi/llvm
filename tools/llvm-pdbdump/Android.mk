@@ -6,9 +6,9 @@ include $(LLVM_ROOT_PATH)/llvm.mk
 llvm_pdbdump_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_pdbdump_STATIC_LIBRARIES := \
-  libLLVMDebugInfoPDB \
-  libLLVMDebugInfoCodeView \
-  libLLVMSupport
+  libLLVM39DebugInfoPDB \
+  libLLVM39DebugInfoCodeView \
+  libLLVM39Support
 
 include $(CLEAR_VARS)
 

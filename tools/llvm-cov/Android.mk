@@ -10,14 +10,14 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 llvm_cov_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_cov_STATIC_LIBRARIES := \
-  libLLVMObject              \
-  libLLVMProfileDataCoverage \
-  libLLVMProfileData         \
-  libLLVMMC                  \
-  libLLVMMCParser            \
-  libLLVMBitReader           \
-  libLLVMCore                \
-  libLLVMSupport             \
+  libLLVM39Object              \
+  libLLVM39ProfileDataCoverage \
+  libLLVM39ProfileData         \
+  libLLVM39MC                  \
+  libLLVM39MCParser            \
+  libLLVM39BitReader           \
+  libLLVM39Core                \
+  libLLVM39Support             \
 
 include $(CLEAR_VARS)
 
