@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_codegen_TBLGEN_TABLES := \
+amdgpu_codegen_TBLGEN_TABLES39 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenDAGISel.inc  \
@@ -12,7 +12,7 @@ amdgpu_codegen_TBLGEN_TABLES := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenAsmMatcher.inc
 
-amdgpu_codegen_SRC_FILES := \
+amdgpu_codegen_SRC_FILES39 := \
   AMDILCFGStructurizer.cpp \
   AMDGPUAlwaysInlinePass.cpp \
   AMDGPUAnnotateKernelFeatures.cpp \
@@ -68,37 +68,37 @@ amdgpu_codegen_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
-TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES39 := $(amdgpu_codegen_TBLGEN_TABLES39)
 
-LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
+LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES39)
 
 LOCAL_MODULE := libLLVM39AMDGPUCodeGen
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
-TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES39 := $(amdgpu_codegen_TBLGEN_TABLES39)
 
-LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
+LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES39)
 
 LOCAL_MODULE := libLLVM39AMDGPUCodeGen
 
-include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_DEVICE_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

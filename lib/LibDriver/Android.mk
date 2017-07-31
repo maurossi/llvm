@@ -1,40 +1,40 @@
 LOCAL_PATH:= $(call my-dir)
 
-LibDriver_SRC_FILES := \
+LibDriver_SRC_FILES39 := \
   LibDriver.cpp
 
-LibDriver_TBLGEN_TABLES := \
+LibDriver_TBLGEN_TABLES39 := \
   Options.inc
 
 
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
-LOCAL_SRC_FILES := $(LibDriver_SRC_FILES)
-TBLGEN_TABLES := $(LibDriver_TBLGEN_TABLES)
+LOCAL_SRC_FILES := $(LibDriver_SRC_FILES39)
+TBLGEN_TABLES39 := $(LibDriver_TBLGEN_TABLES39)
 
 LOCAL_MODULE:= libLLVM39LibDriver
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
-LOCAL_SRC_FILES := $(LibDriver_SRC_FILES)
-TBLGEN_TABLES := $(LibDriver_TBLGEN_TABLES)
+LOCAL_SRC_FILES := $(LibDriver_SRC_FILES39)
+TBLGEN_TABLES39 := $(LibDriver_TBLGEN_TABLES39)
 
 LOCAL_MODULE:= libLLVM39LibDriver
 
-include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM39_DEVICE_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

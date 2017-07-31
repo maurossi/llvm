@@ -1,6 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-debuginfo_dwarf_SRC_FILES := \
+debuginfo_dwarf_SRC_FILES39 := \
   DWARFAbbreviationDeclaration.cpp \
   DWARFAcceleratorTable.cpp \
   DWARFCompileUnit.cpp \
@@ -26,14 +26,14 @@ include $(CLEAR_VARS)
 
 REQUIRES_RTTI := 1
 
-LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
+LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES39)
 
 LOCAL_MODULE:= libLLVM39DebugInfoDWARF
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -43,11 +43,11 @@ include $(CLEAR_VARS)
 
 REQUIRES_RTTI := 1
 
-LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
+LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES39)
 
 LOCAL_MODULE:= libLLVM39DebugInfoDWARF
 
-include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_DEVICE_BUILD_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

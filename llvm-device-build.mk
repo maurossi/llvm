@@ -1,4 +1,4 @@
-LOCAL_MODULE_TARGET_ARCH := $(LLVM_SUPPORTED_ARCH)
+LOCAL_MODULE_TARGET_ARCH := $(LLVM39_SUPPORTED_ARCH)
 
 LOCAL_CLANG := true
 
@@ -60,22 +60,22 @@ LOCAL_CPPFLAGS :=	\
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
 	bionic \
-	$(LLVM_ROOT_PATH)	\
-	$(LLVM_ROOT_PATH)/include	\
-	$(LLVM_ROOT_PATH)/device/include	\
+	$(LLVM39_ROOT_PATH)	\
+	$(LLVM39_ROOT_PATH)/include	\
+	$(LLVM39_ROOT_PATH)/device/include	\
 	$(LOCAL_C_INCLUDES)
 
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-device-td-to-out
+define transform-device-td-to-out39
 @mkdir -p $(dir $@)
 @echo "Device TableGen (gen-$(1)): $(TBLGEN_LOCAL_MODULE) <= $<"
-$(hide) $(LLVM_TBLGEN) \
+$(hide) $(LLVM39_TBLGEN) \
 	-I $(dir $<)	\
-	-I $(LLVM_ROOT_PATH)/include	\
-	-I $(LLVM_ROOT_PATH)/device/include	\
-	-I $(LLVM_ROOT_PATH)/lib/Target	\
+	-I $(LLVM39_ROOT_PATH)/include	\
+	-I $(LLVM39_ROOT_PATH)/device/include	\
+	-I $(LLVM39_ROOT_PATH)/lib/Target	\
     -gen-$(strip $(1)) \
     -d $@.d -o $@ $<
 endef

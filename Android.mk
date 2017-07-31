@@ -1,5 +1,5 @@
 LOCAL_PATH := $(call my-dir)
-LLVM_ROOT_PATH := $(LOCAL_PATH)
+LLVM39_ROOT_PATH := $(LOCAL_PATH)
 LLVM39_TBLGEN := out/host/linux-x86/bin/llvm39-tblgen
 FORCE_BUILD_LLVM_DISABLE_NDEBUG ?= false
 # Legality check: FORCE_BUILD_LLVM_DISABLE_NDEBUG should consist of one word -- either "true" or "false".
