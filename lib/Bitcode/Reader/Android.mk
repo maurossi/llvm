@@ -11,7 +11,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(bitcode_reader_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBitReader
+LOCAL_MODULE:= libLLVM39BitReader
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -27,7 +27,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(bitcode_reader_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBitReader
+LOCAL_MODULE:= libLLVM39BitReader
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

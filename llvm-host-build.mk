@@ -73,8 +73,8 @@ LOCAL_LDLIBS_windows += -luuid
 
 LOCAL_IS_HOST_MODULE := true
 
-ifeq (libLLVM, $(filter libLLVM,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
-# Skip building a 32-bit shared object if they are using libLLVM.
+ifeq (libLLVM39, $(filter libLLVM39,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
+# Skip building a 32-bit shared object if they are using libLLVM39.
 LOCAL_MULTILIB := first
 endif
 

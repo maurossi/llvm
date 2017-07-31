@@ -11,17 +11,17 @@ llvm_extract_SRC_FILES := \
   llvm-extract.cpp
 
 llvm_extract_STATIC_LIBRARIES := \
-  libLLVMIRReader                \
-  libLLVMAsmParser               \
-  libLLVMObject                  \
-  libLLVMBitReader               \
-  libLLVMBitWriter               \
-  libLLVMipo                     \
-  libLLVMTransformUtils          \
-  libLLVMAnalysis                \
-  libLLVMTarget                  \
-  libLLVMCore                    \
-  libLLVMSupport                 \
+  libLLVM39IRReader                \
+  libLLVM39AsmParser               \
+  libLLVM39Object                  \
+  libLLVM39BitReader               \
+  libLLVM39BitWriter               \
+  libLLVM39ipo                     \
+  libLLVM39TransformUtils          \
+  libLLVM39Analysis                \
+  libLLVM39Target                  \
+  libLLVM39Core                    \
+  libLLVM39Support                 \
 
 include $(CLEAR_VARS)
 

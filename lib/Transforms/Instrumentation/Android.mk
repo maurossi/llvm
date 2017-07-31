@@ -6,7 +6,7 @@ instrumentation_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 # =====================================================
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVMInstrumentation
+LOCAL_MODULE:= libLLVM39Instrumentation
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(instrumentation_SRC_FILES)
 
@@ -20,7 +20,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVMInstrumentation
+LOCAL_MODULE:= libLLVM39Instrumentation
 LOCAL_SRC_FILES := $(instrumentation_SRC_FILES)
 
 include $(LLVM_DEVICE_BUILD_MK)

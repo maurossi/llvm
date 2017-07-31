@@ -7,7 +7,7 @@ tablegen_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_MODULE := llvm-tblgen
+LOCAL_MODULE := llvm39-tblgen
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(tablegen_SRC_FILES)
 
@@ -15,8 +15,8 @@ REQUIRES_EH := 1
 REQUIRES_RTTI := 1
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMTableGen \
-  libLLVMSupport
+  libLLVM39TableGen \
+  libLLVM39Support
 
 LOCAL_LDLIBS += -lm
 LOCAL_LDLIBS_windows := -limagehlp -lpsapi -lversion

@@ -3,7 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 # No dia support
 debuginfo_pdb_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
-# lib/PDB/Raw is included into libLLVMDebugInfoPDB instead of as a separate module
+# lib/PDB/Raw is included into libLLVM39DebugInfoPDB instead of as a separate module
 debuginfo_pdb_raw_SRC_FILES = $(sort $(notdir $(wildcard $(LOCAL_PATH)/Raw/*.cpp)))
 debuginfo_pdb_SRC_FILES += $(debuginfo_pdb_raw_SRC_FILES:%=Raw/%)
 
@@ -15,7 +15,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_pdb_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoPDB
+LOCAL_MODULE:= libLLVM39DebugInfoPDB
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -32,7 +32,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_pdb_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoPDB
+LOCAL_MODULE:= libLLVM39DebugInfoPDB
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)

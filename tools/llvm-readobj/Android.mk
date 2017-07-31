@@ -10,17 +10,17 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 llvm_readobj_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 llvm_readobj_STATIC_LIBRARIES := \
-  libLLVMARMInfo \
-  libLLVMAArch64Info \
-  libLLVMMipsInfo \
-  libLLVMX86Info \
-  libLLVMDebugInfoCodeView \
-  libLLVMObject \
-  libLLVMBitReader \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMSupport \
+  libLLVM39ARMInfo \
+  libLLVM39AArch64Info \
+  libLLVM39MipsInfo \
+  libLLVM39X86Info \
+  libLLVM39DebugInfoCodeView \
+  libLLVM39Object \
+  libLLVM39BitReader \
+  libLLVM39MC \
+  libLLVM39MCParser \
+  libLLVM39Core \
+  libLLVM39Support \
 
 include $(CLEAR_VARS)
 
