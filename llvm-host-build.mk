@@ -60,9 +60,9 @@ LOCAL_CPPFLAGS_darwin += \
 
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
-	$(LLVM_ROOT_PATH)	\
-	$(LLVM_ROOT_PATH)/include	\
-	$(LLVM_ROOT_PATH)/host/include	\
+	$(LLVM39_ROOT_PATH)	\
+	$(LLVM39_ROOT_PATH)/include	\
+	$(LLVM39_ROOT_PATH)/host/include	\
 	$(LOCAL_C_INCLUDES)
 
 # Add on ncurses to have support for terminfo
@@ -81,14 +81,14 @@ endif
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-host-td-to-out
+define transform-host-td-to-out39
 @mkdir -p $(dir $@)
 @echo "Host TableGen: $(TBLGEN_LOCAL_MODULE) (gen-$(1)) <= $<"
-$(hide) $(LLVM_TBLGEN) \
+$(hide) $(LLVM39_TBLGEN) \
 	-I $(dir $<)	\
-	-I $(LLVM_ROOT_PATH)/include	\
-	-I $(LLVM_ROOT_PATH)/host/include	\
-	-I $(LLVM_ROOT_PATH)/lib/Target	\
+	-I $(LLVM39_ROOT_PATH)/include	\
+	-I $(LLVM39_ROOT_PATH)/host/include	\
+	-I $(LLVM39_ROOT_PATH)/lib/Target	\
 	$(if $(strip $(CLANG_ROOT_PATH)),-I $(CLANG_ROOT_PATH)/include,)	\
 	-gen-$(strip $(1))	\
 	-d $@.d -o $@ $<

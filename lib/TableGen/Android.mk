@@ -1,8 +1,8 @@
 LOCAL_PATH:= $(call my-dir)
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
-include $(LLVM_ROOT_PATH)/llvm.mk
+LLVM39_ROOT_PATH := $(LOCAL_PATH)/../..
+include $(LLVM39_ROOT_PATH)/llvm.mk
 
-libtablegen_SRC_FILES := \
+libtablegen_SRC_FILES39 := \
   Error.cpp \
   Main.cpp \
   Record.cpp \
@@ -17,7 +17,7 @@ libtablegen_SRC_FILES := \
 include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_SRC_FILES := $(libtablegen_SRC_FILES)
+LOCAL_SRC_FILES := $(libtablegen_SRC_FILES39)
 LOCAL_MODULE:= libLL39TableGen
 
 LOCAL_MODULE_TAGS := optional
@@ -25,7 +25,7 @@ LOCAL_MODULE_TAGS := optional
 REQUIRES_EH := 1
 REQUIRES_RTTI := 1
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM39_HOST_BUILD_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 ## For the device
@@ -33,11 +33,11 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 #include $(CLEAR_VARS)
 #
-#LOCAL_SRC_FILES := $(libtablegen_SRC_FILES)
+#LOCAL_SRC_FILES := $(libtablegen_SRC_FILES39)
 #LOCAL_MODULE:= libLL39TableGen
 #
 #LOCAL_MODULE_TAGS := optional
 #
-#include $(LLVM_DEVICE_BUILD_MK)
+#include $(LLVM39_DEVICE_BUILD_MK)
 #include $(BUILD_STATIC_LIBRARY)
 endif

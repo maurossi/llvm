@@ -16,22 +16,22 @@
 
 LOCAL_PATH:= $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../../
-include $(LLVM_ROOT_PATH)/llvm.mk
+LLVM39_ROOT_PATH := $(LOCAL_PATH)/../../
+include $(LLVM39_ROOT_PATH)/llvm.mk
 
 # For the host only
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
 LOCAL_MODULE := LL39gold
 
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 
-llvm_gold_SRC_FILES := \
+llvm_gold_SRC_FILES39 := \
   gold-plugin.cpp
 
-LOCAL_SRC_FILES := $(llvm_gold_SRC_FILES)
+LOCAL_SRC_FILES := $(llvm_gold_SRC_FILES39)
 
 LOCAL_SHARED_LIBRARIES := libLL39
 
@@ -41,7 +41,7 @@ endif
 
 LOCAL_C_INCLUDES += toolchain/binutils/binutils-2.25/include
 
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)

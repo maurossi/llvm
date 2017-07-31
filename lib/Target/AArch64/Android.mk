@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_codegen_TBLGEN_TABLES := \
+aarch64_codegen_TBLGEN_TABLES39 := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenAsmWriter.inc \
@@ -15,47 +15,47 @@ aarch64_codegen_TBLGEN_TABLES := \
   AArch64GenMCPseudoLowering.inc \
   AArch64GenSystemOperands.inc \
 
-aarch64_codegen_SRC_FILES := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
+aarch64_codegen_SRC_FILES39 := $(sort $(notdir $(wildcard $(LOCAL_PATH)/*.cpp)))
 
 # Global ISEL is an experimental feature.  If LLVM_BUILD_GLOBAL_ISEL is not
 # set, these files fail compilation based on a macro check.
-aarch64_global_isel_SRC_FILES := AArch64CallLowering.cpp \
+aarch64_global_isel_SRC_FILES39 := AArch64CallLowering.cpp \
                                  AArch64RegisterBankInfo.cpp
-aarch64_codegen_SRC_FILES := $(filter-out $(aarch64_global_isel_SRC_FILES),$(aarch64_codegen_SRC_FILES))
+aarch64_codegen_SRC_FILES39 := $(filter-out $(aarch64_global_isel_SRC_FILES39),$(aarch64_codegen_SRC_FILES39))
 
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
 LOCAL_MODULE:= libLL39AArch64CodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
+LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES39)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(aarch64_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES39 := $(aarch64_codegen_TBLGEN_TABLES39)
 
-include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_HOST_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS39)
 
 LOCAL_MODULE:= libLL39AArch64CodeGen
 
-LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
+LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES39)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(aarch64_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES39 := $(aarch64_codegen_TBLGEN_TABLES39)
 
-include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM39_DEVICE_BUILD_MK)
+include $(LLVM39_TBLGEN_RULES_MK)
+include $(LLVM39_GEN_ATTRIBUTES_MK)
+include $(LLVM39_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

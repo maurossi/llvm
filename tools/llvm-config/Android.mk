@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM39_ROOT_PATH := $(LOCAL_PATH)/../..
 
 #===---------------------------------------------------------------===
 # llvm-config command line tool
@@ -8,7 +8,7 @@ LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
 
 include $(CLEAR_VARS)
 
-llvm_config_SRC_FILES := \
+llvm_config_SRC_FILES39 := \
   llvm-config.cpp
 
 llvm_config_STATIC_LIBRARIES := \
@@ -36,7 +36,7 @@ LOCAL_GENERATED_SOURCES += $(GEN)
 
 LOCAL_C_INCLUDES := $(generated_sources)
 
-LOCAL_SRC_FILES := $(llvm_config_SRC_FILES)
+LOCAL_SRC_FILES := $(llvm_config_SRC_FILES39)
 LOCAL_STATIC_LIBRARIES := $(llvm_config_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
@@ -44,6 +44,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
   $(LOCAL_PATH)/Android.mk \
   $(LOCAL_GENERATED_SOURCES)
 
-include $(LLVM_ROOT_PATH)/llvm.mk
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM39_ROOT_PATH)/llvm.mk
+include $(LLVM39_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -1,21 +1,21 @@
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ##########################################################
-define transform-td-to-out
+define transform-td-to-out39
 $(if $(LOCAL_IS_HOST_MODULE),	\
-	$(call transform-host-td-to-out,$(1)),	\
-	$(call transform-device-td-to-out,$(1)))
+	$(call transform-host-td-to-out39,$(1)),	\
+	$(call transform-device-td-to-out39,$(1)))
 endef
 
 # $(1): an output file
 # $(2): an input .td file
-# $(3): a parameter passed to transform-td-to-out
+# $(3): a parameter passed to transform-td-to-out39
 # You must call this with $(eval).
-define define-tblgen-rule
+define define-tblgen-rule39
 $(1): TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
-$(1): $(2) $(LLVM_TBLGEN)
-	$$(call transform-td-to-out,$(3))
-$$(call include-depfile, $(1).d, $(1))
+$(1): $(2) $(LLVM39_TBLGEN)
+	$$(call transform-td-to-out39,$(3))
+$$(call include-depfile39, $(1).d, $(1))
 endef
 
 ###########################################################
@@ -28,175 +28,175 @@ ifeq ($(LOCAL_MODULE_CLASS),)
 	LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 endif
 
-ifneq ($(strip $(TBLGEN_TABLES)),)
+ifneq ($(strip $(TBLGEN_TABLES39)),)
 
 generated_sources := $(call local-generated-sources-dir)
-tblgen_gen_tables := $(addprefix $(generated_sources)/,$(TBLGEN_TABLES))
+tblgen_gen_tables := $(addprefix $(generated_sources)/,$(TBLGEN_TABLES39))
 LOCAL_GENERATED_SOURCES += $(tblgen_gen_tables)
 
 tblgen_source_dir := $(LOCAL_PATH)
-ifneq ($(TBLGEN_TD_DIR),)
-tblgen_source_dir := $(TBLGEN_TD_DIR)
+ifneq ($(TBLGEN_TD_DIR39),)
+tblgen_source_dir := $(TBLGEN_TD_DIR39)
 endif
 
 #
 # The directory and the .td directory is not the same.
 #
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/ARM/MCTargetDesc)
-$(eval $(call define-tblgen-rule, $(generated_sources)/ARMGenRegisterInfo.inc, \
+ifeq ($(tblgen_source_dir),$(LLVM39_ROOT_PATH)/lib/Target/ARM/MCTargetDesc)
+$(eval $(call define-tblgen-rule39, $(generated_sources)/ARMGenRegisterInfo.inc, \
     $(tblgen_source_dir)/../ARM.td,register-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/ARMGenInstrInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/ARMGenInstrInfo.inc, \
     $(tblgen_source_dir)/../ARM.td,instr-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/ARMGenSubtargetInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/ARMGenSubtargetInfo.inc, \
     $(tblgen_source_dir)/../ARM.td,subtarget))
 endif
 
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/AArch64/MCTargetDesc)
-$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenRegisterInfo.inc, \
+ifeq ($(tblgen_source_dir),$(LLVM39_ROOT_PATH)/lib/Target/AArch64/MCTargetDesc)
+$(eval $(call define-tblgen-rule39, $(generated_sources)/AArch64GenRegisterInfo.inc, \
     $(tblgen_source_dir)/../AArch64.td,register-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenInstrInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/AArch64GenInstrInfo.inc, \
     $(tblgen_source_dir)/../AArch64.td,instr-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/AArch64GenSubtargetInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/AArch64GenSubtargetInfo.inc, \
     $(tblgen_source_dir)/../AArch64.td,subtarget))
 endif
 
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
-$(eval $(call define-tblgen-rule, $(generated_sources)/X86GenRegisterInfo.inc, \
+ifeq ($(tblgen_source_dir),$(LLVM39_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
+$(eval $(call define-tblgen-rule39, $(generated_sources)/X86GenRegisterInfo.inc, \
     $(tblgen_source_dir)/../X86.td,register-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/X86GenInstrInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/X86GenInstrInfo.inc, \
     $(tblgen_source_dir)/../X86.td,instr-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/X86GenSubtargetInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/X86GenSubtargetInfo.inc, \
     $(tblgen_source_dir)/../X86.td,subtarget))
 endif
 
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/Mips/MCTargetDesc)
-$(eval $(call define-tblgen-rule, $(generated_sources)/MipsGenRegisterInfo.inc, \
+ifeq ($(tblgen_source_dir),$(LLVM39_ROOT_PATH)/lib/Target/Mips/MCTargetDesc)
+$(eval $(call define-tblgen-rule39, $(generated_sources)/MipsGenRegisterInfo.inc, \
     $(tblgen_source_dir)/../Mips.td,register-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/MipsGenInstrInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/MipsGenInstrInfo.inc, \
     $(tblgen_source_dir)/../Mips.td,instr-info))
-$(eval $(call define-tblgen-rule, $(generated_sources)/MipsGenSubtargetInfo.inc, \
+$(eval $(call define-tblgen-rule39, $(generated_sources)/MipsGenSubtargetInfo.inc, \
     $(tblgen_source_dir)/../Mips.td,subtarget))
 endif
 
 
 genfile := $(filter $(generated_sources)/%GenRegisterInfo.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenRegisterInfo.inc=$(tblgen_source_dir)/%.td),register-info))
 endif
 
 genfile := $(filter $(generated_sources)/%GenInstrInfo.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenInstrInfo.inc=$(tblgen_source_dir)/%.td),instr-info))
 endif
 
 genfile := $(filter $(generated_sources)/%GenAsmWriter.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenAsmWriter.inc=$(tblgen_source_dir)/%.td),asm-writer))
 endif
 
 genfile := $(filter $(generated_sources)/%GenAsmWriter1.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenAsmWriter1.inc=$(tblgen_source_dir)/%.td),asm-writer -asmwriternum=1))
 endif
 
 genfile := $(filter $(generated_sources)/%GenAsmMatcher.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenAsmMatcher.inc=$(tblgen_source_dir)/%.td),asm-matcher))
 endif
 
 # TODO(srhines): Is this needed
 genfile := $(filter $(generated_sources)/%GenCodeEmitter.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenCodeEmitter.inc=$(tblgen_source_dir)/%.td),emitter))
 endif
 
 genfile := $(filter $(generated_sources)/%GenMCCodeEmitter.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenMCCodeEmitter.inc=$(tblgen_source_dir)/%.td),emitter))
 endif
 
 genfile := $(filter $(generated_sources)/%GenMCPseudoLowering.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenMCPseudoLowering.inc=$(tblgen_source_dir)/%.td),pseudo-lowering))
 endif
 
 genfile := $(filter $(generated_sources)/%GenDAGISel.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenDAGISel.inc=$(tblgen_source_dir)/%.td),dag-isel))
 endif
 
 genfile := $(filter $(generated_sources)/%GenDisassemblerTables.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenDisassemblerTables.inc=$(tblgen_source_dir)/%.td),disassembler))
 endif
 
 genfile := $(filter $(generated_sources)/%GenSystemOperands.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenSystemOperands.inc=$(tblgen_source_dir)/%.td),searchable-tables))
 endif
 
 genfile := $(filter $(generated_sources)/%GenEDInfo.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenEDInfo.inc=$(tblgen_source_dir)/%.td),enhanced-disassembly-info))
 endif
 
 genfile := $(filter $(generated_sources)/%GenFastISel.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenFastISel.inc=$(tblgen_source_dir)/%.td),fast-isel))
 endif
 
 genfile := $(filter $(generated_sources)/%GenSubtargetInfo.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenSubtargetInfo.inc=$(tblgen_source_dir)/%.td),subtarget))
 endif
 
 genfile := $(filter $(generated_sources)/%GenCallingConv.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenCallingConv.inc=$(tblgen_source_dir)/%.td),callingconv))
 endif
 
 genfile := $(filter $(generated_sources)/%GenIntrinsics.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenIntrinsics.inc=$(tblgen_source_dir)/%.td),tgt-intrinsic))
 endif
 
 genfile := $(filter $(generated_sources)/ARMGenDecoderTables.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/ARMGenDecoderTables.inc=$(tblgen_source_dir)/ARM.td),arm-decoder))
 endif
 
 genfile := $(filter $(generated_sources)/%GenDFAPacketizer.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/%GenDFAPacketizer.inc=$(tblgen_source_dir)/%.td),dfa-packetizer))
 endif
 
 genfile := $(filter $(generated_sources)/Options.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/Options.inc=$(tblgen_source_dir)/Options.td),opt-parser-defs))
 endif
 
 genfile := $(filter $(generated_sources)/AttributesCompatFunc.inc,$(tblgen_gen_tables))
 ifneq ($(genfile),)
-$(eval $(call define-tblgen-rule, $(genfile), \
+$(eval $(call define-tblgen-rule39, $(genfile), \
     $(genfile:$(generated_sources)/AttributesCompatFunc.inc=$(tblgen_source_dir)/AttributesCompatFunc.td),attrs))
 endif
 
