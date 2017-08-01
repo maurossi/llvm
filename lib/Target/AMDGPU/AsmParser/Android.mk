@@ -46,7 +46,7 @@ LOCAL_C_INCLUDES := $(amdgpu_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(amdgpu_asm_parser_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(amdgpu_asm_parser_TBLGEN_TD_DIR)
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)

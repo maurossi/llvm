@@ -38,6 +38,6 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 #
 #LOCAL_MODULE_TAGS := optional
 #
-#include $(LLVM_DEVICE_BUILD_MK)
+#include $(LLVM70_DEVICE_BUILD_MK)
 #include $(BUILD_STATIC_LIBRARY)
 endif
