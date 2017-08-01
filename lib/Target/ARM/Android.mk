@@ -63,7 +63,7 @@ endif
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS60)
 
 LOCAL_MODULE:= libLLVM60ARMCodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -82,7 +82,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS60)
 
 LOCAL_MODULE:= libLLVM60ARMCodeGen
 
