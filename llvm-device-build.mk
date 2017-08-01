@@ -72,7 +72,7 @@ LOCAL_C_INCLUDES :=	\
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-device-td-to-out
+define transform-device-td-to-out70
 @mkdir -p $(dir $@)
 @echo "Device TableGen (gen-$(1)): $(TBLGEN_LOCAL_MODULE) <= $<"
 $(hide) $(LLVM70_TBLGEN) \
