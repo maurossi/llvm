@@ -32,6 +32,6 @@ LOCAL_MODULE:= libLLVM50MCDisassembler
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM50_DEVICE_BUILD_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
