@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_utils_TBLGEN_TABLES := \
+aarch64_utils_TBLGEN_TABLES70 := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenSubtargetInfo.inc \
@@ -21,7 +21,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 LOCAL_MODULE:= libLLVM70AArch64Utils
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(aarch64_utils_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_utils_TBLGEN_TABLES70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
@@ -42,7 +42,7 @@ LOCAL_MODULE:= libLLVM70AArch64Utils
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(aarch64_utils_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_utils_TBLGEN_TABLES70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)

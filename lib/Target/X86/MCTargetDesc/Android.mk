@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-x86_mc_desc_TBLGEN_TABLES := \
+x86_mc_desc_TBLGEN_TABLES70 := \
   X86GenRegisterInfo.inc \
   X86GenInstrInfo.inc \
   X86GenSubtargetInfo.inc
@@ -25,7 +25,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(x86_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(x86_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_mc_desc_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_HOST_BUILD_MK)
@@ -44,7 +44,7 @@ LOCAL_MODULE:= libLLVM70X86Desc
 
 LOCAL_SRC_FILES := $(x86_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(x86_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_mc_desc_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_DEVICE_BUILD_MK)

@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-x86_target_info_TBLGEN_TABLES := \
+x86_target_info_TBLGEN_TABLES70 := \
   X86GenRegisterInfo.inc \
   X86GenSubtargetInfo.inc \
   X86GenInstrInfo.inc
@@ -13,7 +13,7 @@ x86_target_info_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_target_info_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -36,7 +36,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_target_info_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 

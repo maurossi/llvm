@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-arm_disassembler_TBLGEN_TABLES := \
+arm_disassembler_TBLGEN_TABLES70 := \
   ARMGenDisassemblerTables.inc \
   ARMGenInstrInfo.inc \
   ARMGenSubtargetInfo.inc \
@@ -15,7 +15,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(arm_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_disassembler_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -35,7 +35,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(arm_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_disassembler_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
