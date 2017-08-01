@@ -9,7 +9,7 @@ amdgpu_asm_parser_TBLGEN_TABLES60 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenSubtargetInfo.inc
 
-amdgpu_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+amdgpu_asm_parser_TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 amdgpu_asm_parser_C_INCLUDES :=	$(LOCAL_PATH)/..
 
@@ -24,7 +24,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(amdgpu_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES := $(amdgpu_asm_parser_C_INCLUDES)
 TBLGEN_TABLES60 := $(amdgpu_asm_parser_TBLGEN_TABLES60)
-TBLGEN_TD_DIR := $(amdgpu_asm_parser_TBLGEN_TD_DIR)
+TBLGEN_TD_DIR60 := $(amdgpu_asm_parser_TBLGEN_TD_DIR60)
 
 include $(LLVM60_HOST_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)
@@ -44,7 +44,7 @@ LOCAL_MODULE := libLLVM60AMDGPUAsmParser
 LOCAL_SRC_FILES := $(amdgpu_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES := $(amdgpu_asm_parser_C_INCLUDES)
 TBLGEN_TABLES60 := $(amdgpu_asm_parser_TBLGEN_TABLES60)
-TBLGEN_TD_DIR := $(amdgpu_asm_parser_TBLGEN_TD_DIR)
+TBLGEN_TD_DIR60 := $(amdgpu_asm_parser_TBLGEN_TD_DIR60)
 
 include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)

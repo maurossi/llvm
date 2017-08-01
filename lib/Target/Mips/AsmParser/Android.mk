@@ -15,7 +15,7 @@ mips_asm_parser_TBLGEN_TABLES60 := \
   MipsGenRegisterInfo.inc \
   MipsGenSubtargetInfo.inc
 
-mips_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+mips_asm_parser_TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 
 #===---------------------------------------------------------------===
@@ -29,7 +29,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
 TBLGEN_TABLES60 := $(mips_asm_parser_TBLGEN_TABLES60)
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 include $(LLVM60_HOST_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)
@@ -48,7 +48,7 @@ LOCAL_MODULE:= libLLVM60MipsAsmParser
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
 TBLGEN_TABLES60 := $(mips_asm_parser_TBLGEN_TABLES60)
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)

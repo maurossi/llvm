@@ -19,7 +19,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 TBLGEN_TABLES60 := $(x86_disassembler_TBLGEN_TABLES60)
 
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(x86_disassembler_SRC_FILES)
 
@@ -39,7 +39,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 TBLGEN_TABLES60 := $(x86_disassembler_TBLGEN_TABLES60)
 
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR60 := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(x86_disassembler_SRC_FILES)
 
