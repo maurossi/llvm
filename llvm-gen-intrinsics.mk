@@ -13,5 +13,5 @@ $(GENFILE): $(INTRINSICTD) $(INTRINSICTDS) | $(LLVM60_TBLGEN)
 ifeq ($(LOCAL_IS_HOST_MODULE),true)
 	$(call transform-host-td-to-out,intrinsic)
 else
-	$(call transform-device-td-to-out,intrinsic)
+	$(call transform-device-td-to-out60,intrinsic)
 endif
