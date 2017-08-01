@@ -9,4 +9,4 @@ LLVM70_GEN_ATTRIBUTES_MK := $(LLVM70_ROOT_PATH)/llvm-gen-attributes.mk
 LLVM70_GEN_INTRINSICS_MK := $(LLVM70_ROOT_PATH)/llvm-gen-intrinsics.mk
 LLVM70_TBLGEN_RULES_MK := $(LLVM70_ROOT_PATH)/llvm-tblgen-rules.mk
 
-LLVM_SUPPORTED_ARCH := arm arm64 mips mips64 x86 x86_64
+LLVM70_SUPPORTED_ARCH := arm arm64 mips mips64 x86 x86_64
