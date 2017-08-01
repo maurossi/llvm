@@ -2,7 +2,7 @@ ifeq ($(LLVM50_ROOT_PATH),)
 $(error Must set variable LLVM50_ROOT_PATH before including this! $(LOCAL_PATH))
 endif
 
-CLEAR_TBLGEN_VARS := $(LLVM50_ROOT_PATH)/clear_tblgen_vars.mk
+CLEAR_TBLGEN_VARS50 := $(LLVM50_ROOT_PATH)/clear_tblgen_vars.mk
 LLVM50_HOST_BUILD_MK := $(LLVM50_ROOT_PATH)/llvm-host-build.mk
 LLVM50_DEVICE_BUILD_MK := $(LLVM50_ROOT_PATH)/llvm-device-build.mk
 LLVM50_GEN_ATTRIBUTES_MK := $(LLVM50_ROOT_PATH)/llvm-gen-attributes.mk

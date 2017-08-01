@@ -61,7 +61,7 @@ endif
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS50)
 
 TBLGEN_TABLES50 := $(x86_codegen_TBLGEN_TABLES50)
 
@@ -81,7 +81,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS50)
 
 TBLGEN_TABLES50 := $(x86_codegen_TBLGEN_TABLES50)
 
