@@ -14,7 +14,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_msf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoMSF
+LOCAL_MODULE:= libLLVM70DebugInfoMSF
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -31,7 +31,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_msf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoMSF
+LOCAL_MODULE:= libLLVM70DebugInfoMSF
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)

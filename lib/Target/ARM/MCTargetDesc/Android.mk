@@ -27,7 +27,7 @@ include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
 
-LOCAL_MODULE:= libLLVMARMDesc
+LOCAL_MODULE:= libLLVM70ARMDesc
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(arm_mc_desc_SRC_FILES)
@@ -48,7 +48,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMARMDesc
+LOCAL_MODULE:= libLLVM70ARMDesc
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_SRC_FILES := $(arm_mc_desc_SRC_FILES)

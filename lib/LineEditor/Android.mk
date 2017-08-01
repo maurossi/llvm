@@ -9,7 +9,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(line_editor_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLineEditor
+LOCAL_MODULE:= libLLVM70LineEditor
 
 LOCAL_MODULE_TAGS := optional
 
@@ -25,7 +25,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(line_editor_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLineEditor
+LOCAL_MODULE:= libLLVM70LineEditor
 
 LOCAL_MODULE_TAGS := optional
 

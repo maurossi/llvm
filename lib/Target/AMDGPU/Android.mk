@@ -102,7 +102,7 @@ TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 
-LOCAL_MODULE := libLLVMAMDGPUCodeGen
+LOCAL_MODULE := libLLVM70AMDGPUCodeGen
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -122,7 +122,7 @@ TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 
-LOCAL_MODULE := libLLVMAMDGPUCodeGen
+LOCAL_MODULE := libLLVM70AMDGPUCodeGen
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)

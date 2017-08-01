@@ -11,12 +11,12 @@ llvm_size_SRC_FILES := \
   llvm-size.cpp
 
 llvm_size_STATIC_LIBRARIES := \
-  libLLVMObject               \
-  libLLVMMC                   \
-  libLLVMMCParser             \
-  libLLVMBitReader            \
-  libLLVMCore                 \
-  libLLVMSupport
+  libLLVM70Object               \
+  libLLVM70MC                   \
+  libLLVM70MCParser             \
+  libLLVM70BitReader            \
+  libLLVM70Core                 \
+  libLLVM70Support
 
 include $(CLEAR_VARS)
 

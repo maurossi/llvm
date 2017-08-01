@@ -20,7 +20,7 @@ x86_mc_desc_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMX86Desc
+LOCAL_MODULE:= libLLVM70X86Desc
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(x86_mc_desc_SRC_FILES)
@@ -40,7 +40,7 @@ include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
 
-LOCAL_MODULE:= libLLVMX86Desc
+LOCAL_MODULE:= libLLVM70X86Desc
 
 LOCAL_SRC_FILES := $(x86_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
