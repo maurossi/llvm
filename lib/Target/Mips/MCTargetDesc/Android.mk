@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-mips_mc_desc_TBLGEN_TABLES := \
+mips_mc_desc_TBLGEN_TABLES60 := \
   MipsGenRegisterInfo.inc \
   MipsGenInstrInfo.inc \
   MipsGenMCCodeEmitter.inc \
@@ -32,7 +32,7 @@ LOCAL_SRC_FILES := $(mips_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(mips_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(mips_mc_desc_TBLGEN_TABLES60)
 
 include $(LLVM60_HOST_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)
@@ -52,7 +52,7 @@ LOCAL_SRC_FILES := $(mips_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(mips_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(mips_mc_desc_TBLGEN_TABLES60)
 
 include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)
