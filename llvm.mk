@@ -9,4 +9,4 @@ LLVM60_GEN_ATTRIBUTES_MK := $(LLVM60_ROOT_PATH)/llvm-gen-attributes.mk
 LLVM60_GEN_INTRINSICS_MK := $(LLVM60_ROOT_PATH)/llvm-gen-intrinsics.mk
 LLVM60_TBLGEN_RULES_MK := $(LLVM60_ROOT_PATH)/llvm-tblgen-rules.mk
 
-LLVM_SUPPORTED_ARCH := arm arm64 mips mips64 x86 x86_64
+LLVM60_SUPPORTED_ARCH := arm arm64 mips mips64 x86 x86_64
