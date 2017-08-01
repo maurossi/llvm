@@ -16,8 +16,8 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(executionengine_SRC_FILES)
 
 include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -29,7 +29,7 @@ LOCAL_MODULE := libLLVM70ExecutionEngine
 LOCAL_SRC_FILES := $(executionengine_SRC_FILES)
 
 include $(LLVM70_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

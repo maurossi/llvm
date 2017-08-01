@@ -32,7 +32,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_link_STATIC_LIBRARIES)
 LOCAL_LDLIBS += -lpthread
 
 include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
 include $(BUILD_HOST_EXECUTABLE)
 
 #===---------------------------------------------------------------===
@@ -49,6 +49,6 @@ LOCAL_SRC_FILES := $(llvm_link_SRC_FILES)
 LOCAL_STATIC_LIBRARIES := $(llvm_link_STATIC_LIBRARIES)
 
 include $(LLVM70_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
 include $(BUILD_EXECUTABLE)
 endif
