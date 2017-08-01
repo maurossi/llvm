@@ -30,7 +30,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE:= libLLVM70ProfileData
 LOCAL_SRC_FILES := $(profiledata_SRC_FILES)
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)

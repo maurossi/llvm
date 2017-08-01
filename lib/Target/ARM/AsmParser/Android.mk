@@ -55,7 +55,7 @@ LOCAL_C_INCLUDES += $(arm_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(arm_asm_parser_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(arm_asm_parser_TBLGEN_TD_DIR)
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

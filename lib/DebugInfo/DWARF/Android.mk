@@ -52,7 +52,7 @@ LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
 
 LOCAL_MODULE:= libLLVM70DebugInfoDWARF
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

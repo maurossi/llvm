@@ -56,7 +56,7 @@ LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(aarch64_asm_parser_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(aarch64_asm_parser_TBLGEN_TD_DIR)
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
