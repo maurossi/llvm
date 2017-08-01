@@ -24,8 +24,8 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(instrumentation_SRC_FILES)
 
 include $(LLVM60_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM60_GEN_ATTRIBUTES_MK)
+include $(LLVM60_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the target
@@ -37,7 +37,7 @@ LOCAL_MODULE:= libLLVM60Instrumentation
 LOCAL_SRC_FILES := $(instrumentation_SRC_FILES)
 
 include $(LLVM60_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM60_GEN_ATTRIBUTES_MK)
+include $(LLVM60_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

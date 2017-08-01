@@ -67,8 +67,8 @@ LOCAL_MODULE:= libLLVM60TransformUtils
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 include $(LLVM60_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM60_GEN_ATTRIBUTES_MK)
+include $(LLVM60_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -80,7 +80,7 @@ LOCAL_SRC_FILES := $(transforms_utils_SRC_FILES)
 LOCAL_MODULE:= libLLVM60TransformUtils
 
 include $(LLVM60_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM60_GEN_ATTRIBUTES_MK)
+include $(LLVM60_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
