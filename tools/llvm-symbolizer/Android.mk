@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
-include $(LLVM_ROOT_PATH)/llvm.mk
+LLVM50_ROOT_PATH := $(LOCAL_PATH)/../..
+include $(LLVM50_ROOT_PATH)/llvm.mk
 
 llvm_symbolizer_SRC_FILES := \
   llvm-symbolizer.cpp
