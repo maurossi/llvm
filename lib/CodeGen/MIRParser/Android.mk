@@ -30,7 +30,7 @@ LOCAL_MODULE:= libLLVM60MIRParser
 
 LOCAL_MODULE_TAGS := optional
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

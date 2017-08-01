@@ -28,7 +28,7 @@ LOCAL_SRC_FILES := $(debuginfo_symbolize_SRC_FILES)
 
 LOCAL_MODULE:= libLLVM60Symbolize
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
