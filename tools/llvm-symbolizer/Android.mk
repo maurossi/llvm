@@ -15,15 +15,15 @@ LOCAL_SRC_FILES := $(llvm_symbolizer_SRC_FILES)
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMSymbolize \
-  libLLVMDebugInfoDWARF \
-  libLLVMDebugInfoPDB \
-  libLLVMObject \
-  libLLVMBitReader \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMSupport
+  libLLVM50Symbolize \
+  libLLVM50DebugInfoDWARF \
+  libLLVM50DebugInfoPDB \
+  libLLVM50Object \
+  libLLVM50BitReader \
+  libLLVM50MC \
+  libLLVM50MCParser \
+  libLLVM50Core \
+  libLLVM50Support
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
@@ -35,7 +35,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 LOCAL_MODULE := llvm-symbolizer
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_SRC_FILES := $(llvm_symbolizer_SRC_FILES)
-LOCAL_SHARED_LIBRARIES := libLLVM
+LOCAL_SHARED_LIBRARIES := libLLVM50
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(BUILD_EXECUTABLE)

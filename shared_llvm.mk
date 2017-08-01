@@ -1,102 +1,102 @@
 LOCAL_PATH:= $(call my-dir)
 
 llvm_pre_static_libraries := \
-  libLLVMLinker \
-  libLLVMipo \
-  libLLVMDebugInfoDWARF \
-  libLLVMDebugInfoPDB \
-  libLLVMSymbolize \
-  libLLVMDebugInfoMSF \
-  libLLVMDebugInfoCodeView \
-  libLLVMIRReader \
-  libLLVMBitWriter \
-  libLLVMBitReader \
-  libLLVMGlobalISel
+  libLLVM50Linker \
+  libLLVM50ipo \
+  libLLVM50DebugInfoDWARF \
+  libLLVM50DebugInfoPDB \
+  libLLVM50Symbolize \
+  libLLVM50DebugInfoMSF \
+  libLLVM50DebugInfoCodeView \
+  libLLVM50IRReader \
+  libLLVM50BitWriter \
+  libLLVM50BitReader \
+  libLLVM50GlobalISel
 
 llvm_arm_static_libraries := \
-  libLLVMARMCodeGen \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMInfo \
-  libLLVMARMDesc \
-  libLLVMARMDisassembler
+  libLLVM50ARMCodeGen \
+  libLLVM50ARMAsmParser \
+  libLLVM50ARMAsmPrinter \
+  libLLVM50ARMInfo \
+  libLLVM50ARMDesc \
+  libLLVM50ARMDisassembler
 
 llvm_x86_static_libraries := \
-  libLLVMX86CodeGen \
-  libLLVMX86Info \
-  libLLVMX86Desc \
-  libLLVMX86AsmParser \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils \
-  libLLVMX86Disassembler
+  libLLVM50X86CodeGen \
+  libLLVM50X86Info \
+  libLLVM50X86Desc \
+  libLLVM50X86AsmParser \
+  libLLVM50X86AsmPrinter \
+  libLLVM50X86Utils \
+  libLLVM50X86Disassembler
 
 ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
 llvm_x86_static_libraries += \
-  libLLVMAMDGPUCodeGen \
-  libLLVMAMDGPUInfo \
-  libLLVMAMDGPUDesc \
-  libLLVMAMDGPUAsmParser \
-  libLLVMAMDGPUAsmPrinter \
-  libLLVMAMDGPUUtils
+  libLLVM50AMDGPUCodeGen \
+  libLLVM50AMDGPUInfo \
+  libLLVM50AMDGPUDesc \
+  libLLVM50AMDGPUAsmParser \
+  libLLVM50AMDGPUAsmPrinter \
+  libLLVM50AMDGPUUtils
 endif
 
 llvm_mips_static_libraries := \
-  libLLVMMipsCodeGen \
-  libLLVMMipsInfo \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmParser \
-  libLLVMMipsAsmPrinter \
-  libLLVMMipsDisassembler
+  libLLVM50MipsCodeGen \
+  libLLVM50MipsInfo \
+  libLLVM50MipsDesc \
+  libLLVM50MipsAsmParser \
+  libLLVM50MipsAsmPrinter \
+  libLLVM50MipsDisassembler
 
 llvm_aarch64_static_libraries := \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Info \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils \
-  libLLVMAArch64Disassembler
+  libLLVM50AArch64CodeGen \
+  libLLVM50AArch64Info \
+  libLLVM50AArch64Desc \
+  libLLVM50AArch64AsmParser \
+  libLLVM50AArch64AsmPrinter \
+  libLLVM50AArch64Utils \
+  libLLVM50AArch64Disassembler
 
 llvm_post_static_libraries := \
-  libLLVMAsmPrinter \
-  libLLVMSelectionDAG \
-  libLLVMCodeGen \
-  libLLVMObject \
-  libLLVMScalarOpts \
-  libLLVMInstCombine \
-  libLLVMInstrumentation \
-  libLLVMTransformObjCARC \
-  libLLVMTransformUtils \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMAsmParser \
-  libLLVMOption \
-  libLLVMSupport \
-  libLLVMVectorize \
-  libLLVMProfileData \
-  libLLVMLibDriver \
-  libLLVMBinaryFormat
+  libLLVM50AsmPrinter \
+  libLLVM50SelectionDAG \
+  libLLVM50CodeGen \
+  libLLVM50Object \
+  libLLVM50ScalarOpts \
+  libLLVM50InstCombine \
+  libLLVM50Instrumentation \
+  libLLVM50TransformObjCARC \
+  libLLVM50TransformUtils \
+  libLLVM50Analysis \
+  libLLVM50Target \
+  libLLVM50MCDisassembler \
+  libLLVM50MC \
+  libLLVM50MCParser \
+  libLLVM50Core \
+  libLLVM50AsmParser \
+  libLLVM50Option \
+  libLLVM50Support \
+  libLLVM50Vectorize \
+  libLLVM50ProfileData \
+  libLLVM50LibDriver \
+  libLLVM50BinaryFormat
 
 llvm_host_static_libraries := \
-  libLLVMExecutionEngine \
-  libLLVMRuntimeDyld \
-  libLLVMMCJIT \
-  libLLVMOrcJIT
+  libLLVM50ExecutionEngine \
+  libLLVM50RuntimeDyld \
+  libLLVM50MCJIT \
+  libLLVM50OrcJIT
 
 llvm_device_static_libraries := \
-  libLLVMExecutionEngine \
-  libLLVMRuntimeDyld \
-  libLLVMMCJIT
+  libLLVM50ExecutionEngine \
+  libLLVM50RuntimeDyld \
+  libLLVM50MCJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
 LOCAL_IS_HOST_MODULE := true
 
-LOCAL_MODULE:= libLLVM
+LOCAL_MODULE:= libLLVM50
 
 LOCAL_MODULE_TAGS := optional
 
@@ -133,7 +133,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 # DEVICE LLVM shared library build
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVM
+LOCAL_MODULE:= libLLVM50
 
 LOCAL_MODULE_TAGS := optional
 

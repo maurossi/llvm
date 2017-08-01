@@ -11,63 +11,63 @@ llvm_llc_SRC_FILES := \
   llc.cpp
 
 llvm_llc_mips_STATIC_LIBRARIES := \
-  libLLVMMipsAsmParser \
-  libLLVMMipsInfo \
-  libLLVMMipsCodeGen \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmPrinter \
+  libLLVM50MipsAsmParser \
+  libLLVM50MipsInfo \
+  libLLVM50MipsCodeGen \
+  libLLVM50MipsDesc \
+  libLLVM50MipsAsmPrinter \
 
 llvm_llc_x86_STATIC_LIBRARIES := \
-  libLLVMX86Info \
-  libLLVMX86AsmParser \
-  libLLVMX86CodeGen \
-  libLLVMX86Disassembler \
-  libLLVMX86Desc \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils
+  libLLVM50X86Info \
+  libLLVM50X86AsmParser \
+  libLLVM50X86CodeGen \
+  libLLVM50X86Disassembler \
+  libLLVM50X86Desc \
+  libLLVM50X86AsmPrinter \
+  libLLVM50X86Utils
 
 llvm_llc_arm_STATIC_LIBRARIES := \
-  libLLVMARMCodeGen \
-  libLLVMARMDisassembler \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMDesc \
-  libLLVMARMInfo
+  libLLVM50ARMCodeGen \
+  libLLVM50ARMDisassembler \
+  libLLVM50ARMAsmParser \
+  libLLVM50ARMAsmPrinter \
+  libLLVM50ARMDesc \
+  libLLVM50ARMInfo
 
 llvm_llc_STATIC_LIBRARIES := \
-  libLLVMAsmPrinter \
-  libLLVMIRReader \
-  libLLVMAsmParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMSelectionDAG \
-  libLLVMInstCombine \
-  libLLVMCodeGen \
-  libLLVMInstrumentation \
-  libLLVMObject \
-  libLLVMipo \
-  libLLVMLinker \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMIRParser \
-  libLLVMMCParser \
-  libLLVMScalarOpts \
-  libLLVMTransformUtils \
-  libLLVMVectorize \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMSupport \
-  libLLVMObject
+  libLLVM50AsmPrinter \
+  libLLVM50IRReader \
+  libLLVM50AsmParser \
+  libLLVM50BitReader \
+  libLLVM50BitWriter \
+  libLLVM50SelectionDAG \
+  libLLVM50InstCombine \
+  libLLVM50CodeGen \
+  libLLVM50Instrumentation \
+  libLLVM50Object \
+  libLLVM50ipo \
+  libLLVM50Linker \
+  libLLVM50MCDisassembler \
+  libLLVM50MC \
+  libLLVM50MIRParser \
+  libLLVM50MCParser \
+  libLLVM50ScalarOpts \
+  libLLVM50TransformUtils \
+  libLLVM50Vectorize \
+  libLLVM50Analysis \
+  libLLVM50Target \
+  libLLVM50Core \
+  libLLVM50Support \
+  libLLVM50Object
 
 llvm_llc_aarch64_STATIC_LIBRARIES := \
-  libLLVMAArch64Info \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Disassembler \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils
+  libLLVM50AArch64Info \
+  libLLVM50AArch64AsmParser \
+  libLLVM50AArch64CodeGen \
+  libLLVM50AArch64Disassembler \
+  libLLVM50AArch64Desc \
+  libLLVM50AArch64AsmPrinter \
+  libLLVM50AArch64Utils
 
 
 

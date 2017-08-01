@@ -4,7 +4,7 @@ filecheck_SRC_FILES := \
   FileCheck.cpp
 
 filecheck_STATIC_LIBRARIES := \
-  libLLVMSupport
+  libLLVM50Support
 
 include $(CLEAR_VARS)
 

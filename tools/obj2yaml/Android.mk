@@ -14,12 +14,12 @@ obj2yaml_SRC_FILES := \
   Error.cpp \
 
 obj2yaml_STATIC_LIBRARIES := \
-  libLLVMObject             \
-  libLLVMMC                 \
-  libLLVMMCParser           \
-  libLLVMBitReader          \
-  libLLVMCore               \
-  libLLVMSupport            \
+  libLLVM50Object             \
+  libLLVM50MC                 \
+  libLLVM50MCParser           \
+  libLLVM50BitReader          \
+  libLLVM50Core               \
+  libLLVM50Support            \
 
 include $(CLEAR_VARS)
 

@@ -15,10 +15,10 @@ LOCAL_LDLIBS_darwin := -lpthread -ldl
 LOCAL_LDLIBS_linux := -lpthread -ldl
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMAsmParser \
-  libLLVMBitWriter \
-  libLLVMCore \
-  libLLVMSupport
+  libLLVM50AsmParser \
+  libLLVM50BitWriter \
+  libLLVM50Core \
+  libLLVM50Support
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

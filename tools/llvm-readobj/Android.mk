@@ -21,16 +21,16 @@ llvm_readobj_SRC_FILES := \
   Win64EHDumper.cpp \
 
 llvm_readobj_STATIC_LIBRARIES := \
-  libLLVMARMInfo \
-  libLLVMAArch64Info \
-  libLLVMMipsInfo \
-  libLLVMX86Info \
-  libLLVMObject \
-  libLLVMBitReader \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMCore \
-  libLLVMSupport \
+  libLLVM50ARMInfo \
+  libLLVM50AArch64Info \
+  libLLVM50MipsInfo \
+  libLLVM50X86Info \
+  libLLVM50Object \
+  libLLVM50BitReader \
+  libLLVM50MC \
+  libLLVM50MCParser \
+  libLLVM50Core \
+  libLLVM50Support \
 
 include $(CLEAR_VARS)
 

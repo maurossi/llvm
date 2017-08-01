@@ -14,11 +14,11 @@ llvm_diff_SRC_FILES := \
   DiffLog.cpp          \
 
 llvm_diff_STATIC_LIBRARIES := \
-  libLLVMIRReader             \
-  libLLVMBitReader            \
-  libLLVMAsmParser            \
-  libLLVMCore                 \
-  libLLVMSupport              \
+  libLLVM50IRReader             \
+  libLLVM50BitReader            \
+  libLLVM50AsmParser            \
+  libLLVM50Core                 \
+  libLLVM50Support              \
 
 include $(CLEAR_VARS)
 
