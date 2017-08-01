@@ -81,8 +81,8 @@ LOCAL_LDFLAGS_linux := -Wl,--export-dynamic
 
 include $(LLVM50_ROOT_PATH)/llvm.mk
 include $(LLVM50_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)
 
 
@@ -98,7 +98,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_opt_STATIC_LIBRARIES)
 
 include $(LLVM50_ROOT_PATH)/llvm.mk
 include $(LLVM50_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_INTRINSICS_MK)
 include $(BUILD_EXECUTABLE)
 endif

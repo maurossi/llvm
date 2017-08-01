@@ -81,6 +81,6 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 
 include $(LLVM50_ROOT_PATH)/llvm.mk
 include $(LLVM50_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -17,5 +17,5 @@ LOCAL_MODULE:= LLVM50Hello
 LOCAL_LDFLAGS_darwin := -Wl,-undefined -Wl,dynamic_lookup
 
 include $(LLVM50_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)

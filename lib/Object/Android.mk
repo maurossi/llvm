@@ -38,8 +38,8 @@ LOCAL_SRC_FILES := $(object_SRC_FILES)
 LOCAL_CFLAGS_windows := -Wno-uninitialized
 
 include $(LLVM50_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
@@ -52,7 +52,7 @@ LOCAL_MODULE:= libLLVM50Object
 LOCAL_SRC_FILES := $(object_SRC_FILES)
 
 include $(LLVM50_DEVICE_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM50_GEN_ATTRIBUTES_MK)
+include $(LLVM50_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
