@@ -84,7 +84,7 @@ LOCAL_MODULE:= libLLVM70Core
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(call local-generated-sources-dir)
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(LOCAL_PATH)/llvm-gen-local.mk
