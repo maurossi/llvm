@@ -55,7 +55,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(transforms_ipo_SRC_FILES)
 LOCAL_MODULE:= libLLVM70ipo
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
