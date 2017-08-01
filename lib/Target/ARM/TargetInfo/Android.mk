@@ -11,7 +11,7 @@ arm_target_info_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 TBLGEN_TABLES70 := $(arm_target_info_TBLGEN_TABLES70)
 
@@ -35,7 +35,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 TBLGEN_TABLES70 := $(arm_target_info_TBLGEN_TABLES70)
 

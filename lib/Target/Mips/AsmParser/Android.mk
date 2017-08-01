@@ -22,7 +22,7 @@ mips_asm_parser_TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
 # libLLVM70MipsAsmParser (host)
 #===---------------------------------------------------------------===
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -42,7 +42,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 #===---------------------------------------------------------------===
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
