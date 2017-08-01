@@ -55,7 +55,7 @@ mips_codegen_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsCodeGen
+LOCAL_MODULE:= libLLVM70MipsCodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(mips_codegen_SRC_FILES)
@@ -75,7 +75,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsCodeGen
+LOCAL_MODULE:= libLLVM70MipsCodeGen
 
 LOCAL_SRC_FILES := $(mips_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc

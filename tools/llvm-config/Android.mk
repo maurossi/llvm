@@ -12,8 +12,8 @@ llvm_config_SRC_FILES := \
   llvm-config.cpp
 
 llvm_config_STATIC_LIBRARIES := \
-  libLLVMCore \
-  libLLVMSupport
+  libLLVM70Core \
+  libLLVM70Support
 
 LOCAL_MODULE := llvm-config
 LOCAL_MODULE_TAGS := optional

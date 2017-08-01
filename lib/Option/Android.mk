@@ -15,7 +15,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(option_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMOption
+LOCAL_MODULE:= libLLVM70Option
 
 LOCAL_CFLAGS := -D__android__
 
@@ -31,7 +31,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(option_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMOption
+LOCAL_MODULE:= libLLVM70Option
 
 LOCAL_CFLAGS := -D__android__
 

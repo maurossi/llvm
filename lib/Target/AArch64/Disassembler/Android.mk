@@ -25,7 +25,7 @@ LOCAL_SRC_FILES := $(aarch64_disassembler_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMAArch64Disassembler
+LOCAL_MODULE:= libLLVM70AArch64Disassembler
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
@@ -47,7 +47,7 @@ LOCAL_SRC_FILES := $(aarch64_disassembler_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMAArch64Disassembler
+LOCAL_MODULE:= libLLVM70AArch64Disassembler
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
