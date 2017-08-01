@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-arm_asm_printer_TBLGEN_TABLES := \
+arm_asm_printer_TBLGEN_TABLES70 := \
   ARMGenAsmWriter.inc \
   ARMGenRegisterInfo.inc \
   ARMGenSubtargetInfo.inc \
@@ -14,7 +14,7 @@ arm_asm_printer_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(arm_asm_printer_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_asm_printer_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -37,7 +37,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(arm_asm_printer_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_asm_printer_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 

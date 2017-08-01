@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_mc_desc_TBLGEN_TABLES := \
+amdgpu_mc_desc_TBLGEN_TABLES70 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenMCCodeEmitter.inc \
@@ -30,7 +30,7 @@ LOCAL_SRC_FILES := $(amdgpu_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(amdgpu_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_mc_desc_TBLGEN_TABLES70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
@@ -50,7 +50,7 @@ LOCAL_SRC_FILES := $(amdgpu_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(amdgpu_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_mc_desc_TBLGEN_TABLES70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)

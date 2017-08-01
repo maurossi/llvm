@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-mips_target_info_TBLGEN_TABLES := \
+mips_target_info_TBLGEN_TABLES70 := \
   MipsGenInstrInfo.inc \
   MipsGenRegisterInfo.inc \
   MipsGenSubtargetInfo.inc
@@ -16,7 +16,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE:= libLLVM70MipsInfo
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-TBLGEN_TABLES := $(mips_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_target_info_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(mips_target_info_SRC_FILES)
@@ -35,7 +35,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 LOCAL_MODULE:= libLLVM70MipsInfo
 
-TBLGEN_TABLES := $(mips_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_target_info_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(mips_target_info_SRC_FILES)

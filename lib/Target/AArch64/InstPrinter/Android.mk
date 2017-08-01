@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_asm_printer_TBLGEN_TABLES := \
+aarch64_asm_printer_TBLGEN_TABLES70 := \
   AArch64GenAsmWriter.inc \
   AArch64GenAsmWriter1.inc \
   AArch64GenRegisterInfo.inc \
@@ -16,7 +16,7 @@ aarch64_asm_printer_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(aarch64_asm_printer_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_asm_printer_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -39,7 +39,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(aarch64_asm_printer_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_asm_printer_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 

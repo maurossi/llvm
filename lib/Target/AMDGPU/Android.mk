@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_codegen_TBLGEN_TABLES := \
+amdgpu_codegen_TBLGEN_TABLES70 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenDAGISel.inc  \
@@ -83,7 +83,7 @@ amdgpu_codegen_SRC_FILES := \
   GCNRegPressure.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
-amdgpu_codegen_TBLGEN_TABLES += \
+amdgpu_codegen_TBLGEN_TABLES70 += \
   AMDGPUGenRegisterBank.inc
 
 amdgpu_codegen_SRC_FILES += \
@@ -98,7 +98,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_codegen_TBLGEN_TABLES70)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 
@@ -118,7 +118,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(amdgpu_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_codegen_TBLGEN_TABLES70)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 

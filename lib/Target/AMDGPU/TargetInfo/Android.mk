@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_target_info_TBLGEN_TABLES := \
+amdgpu_target_info_TBLGEN_TABLES70 := \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenIntrinsics.inc \
   AMDGPUGenRegisterInfo.inc \
@@ -17,7 +17,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE := libLLVM70AMDGPUInfo
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-TBLGEN_TABLES := $(amdgpu_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_target_info_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(amdgpu_target_info_SRC_FILES)
@@ -37,7 +37,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 LOCAL_MODULE := libLLVM70AMDGPUInfo
 
-TBLGEN_TABLES := $(amdgpu_target_info_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_target_info_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(amdgpu_target_info_SRC_FILES)
