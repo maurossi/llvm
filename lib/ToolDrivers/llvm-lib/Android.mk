@@ -19,7 +19,7 @@ LOCAL_MODULE:= libLLVM70LibDriver
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -35,6 +35,6 @@ TBLGEN_TABLES := $(LibDriver_TBLGEN_TABLES)
 LOCAL_MODULE:= libLLVM70LibDriver
 
 include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

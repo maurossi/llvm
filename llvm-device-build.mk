@@ -75,7 +75,7 @@ LOCAL_C_INCLUDES :=	\
 define transform-device-td-to-out
 @mkdir -p $(dir $@)
 @echo "Device TableGen (gen-$(1)): $(TBLGEN_LOCAL_MODULE) <= $<"
-$(hide) $(LLVM_TBLGEN) \
+$(hide) $(LLVM70_TBLGEN) \
 	-I $(dir $<)	\
 	-I $(LLVM70_ROOT_PATH)/include	\
 	-I $(LLVM70_ROOT_PATH)/device/include	\

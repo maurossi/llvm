@@ -24,7 +24,7 @@ TBLGEN_TABLES := $(amdgpu_instprinter_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM_HOST_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
@@ -42,6 +42,6 @@ TBLGEN_TABLES := $(amdgpu_instprinter_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM_DEVICE_BUILD_MK)
-include $(LLVM_TBLGEN_RULES_MK)
+include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

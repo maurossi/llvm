@@ -41,86 +41,86 @@ tblgen_td_deps := $(wildcard $(tblgen_td_deps))
 ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/ARM/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
-                                       $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                       $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out, register-info)
 
 $(generated_sources)/%GenInstrInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenInstrInfo.inc: $(tblgen_source_dir)/../%.td \
-                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                    $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,instr-info)
 
 $(generated_sources)/%GenSubtargetInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
-                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                        $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,subtarget)
 endif
 
 ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
-                                       $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                       $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out, register-info)
 
 $(generated_sources)/%GenInstrInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenInstrInfo.inc: $(tblgen_source_dir)/../%.td \
-                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                    $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,instr-info)
 
 $(generated_sources)/%GenSubtargetInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
-                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                        $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,subtarget)
 endif
 
 ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/Mips/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
-                                       $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                       $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out, register-info)
 
 $(generated_sources)/%GenInstrInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenInstrInfo.inc: $(tblgen_source_dir)/../%.td \
-                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                    $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,instr-info)
 
 $(generated_sources)/%GenSubtargetInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
-                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                        $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,subtarget)
 endif
 
 ifneq ($(filter %GenRegisterInfo.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/%.td \
-                                       $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                       $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,register-info)
 endif
 
 ifneq ($(filter %GenInstrInfo.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenInstrInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenInstrInfo.inc: $(tblgen_source_dir)/%.td \
-                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                    $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,instr-info)
 endif
 
 ifneq ($(filter %GenAsmWriter.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenAsmWriter.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenAsmWriter.inc: $(tblgen_source_dir)/%.td \
-                                    $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                    $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,asm-writer)
 endif
 
 ifneq ($(filter %GenAsmWriter1.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenAsmWriter1.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenAsmWriter1.inc: $(tblgen_source_dir)/%.td \
-                                     $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,asm-writer -asmwriternum=1)
 endif
 
 ifneq ($(filter %GenAsmMatcher.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenAsmMatcher.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenAsmMatcher.inc: $(tblgen_source_dir)/%.td \
-                                     $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,asm-matcher)
 endif
 
@@ -128,105 +128,105 @@ endif
 ifneq ($(filter %GenCodeEmitter.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenCodeEmitter.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenCodeEmitter.inc: $(tblgen_source_dir)/%.td \
-                                      $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                      $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,emitter)
 endif
 
 ifneq ($(filter %GenMCCodeEmitter.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenMCCodeEmitter.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenMCCodeEmitter.inc: $(tblgen_source_dir)/%.td \
-                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                        $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,emitter)
 endif
 
 ifneq ($(filter %GenMCPseudoLowering.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenMCPseudoLowering.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenMCPseudoLowering.inc: $(tblgen_source_dir)/%.td \
-                                           $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                           $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,pseudo-lowering)
 endif
 
 ifneq ($(filter %GenDAGISel.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenDAGISel.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenDAGISel.inc: $(tblgen_source_dir)/%.td \
-                                  $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                  $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,dag-isel)
 endif
 
 ifneq ($(filter %GenRegisterBank.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenRegisterBank.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterBank.inc: $(tblgen_source_dir)/%.td \
-                                  $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                  $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,register-bank)
 endif
 
 ifneq ($(filter %GenDisassemblerTables.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenDisassemblerTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenDisassemblerTables.inc: $(tblgen_source_dir)/%.td \
-                                             $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                             $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,disassembler)
 endif
 
 ifneq ($(filter %GenEDInfo.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenEDInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenEDInfo.inc: $(tblgen_source_dir)/%.td \
-                                 $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                 $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,enhanced-disassembly-info)
 endif
 
 ifneq ($(filter %GenFastISel.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenFastISel.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenFastISel.inc: $(tblgen_source_dir)/%.td \
-                                   $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                   $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,fast-isel)
 endif
 
 ifneq ($(filter %GenGlobalISel.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenGlobalISel.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenGlobalISel.inc: $(tblgen_source_dir)/%.td \
-                                   $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                   $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,global-isel)
 endif
 
 ifneq ($(filter %GenSubtargetInfo.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenSubtargetInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/%.td \
-                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                        $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,subtarget)
 endif
 
 ifneq ($(filter %GenCallingConv.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenCallingConv.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenCallingConv.inc: $(tblgen_source_dir)/%.td \
-                                      $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                      $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,callingconv)
 endif
 
 ifneq ($(filter %GenIntrinsics.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenIntrinsics.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenIntrinsics.inc: $(tblgen_source_dir)/%.td \
-                                     $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,tgt-intrinsic)
 endif
 
 ifneq ($(filter %GenSystemOperands.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenSystemOperands.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSystemOperands.inc: $(tblgen_source_dir)/%.td \
-                                     $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,searchable-tables)
 endif
 
 ifneq ($(filter %GenDFAPacketizer.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenDFAPacketizer.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenDFAPacketizer.inc: $(tblgen_source_dir)/%.td \
-                                     $(tblgen_td_deps) | $(LLVM_TBLGEN)
+                                     $(tblgen_td_deps) | $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,dfa-packetizer)
 endif
 
 ifneq ($(findstring ARMGenDecoderTables.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/ARMGenDecoderTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/ARMGenDecoderTables.inc: $(tblgen_source_dir)/ARM.td \
-                                          $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                          $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,arm-decoder)
 endif
 
@@ -234,7 +234,7 @@ ifneq ($(findstring Options.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/Options.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/Options.inc: $(tblgen_source_dir)/Options.td \
                                      $(tblgen_td_deps) \
-                                     $(LLVM_TBLGEN) \
+                                     $(LLVM70_TBLGEN) \
                                      $(LLVM70_ROOT_PATH)/include/llvm/Option/OptParser.td
 	$(call transform-td-to-out,opt-parser-defs)
 endif
@@ -242,7 +242,7 @@ endif
 ifneq ($(findstring X86GenEVEX2VEXTables.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/X86GenEVEX2VEXTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/X86GenEVEX2VEXTables.inc: $(tblgen_source_dir)/X86.td \
-                                          $(tblgen_td_deps) $(LLVM_TBLGEN)
+                                          $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out,x86-EVEX2VEX-tables)
 endif
 
