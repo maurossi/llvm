@@ -9,7 +9,7 @@ x86_asm_parser_SRC_FILES :=	\
 	X86AsmInstrumentation.cpp \
 	X86AsmParser.cpp
 
-x86_asm_parser_TBLGEN_TABLES :=	\
+x86_asm_parser_TBLGEN_TABLES70 :=	\
 	X86GenAsmMatcher.inc	\
 	X86GenInstrInfo.inc	\
 	X86GenRegisterInfo.inc \
@@ -31,7 +31,7 @@ LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(x86_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(x86_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(x86_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(x86_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM70_HOST_BUILD_MK)
@@ -51,7 +51,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_SRC_FILES := $(x86_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(x86_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(x86_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(x86_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM70_DEVICE_BUILD_MK)

@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-mips_disassembler_TBLGEN_TABLES := \
+mips_disassembler_TBLGEN_TABLES70 := \
   MipsGenDisassemblerTables.inc \
   MipsGenInstrInfo.inc \
   MipsGenRegisterInfo.inc \
@@ -20,7 +20,7 @@ LOCAL_MODULE:= libLLVM70MipsDisassembler
 LOCAL_SRC_FILES := $(mips_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(mips_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_disassembler_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_DEVICE_BUILD_MK)
@@ -41,7 +41,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(mips_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(mips_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_disassembler_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_HOST_BUILD_MK)

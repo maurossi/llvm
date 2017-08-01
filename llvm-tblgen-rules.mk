@@ -17,10 +17,10 @@ ifeq ($(LOCAL_MODULE_CLASS),)
 	LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 endif
 
-ifneq ($(strip $(TBLGEN_TABLES)),)
+ifneq ($(strip $(TBLGEN_TABLES70)),)
 
 generated_sources := $(call local-generated-sources-dir)
-tblgen_gen_tables := $(addprefix $(generated_sources)/,$(TBLGEN_TABLES))
+tblgen_gen_tables := $(addprefix $(generated_sources)/,$(TBLGEN_TABLES70))
 LOCAL_GENERATED_SOURCES += $(tblgen_gen_tables)
 
 tblgen_source_dir := $(LOCAL_PATH)
