@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_codegen_TBLGEN_TABLES := \
+aarch64_codegen_TBLGEN_TABLES60 := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenAsmWriter.inc \
@@ -48,7 +48,7 @@ aarch64_codegen_SRC_FILES := \
   AArch64VectorByElementOpt.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
-aarch64_codegen_TBLGEN_TABLES += \
+aarch64_codegen_TBLGEN_TABLES60 += \
   AArch64GenRegisterBank.inc \
   AArch64GenGlobalISel.inc
 
@@ -69,7 +69,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(aarch64_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(aarch64_codegen_TBLGEN_TABLES60)
 
 include $(LLVM60_HOST_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)
@@ -87,7 +87,7 @@ LOCAL_MODULE:= libLLVM60AArch64CodeGen
 
 LOCAL_SRC_FILES := $(aarch64_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(aarch64_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(aarch64_codegen_TBLGEN_TABLES60)
 
 include $(LLVM60_DEVICE_BUILD_MK)
 include $(LLVM60_TBLGEN_RULES_MK)

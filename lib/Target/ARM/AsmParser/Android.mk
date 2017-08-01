@@ -7,7 +7,7 @@ LOCAL_PATH := $(call my-dir)
 arm_asm_parser_SRC_FILES := \
   ARMAsmParser.cpp
 
-arm_asm_parser_TBLGEN_TABLES := \
+arm_asm_parser_TBLGEN_TABLES60 := \
   ARMGenInstrInfo.inc \
   ARMGenRegisterInfo.inc \
   ARMGenAsmMatcher.inc \
@@ -28,7 +28,7 @@ LOCAL_MODULE:= libLLVM60ARMAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(arm_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(arm_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(arm_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(arm_asm_parser_TBLGEN_TABLES60)
 TBLGEN_TD_DIR := $(arm_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM60_HOST_BUILD_MK)
@@ -52,7 +52,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE:= libLLVM60ARMAsmParser
 LOCAL_SRC_FILES := $(arm_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(arm_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(arm_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(arm_asm_parser_TBLGEN_TABLES60)
 TBLGEN_TD_DIR := $(arm_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM60_DEVICE_BUILD_MK)

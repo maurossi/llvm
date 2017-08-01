@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_disassembler_TBLGEN_TABLES := \
+amdgpu_disassembler_TBLGEN_TABLES60 := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenRegisterInfo.inc \
@@ -20,7 +20,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(amdgpu_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(amdgpu_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(amdgpu_disassembler_TBLGEN_TABLES60)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM60_HOST_BUILD_MK)
@@ -38,7 +38,7 @@ LOCAL_MODULE := libLLVM60AMDGPUDisassembler
 LOCAL_SRC_FILES := $(amdgpu_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(amdgpu_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES60 := $(amdgpu_disassembler_TBLGEN_TABLES60)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM60_DEVICE_BUILD_MK)
