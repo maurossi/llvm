@@ -16,8 +16,8 @@
 
 LOCAL_PATH:= $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../../
-include $(LLVM_ROOT_PATH)/llvm.mk
+LLVM60_ROOT_PATH := $(LOCAL_PATH)/../../
+include $(LLVM60_ROOT_PATH)/llvm.mk
 
 # For the host only
 # =====================================================

@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM60_ROOT_PATH := $(LOCAL_PATH)/../..
 
 #===---------------------------------------------------------------===
 # llvm-config command line tool
@@ -44,6 +44,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
   $(LOCAL_PATH)/Android.mk \
   $(LOCAL_GENERATED_SOURCES)
 
-include $(LLVM_ROOT_PATH)/llvm.mk
+include $(LLVM60_ROOT_PATH)/llvm.mk
 include $(LLVM_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)
