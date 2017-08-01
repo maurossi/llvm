@@ -25,7 +25,7 @@ LOCAL_MODULE_TAGS := optional
 REQUIRES_EH := 1
 REQUIRES_RTTI := 1
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 ## For the device
