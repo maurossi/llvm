@@ -19,7 +19,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 TBLGEN_TABLES70 := $(aarch64_disassembler_TBLGEN_TABLES70)
 
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(aarch64_disassembler_SRC_FILES)
 
@@ -41,7 +41,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 TBLGEN_TABLES70 := $(aarch64_disassembler_TBLGEN_TABLES70)
 
-TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(aarch64_disassembler_SRC_FILES)
 
