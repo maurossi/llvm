@@ -11,8 +11,8 @@ not_SRC_FILES := \
   not.cpp
 
 not_STATIC_LIBRARIES := \
-  libLLVMCore               \
-  libLLVMSupport            \
+  libLLVM70Core               \
+  libLLVM70Support            \
 
 include $(CLEAR_VARS)
 

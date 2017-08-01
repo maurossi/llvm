@@ -7,7 +7,7 @@ passes_SRC_FILES := \
 # =====================================================
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVMPasses
+LOCAL_MODULE:= libLLVM70Passes
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(passes_SRC_FILES)
 
@@ -21,7 +21,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVMPasses
+LOCAL_MODULE:= libLLVM70Passes
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(passes_SRC_FILES)
 

@@ -23,7 +23,7 @@ LOCAL_SRC_FILES := $(arm_disassembler_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMARMDisassembler
+LOCAL_MODULE:= libLLVM70ARMDisassembler
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
@@ -43,7 +43,7 @@ LOCAL_SRC_FILES := $(arm_disassembler_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMARMDisassembler
+LOCAL_MODULE:= libLLVM70ARMDisassembler
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 

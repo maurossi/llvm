@@ -25,7 +25,7 @@ aarch64_asm_parser_C_INCLUDES := $(LOCAL_PATH)/..
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMAArch64AsmParser
+LOCAL_MODULE:= libLLVM70AArch64AsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(aarch64_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
@@ -50,7 +50,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMAArch64AsmParser
+LOCAL_MODULE:= libLLVM70AArch64AsmParser
 LOCAL_SRC_FILES := $(aarch64_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(aarch64_asm_parser_TBLGEN_TABLES)
