@@ -26,7 +26,7 @@ LOCAL_MODULE:= libLLVM70ARMInfo
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)

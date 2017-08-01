@@ -61,5 +61,5 @@ LOCAL_LDLIBS_windows := -limagehlp -lpsapi
 LOCAL_LDLIBS_darwin := -lpthread -ldl
 LOCAL_LDLIBS_linux := -lpthread -ldl
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

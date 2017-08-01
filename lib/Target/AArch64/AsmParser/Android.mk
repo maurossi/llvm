@@ -32,7 +32,7 @@ LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(aarch64_asm_parser_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(aarch64_asm_parser_TBLGEN_TD_DIR)
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 # Override the default optimization level to work around taking forever (~50m)
 # to compile AArch64AsmParser.cpp on Mac with gcc 4.2,
