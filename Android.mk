@@ -123,46 +123,6 @@ subdirs += \
   lib/Target/AMDGPU/Utils
 endif
 
-# LLVM Command Line Tools
-subdirs += \
-  tools/bugpoint \
-  tools/bugpoint-passes \
-  tools/dsymutil \
-  tools/llc \
-  tools/lli \
-  tools/lli/ChildTarget \
-  tools/llvm-ar \
-  tools/llvm-as \
-  tools/llvm-bcanalyzer \
-  tools/llvm-c-test \
-  tools/llvm-config \
-  tools/llvm-cov \
-  tools/llvm-cxxdump \
-  tools/llvm-dis \
-  tools/llvm-diff \
-  tools/llvm-dwarfdump \
-  tools/llvm-dwp \
-  tools/llvm-extract \
-  tools/llvm-link \
-  tools/llvm-lto \
-  tools/llvm-mc \
-  tools/llvm-mcmarkup \
-  tools/llvm-nm \
-  tools/llvm-objdump \
-  tools/llvm-profdata \
-  tools/llvm-readobj \
-  tools/llvm-rtdyld \
-  tools/llvm-size \
-  tools/llvm-split \
-  tools/llvm-symbolizer \
-  tools/lto \
-  tools/gold \
-  tools/obj2yaml \
-  tools/opt \
-  tools/sancov \
-  tools/verify-uselistorder \
-  tools/yaml2obj \
-
 # LLVM Command Line Utilities
 subdirs += \
   utils/count \
