@@ -34,6 +34,6 @@ LOCAL_STATIC_LIBRARIES := $(yaml2obj_STATIC_LIBRARIES)
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
 include $(LLVM50_ROOT_PATH)/llvm.mk
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM50_HOST_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -50,6 +50,6 @@ LOCAL_MODULE := libLLVM50X86AsmPrinter
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM50_HOST_BUILD_MK)
 include $(LLVM50_TBLGEN_RULES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
