@@ -9,7 +9,7 @@ LOCAL_GENERATED_SOURCES += $(GENFILE)
 $(GENFILE): TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(GENFILE): $(ATTRIBUTETD) | $(LLVM50_TBLGEN)
 ifeq ($(LOCAL_IS_HOST_MODULE),true)
-	$(call transform-host-td-to-out,attrs)
+	$(call transform-host-td-to-out50,attrs)
 else
 	$(call transform-device-td-to-out50,attrs)
 endif
