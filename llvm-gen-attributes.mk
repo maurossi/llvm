@@ -11,5 +11,5 @@ $(GENFILE): $(ATTRIBUTETD) | $(LLVM50_TBLGEN)
 ifeq ($(LOCAL_IS_HOST_MODULE),true)
 	$(call transform-host-td-to-out,attrs)
 else
-	$(call transform-device-td-to-out,attrs)
+	$(call transform-device-td-to-out50,attrs)
 endif
