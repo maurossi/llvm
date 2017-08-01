@@ -18,13 +18,13 @@ llvm_cov_SRC_FILES := \
   TestingSupport.cpp
 
 llvm_cov_STATIC_LIBRARIES := \
-  libLLVMObject              \
-  libLLVMProfileData         \
-  libLLVMMC                  \
-  libLLVMMCParser            \
-  libLLVMBitReader           \
-  libLLVMCore                \
-  libLLVMSupport             \
+  libLLVM60Object              \
+  libLLVM60ProfileData         \
+  libLLVM60MC                  \
+  libLLVM60MCParser            \
+  libLLVM60BitReader           \
+  libLLVM60Core                \
+  libLLVM60Support             \
 
 include $(CLEAR_VARS)
 

@@ -11,63 +11,63 @@ llvm_llc_SRC_FILES := \
   llc.cpp
 
 llvm_llc_mips_STATIC_LIBRARIES := \
-  libLLVMMipsAsmParser \
-  libLLVMMipsInfo \
-  libLLVMMipsCodeGen \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmPrinter \
+  libLLVM60MipsAsmParser \
+  libLLVM60MipsInfo \
+  libLLVM60MipsCodeGen \
+  libLLVM60MipsDesc \
+  libLLVM60MipsAsmPrinter \
 
 llvm_llc_x86_STATIC_LIBRARIES := \
-  libLLVMX86Info \
-  libLLVMX86AsmParser \
-  libLLVMX86CodeGen \
-  libLLVMX86Disassembler \
-  libLLVMX86Desc \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils
+  libLLVM60X86Info \
+  libLLVM60X86AsmParser \
+  libLLVM60X86CodeGen \
+  libLLVM60X86Disassembler \
+  libLLVM60X86Desc \
+  libLLVM60X86AsmPrinter \
+  libLLVM60X86Utils
 
 llvm_llc_arm_STATIC_LIBRARIES := \
-  libLLVMARMCodeGen \
-  libLLVMARMDisassembler \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMDesc \
-  libLLVMARMInfo
+  libLLVM60ARMCodeGen \
+  libLLVM60ARMDisassembler \
+  libLLVM60ARMAsmParser \
+  libLLVM60ARMAsmPrinter \
+  libLLVM60ARMDesc \
+  libLLVM60ARMInfo
 
 llvm_llc_STATIC_LIBRARIES := \
-  libLLVMAsmPrinter \
-  libLLVMIRReader \
-  libLLVMAsmParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMSelectionDAG \
-  libLLVMInstCombine \
-  libLLVMCodeGen \
-  libLLVMInstrumentation \
-  libLLVMObject \
-  libLLVMipo \
-  libLLVMLinker \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMIRParser \
-  libLLVMMCParser \
-  libLLVMScalarOpts \
-  libLLVMTransformUtils \
-  libLLVMVectorize \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMSupport \
-  libLLVMObject
+  libLLVM60AsmPrinter \
+  libLLVM60IRReader \
+  libLLVM60AsmParser \
+  libLLVM60BitReader \
+  libLLVM60BitWriter \
+  libLLVM60SelectionDAG \
+  libLLVM60InstCombine \
+  libLLVM60CodeGen \
+  libLLVM60Instrumentation \
+  libLLVM60Object \
+  libLLVM60ipo \
+  libLLVM60Linker \
+  libLLVM60MCDisassembler \
+  libLLVM60MC \
+  libLLVM60MIRParser \
+  libLLVM60MCParser \
+  libLLVM60ScalarOpts \
+  libLLVM60TransformUtils \
+  libLLVM60Vectorize \
+  libLLVM60Analysis \
+  libLLVM60Target \
+  libLLVM60Core \
+  libLLVM60Support \
+  libLLVM60Object
 
 llvm_llc_aarch64_STATIC_LIBRARIES := \
-  libLLVMAArch64Info \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Disassembler \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils
+  libLLVM60AArch64Info \
+  libLLVM60AArch64AsmParser \
+  libLLVM60AArch64CodeGen \
+  libLLVM60AArch64Disassembler \
+  libLLVM60AArch64Desc \
+  libLLVM60AArch64AsmPrinter \
+  libLLVM60AArch64Utils
 
 
 

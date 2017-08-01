@@ -15,14 +15,14 @@ LOCAL_LDLIBS_darwin := -lpthread -ldl
 LOCAL_LDLIBS_linux := -lpthread -ldl
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMIRReader \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMTransformUtils \
-  libLLVMAnalysis \
-  libLLVMCore \
-  libLLVMAsmParser \
-  libLLVMSupport
+  libLLVM60IRReader \
+  libLLVM60BitReader \
+  libLLVM60BitWriter \
+  libLLVM60TransformUtils \
+  libLLVM60Analysis \
+  libLLVM60Core \
+  libLLVM60AsmParser \
+  libLLVM60Support
 
 include $(LLVM_HOST_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
