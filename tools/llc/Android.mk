@@ -104,7 +104,7 @@ include $(BUILD_HOST_EXECUTABLE)
 # llc command line tool (target)
 #===---------------------------------------------------------------===
 
-ifeq (,$(filter $(TARGET_ARCH),$(LLVM_SUPPORTED_ARCH)))
+ifeq (,$(filter $(TARGET_ARCH),$(LLVM70_SUPPORTED_ARCH)))
 $(warning TODO $(TARGET_ARCH): Enable llc build)
 endif
 

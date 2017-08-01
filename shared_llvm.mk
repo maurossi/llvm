@@ -125,7 +125,7 @@ endif
 include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)
 
-ifeq (,$(filter $(TARGET_ARCH),$(LLVM_SUPPORTED_ARCH)))
+ifeq (,$(filter $(TARGET_ARCH),$(LLVM70_SUPPORTED_ARCH)))
 $(warning TODO $(TARGET_ARCH): Enable llvm build)
 endif
 
