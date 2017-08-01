@@ -13,7 +13,7 @@ arm_asm_parser_TBLGEN_TABLES50 := \
   ARMGenAsmMatcher.inc \
   ARMGenSubtargetInfo.inc
 
-arm_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
+arm_asm_parser_TBLGEN_TD_DIR50 := $(LOCAL_PATH)/..
 
 arm_asm_parser_C_INCLUDES := $(LOCAL_PATH)/..
 
@@ -29,7 +29,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(arm_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(arm_asm_parser_C_INCLUDES)
 TBLGEN_TABLES50 := $(arm_asm_parser_TBLGEN_TABLES50)
-TBLGEN_TD_DIR := $(arm_asm_parser_TBLGEN_TD_DIR)
+TBLGEN_TD_DIR50 := $(arm_asm_parser_TBLGEN_TD_DIR50)
 
 include $(LLVM50_HOST_BUILD_MK)
 include $(LLVM50_TBLGEN_RULES_MK)
@@ -53,7 +53,7 @@ LOCAL_MODULE:= libLLVM50ARMAsmParser
 LOCAL_SRC_FILES := $(arm_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(arm_asm_parser_C_INCLUDES)
 TBLGEN_TABLES50 := $(arm_asm_parser_TBLGEN_TABLES50)
-TBLGEN_TD_DIR := $(arm_asm_parser_TBLGEN_TD_DIR)
+TBLGEN_TD_DIR50 := $(arm_asm_parser_TBLGEN_TD_DIR50)
 
 include $(LLVM50_DEVICE_BUILD_MK)
 include $(LLVM50_TBLGEN_RULES_MK)
