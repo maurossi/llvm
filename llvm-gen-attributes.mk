@@ -1,4 +1,4 @@
-ATTRIBUTETD := $(LLVM_ROOT_PATH)/include/llvm/IR/Attributes.td
+ATTRIBUTETD := $(LLVM70_ROOT_PATH)/include/llvm/IR/Attributes.td
 
 ifeq ($(LOCAL_MODULE_CLASS),)
 	LOCAL_MODULE_CLASS := STATIC_LIBRARIES
