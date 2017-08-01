@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_utils_TBLGEN_TABLES := \
+amdgpu_utils_TBLGEN_TABLES50 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenSubtargetInfo.inc \
   AMDGPUGenInstrInfo.inc
@@ -23,7 +23,7 @@ LOCAL_MODULE := libLLVM50AMDGPUUtils
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(amdgpu_utils_TBLGEN_TABLES)
+TBLGEN_TABLES50 := $(amdgpu_utils_TBLGEN_TABLES50)
 
 include $(LLVM50_HOST_BUILD_MK)
 include $(LLVM50_TBLGEN_RULES_MK)
@@ -43,7 +43,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 LOCAL_MODULE := libLLVM50AMDGPUUtils
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(amdgpu_utils_TBLGEN_TABLES)
+TBLGEN_TABLES50 := $(amdgpu_utils_TBLGEN_TABLES50)
 
 include $(LLVM50_DEVICE_BUILD_MK)
 include $(LLVM50_TBLGEN_RULES_MK)

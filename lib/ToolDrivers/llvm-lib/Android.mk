@@ -3,7 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 LibDriver_SRC_FILES := \
   LibDriver.cpp
 
-LibDriver_TBLGEN_TABLES := \
+LibDriver_TBLGEN_TABLES50 := \
   Options.inc
 
 
@@ -13,7 +13,7 @@ include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
 LOCAL_SRC_FILES := $(LibDriver_SRC_FILES)
-TBLGEN_TABLES := $(LibDriver_TBLGEN_TABLES)
+TBLGEN_TABLES50 := $(LibDriver_TBLGEN_TABLES50)
 
 LOCAL_MODULE:= libLLVM50LibDriver
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -30,7 +30,7 @@ include $(CLEAR_TBLGEN_VARS)
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(LibDriver_SRC_FILES)
-TBLGEN_TABLES := $(LibDriver_TBLGEN_TABLES)
+TBLGEN_TABLES50 := $(LibDriver_TBLGEN_TABLES50)
 
 LOCAL_MODULE:= libLLVM50LibDriver
 
