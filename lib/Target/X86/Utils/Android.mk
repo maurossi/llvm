@@ -30,5 +30,5 @@ LOCAL_MODULE:= libLLVM60X86Utils
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM60_HOST_BUILD_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)

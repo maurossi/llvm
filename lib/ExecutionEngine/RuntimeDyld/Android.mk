@@ -19,7 +19,7 @@ LOCAL_MODULE := libLLVM60RuntimeDyld
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM60_HOST_BUILD_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
