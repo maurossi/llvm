@@ -64,9 +64,9 @@ LOCAL_CPPFLAGS :=	\
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
 	bionic \
-	$(LLVM_ROOT_PATH)	\
-	$(LLVM_ROOT_PATH)/include	\
-	$(LLVM_ROOT_PATH)/device/include	\
+	$(LLVM70_ROOT_PATH)	\
+	$(LLVM70_ROOT_PATH)/include	\
+	$(LLVM70_ROOT_PATH)/device/include	\
 	$(LOCAL_C_INCLUDES)
 
 ###########################################################
@@ -77,9 +77,9 @@ define transform-device-td-to-out
 @echo "Device TableGen (gen-$(1)): $(TBLGEN_LOCAL_MODULE) <= $<"
 $(hide) $(LLVM_TBLGEN) \
 	-I $(dir $<)	\
-	-I $(LLVM_ROOT_PATH)/include	\
-	-I $(LLVM_ROOT_PATH)/device/include	\
-	-I $(LLVM_ROOT_PATH)/lib/Target	\
+	-I $(LLVM70_ROOT_PATH)/include	\
+	-I $(LLVM70_ROOT_PATH)/device/include	\
+	-I $(LLVM70_ROOT_PATH)/lib/Target	\
     -gen-$(strip $(1)) \
     -o $@ $<
 endef

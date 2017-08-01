@@ -1,4 +1,4 @@
-ATTRIBUTETD_LOCAL := $(LLVM_ROOT_PATH)/lib/IR/AttributesCompatFunc.td
+ATTRIBUTETD_LOCAL := $(LLVM70_ROOT_PATH)/lib/IR/AttributesCompatFunc.td
 
 GENFILE_LOCAL := $(addprefix $(call local-generated-sources-dir)/,AttributesCompatFunc.inc)
 LOCAL_GENERATED_SOURCES += $(GENFILE_LOCAL)
