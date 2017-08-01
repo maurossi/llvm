@@ -1,5 +1,5 @@
 # We treat Intrinsics.td as a very special target just like what lib/VMCore/Makefile does
-INTRINSICTD := $(LLVM_ROOT_PATH)/include/llvm/IR/Intrinsics.td
+INTRINSICTD := $(LLVM70_ROOT_PATH)/include/llvm/IR/Intrinsics.td
 INTRINSICTDS := $(wildcard $(dir $(INTRINSICTD))/Intrinsics*.td)
 
 ifeq ($(LOCAL_MODULE_CLASS),)

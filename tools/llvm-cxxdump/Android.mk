@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
-include $(LLVM_ROOT_PATH)/llvm.mk
+LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+include $(LLVM70_ROOT_PATH)/llvm.mk
 
 llvm_cxxdump_SRC_FILES := \
   Error.cpp \

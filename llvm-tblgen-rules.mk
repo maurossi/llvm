@@ -38,7 +38,7 @@ tblgen_td_deps := $(wildcard $(tblgen_td_deps))
 #
 # The directory and the .td directory is not the same.
 #
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/ARM/MCTargetDesc)
+ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/ARM/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
@@ -55,7 +55,7 @@ $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
 	$(call transform-td-to-out,subtarget)
 endif
 
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
+ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/X86/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
@@ -72,7 +72,7 @@ $(generated_sources)/%GenSubtargetInfo.inc: $(tblgen_source_dir)/../%.td \
 	$(call transform-td-to-out,subtarget)
 endif
 
-ifeq ($(tblgen_source_dir),$(LLVM_ROOT_PATH)/lib/Target/Mips/MCTargetDesc)
+ifeq ($(tblgen_source_dir),$(LLVM70_ROOT_PATH)/lib/Target/Mips/MCTargetDesc)
 $(generated_sources)/%GenRegisterInfo.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenRegisterInfo.inc: $(tblgen_source_dir)/../%.td \
                                        $(tblgen_td_deps) $(LLVM_TBLGEN)
@@ -235,7 +235,7 @@ $(generated_sources)/Options.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/Options.inc: $(tblgen_source_dir)/Options.td \
                                      $(tblgen_td_deps) \
                                      $(LLVM_TBLGEN) \
-                                     $(LLVM_ROOT_PATH)/include/llvm/Option/OptParser.td
+                                     $(LLVM70_ROOT_PATH)/include/llvm/Option/OptParser.td
 	$(call transform-td-to-out,opt-parser-defs)
 endif
 

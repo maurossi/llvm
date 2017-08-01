@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -71,6 +71,6 @@ LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := $(llvm_sancov_SRC_FILES)
 LOCAL_STATIC_LIBRARIES := $(llvm_sancov_STATIC_LIBRARIES)
 
-include $(LLVM_ROOT_PATH)/llvm.mk
+include $(LLVM70_ROOT_PATH)/llvm.mk
 include $(LLVM_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)
