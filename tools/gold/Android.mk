@@ -42,6 +42,6 @@ endif
 LOCAL_C_INCLUDES += toolchain/binutils/binutils-2.25/include
 
 include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM_GEN_ATTRIBUTES_MK)
-include $(LLVM_GEN_INTRINSICS_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)
