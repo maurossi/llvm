@@ -89,7 +89,7 @@ endif
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-host-td-to-out
+define transform-host-td-to-out70
 @mkdir -p $(dir $@)
 @echo "Host TableGen: $(TBLGEN_LOCAL_MODULE) (gen-$(1)) <= $<"
 $(hide) $(LLVM70_TBLGEN) \
