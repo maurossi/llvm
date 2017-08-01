@@ -92,7 +92,7 @@ endif
 define transform-host-td-to-out
 @mkdir -p $(dir $@)
 @echo "Host TableGen: $(TBLGEN_LOCAL_MODULE) (gen-$(1)) <= $<"
-$(hide) $(LLVM_TBLGEN) \
+$(hide) $(LLVM70_TBLGEN) \
 	-I $(dir $<)	\
 	-I $(LLVM70_ROOT_PATH)/include	\
 	-I $(LLVM70_ROOT_PATH)/host/include	\
