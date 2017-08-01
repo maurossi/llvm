@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-arm_codegen_TBLGEN_TABLES := \
+arm_codegen_TBLGEN_TABLES70 := \
   ARMGenRegisterInfo.inc \
   ARMGenInstrInfo.inc \
   ARMGenCodeEmitter.inc \
@@ -49,7 +49,7 @@ arm_codegen_SRC_FILES := \
   ARMComputeBlockSize.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
-arm_codegen_TBLGEN_TABLES += \
+arm_codegen_TBLGEN_TABLES70 += \
   ARMGenRegisterBank.inc \
   ARMGenGlobalISel.inc
 
@@ -70,7 +70,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(arm_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_codegen_TBLGEN_TABLES70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
@@ -88,7 +88,7 @@ LOCAL_MODULE:= libLLVM70ARMCodeGen
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
-TBLGEN_TABLES := $(arm_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_codegen_TBLGEN_TABLES70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)

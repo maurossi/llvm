@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_disassembler_TBLGEN_TABLES := \
+aarch64_disassembler_TBLGEN_TABLES70 := \
   AArch64GenDisassemblerTables.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenSubtargetInfo.inc \
@@ -17,7 +17,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(aarch64_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_disassembler_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -39,7 +39,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(aarch64_disassembler_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_disassembler_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 

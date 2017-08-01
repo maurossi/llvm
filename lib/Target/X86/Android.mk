@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-x86_codegen_TBLGEN_TABLES := \
+x86_codegen_TBLGEN_TABLES70 := \
   X86GenAsmMatcher.inc \
   X86GenAsmWriter.inc \
   X86GenAsmWriter1.inc \
@@ -47,7 +47,7 @@ x86_codegen_SRC_FILES := \
   X86CallingConv.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
-x86_codegen_TBLGEN_TABLES += \
+x86_codegen_TBLGEN_TABLES70 += \
   X86GenRegisterBank.inc \
   X86GenGlobalISel.inc
 
@@ -63,7 +63,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_codegen_TBLGEN_TABLES70)
 
 LOCAL_SRC_FILES := $(x86_codegen_SRC_FILES)
 
@@ -83,7 +83,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_codegen_TBLGEN_TABLES70)
 
 LOCAL_SRC_FILES := $(x86_codegen_SRC_FILES)
 

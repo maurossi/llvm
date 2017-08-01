@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-mips_codegen_TBLGEN_TABLES := \
+mips_codegen_TBLGEN_TABLES70 := \
   MipsGenRegisterInfo.inc \
   MipsGenInstrInfo.inc \
   MipsGenCodeEmitter.inc \
@@ -61,7 +61,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(mips_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
 
-TBLGEN_TABLES := $(mips_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_codegen_TBLGEN_TABLES70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
@@ -80,7 +80,7 @@ LOCAL_MODULE:= libLLVM70MipsCodeGen
 LOCAL_SRC_FILES := $(mips_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc
 
-TBLGEN_TABLES := $(mips_codegen_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_codegen_TBLGEN_TABLES70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
