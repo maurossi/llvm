@@ -7,7 +7,7 @@ LOCAL_PATH := $(call my-dir)
 aarch64_asm_parser_SRC_FILES := \
   AArch64AsmParser.cpp
 
-aarch64_asm_parser_TBLGEN_TABLES := \
+aarch64_asm_parser_TBLGEN_TABLES70 := \
   AArch64GenInstrInfo.inc \
   AArch64GenRegisterInfo.inc \
   AArch64GenAsmMatcher.inc \
@@ -29,7 +29,7 @@ LOCAL_MODULE:= libLLVM70AArch64AsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(aarch64_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(aarch64_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(aarch64_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM70_HOST_BUILD_MK)
@@ -53,7 +53,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE:= libLLVM70AArch64AsmParser
 LOCAL_SRC_FILES := $(aarch64_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(aarch64_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(aarch64_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(aarch64_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(aarch64_asm_parser_TBLGEN_TD_DIR)
 
 include $(LLVM70_DEVICE_BUILD_MK)

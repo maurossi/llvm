@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-arm_mc_desc_TBLGEN_TABLES := \
+arm_mc_desc_TBLGEN_TABLES70 := \
   ARMGenRegisterInfo.inc \
   ARMGenInstrInfo.inc \
   ARMGenMCCodeEmitter.inc \
@@ -34,7 +34,7 @@ LOCAL_SRC_FILES := $(arm_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(arm_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_mc_desc_TBLGEN_TABLES70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
@@ -55,7 +55,7 @@ LOCAL_SRC_FILES := $(arm_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
-TBLGEN_TABLES := $(arm_mc_desc_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(arm_mc_desc_TBLGEN_TABLES70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)

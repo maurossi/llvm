@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_instprinter_TBLGEN_TABLES := \
+amdgpu_instprinter_TBLGEN_TABLES70 := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenRegisterInfo.inc \
@@ -20,7 +20,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(amdgpu_instprinter_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(amdgpu_instprinter_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_instprinter_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_HOST_BUILD_MK)
@@ -38,7 +38,7 @@ LOCAL_MODULE := libLLVM70AMDGPUAsmPrinter
 LOCAL_SRC_FILES := $(amdgpu_instprinter_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TABLES := $(amdgpu_instprinter_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(amdgpu_instprinter_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_DEVICE_BUILD_MK)

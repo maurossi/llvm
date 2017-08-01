@@ -9,7 +9,7 @@ mips_asm_parser_SRC_FILES := \
 
 mips_asm_parser_C_INCLUDES := $(LOCAL_PATH)/..
 
-mips_asm_parser_TBLGEN_TABLES := \
+mips_asm_parser_TBLGEN_TABLES70 := \
   MipsGenAsmMatcher.inc \
   MipsGenInstrInfo.inc \
   MipsGenRegisterInfo.inc \
@@ -28,7 +28,7 @@ LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(mips_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_HOST_BUILD_MK)
@@ -47,7 +47,7 @@ include $(CLEAR_TBLGEN_VARS)
 LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
-TBLGEN_TABLES := $(mips_asm_parser_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(mips_asm_parser_TBLGEN_TABLES70)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 include $(LLVM70_DEVICE_BUILD_MK)

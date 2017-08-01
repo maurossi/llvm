@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-x86_instprinter_TBLGEN_TABLES := \
+x86_instprinter_TBLGEN_TABLES70 := \
   X86GenAsmWriter.inc \
   X86GenAsmWriter1.inc \
   X86GenInstrInfo.inc \
@@ -18,7 +18,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_instprinter_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_instprinter_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
@@ -38,7 +38,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-TBLGEN_TABLES := $(x86_instprinter_TBLGEN_TABLES)
+TBLGEN_TABLES70 := $(x86_instprinter_TBLGEN_TABLES70)
 
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
