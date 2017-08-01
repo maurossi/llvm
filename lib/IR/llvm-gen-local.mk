@@ -7,5 +7,5 @@ $(GENFILE_LOCAL): $(ATTRIBUTETD_LOCAL) | $(LLVM70_TBLGEN)
 ifeq ($(LOCAL_IS_HOST_MODULE),true)
 	$(call transform-host-td-to-out,attrs)
 else
-	$(call transform-device-td-to-out,attrs)
+	$(call transform-device-td-to-out70,attrs)
 endif

@@ -4,7 +4,7 @@
 define transform-td-to-out
 $(if $(LOCAL_IS_HOST_MODULE),	\
 	$(call transform-host-td-to-out,$(1)),	\
-	$(call transform-device-td-to-out,$(1)))
+	$(call transform-device-td-to-out70,$(1)))
 endef
 
 ###########################################################
