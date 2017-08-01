@@ -27,7 +27,7 @@ object_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS60)
 
 LOCAL_MODULE:= libLLVM60Object
 LOCAL_MODULE_HOST_OS := darwin linux windows

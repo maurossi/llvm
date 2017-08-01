@@ -16,7 +16,7 @@ x86_instprinter_SRC_FILES := \
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS60)
 
 TBLGEN_TABLES60 := $(x86_instprinter_TBLGEN_TABLES60)
 
@@ -36,7 +36,7 @@ endif
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS60)
 
 TBLGEN_TABLES60 := $(x86_instprinter_TBLGEN_TABLES60)
 
