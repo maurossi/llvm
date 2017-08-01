@@ -7,7 +7,7 @@ linker_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_SRC_FILES := $(linker_SRC_FILES)
 

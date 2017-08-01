@@ -22,7 +22,7 @@ arm_asm_parser_C_INCLUDES := $(LOCAL_PATH)/..
 # libARMAsmParser (host)
 #===---------------------------------------------------------------===
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70ARMAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -47,7 +47,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 #===---------------------------------------------------------------===
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70ARMAsmParser
 LOCAL_SRC_FILES := $(arm_asm_parser_SRC_FILES)

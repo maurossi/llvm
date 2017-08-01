@@ -18,7 +18,7 @@ x86_mc_desc_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70X86Desc
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -37,7 +37,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 
 LOCAL_MODULE:= libLLVM70X86Desc
