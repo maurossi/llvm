@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 #===---------------------------------------------------------------===
-# libLLVMMipsAsmParser (common)
+# libLLVM70MipsAsmParser (common)
 #===---------------------------------------------------------------===
 
 mips_asm_parser_SRC_FILES := \
@@ -19,12 +19,12 @@ mips_asm_parser_TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 
 #===---------------------------------------------------------------===
-# libLLVMMipsAsmParser (host)
+# libLLVM70MipsAsmParser (host)
 #===---------------------------------------------------------------===
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsAsmParser
+LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
@@ -38,13 +38,13 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 
 
 #===---------------------------------------------------------------===
-# libLLVMMipsAsmParser (target)
+# libLLVM70MipsAsmParser (target)
 #===---------------------------------------------------------------===
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsAsmParser
+LOCAL_MODULE:= libLLVM70MipsAsmParser
 LOCAL_SRC_FILES := $(mips_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(mips_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(mips_asm_parser_TBLGEN_TABLES)

@@ -80,8 +80,8 @@ LOCAL_IS_HOST_MODULE := true
 ifeq ($(HOST_PREFER_32_BIT),true)
 LOCAL_MULTILIB := 32
 else
-ifeq (libLLVM, $(filter libLLVM,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
-# Skip building a 32-bit shared object if they are using libLLVM.
+ifeq (libLLVM70, $(filter libLLVM70,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
+# Skip building a 32-bit shared object if they are using libLLVM70.
 LOCAL_MULTILIB := first
 endif
 endif

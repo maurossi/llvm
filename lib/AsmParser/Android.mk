@@ -11,7 +11,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(asm_parser_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMAsmParser
+LOCAL_MODULE:= libLLVM70AsmParser
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -27,7 +27,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(asm_parser_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMAsmParser
+LOCAL_MODULE:= libLLVM70AsmParser
 
 include $(LOCAL_PATH)/../../llvm-device-build.mk
 include $(LLVM_GEN_ATTRIBUTES_MK)

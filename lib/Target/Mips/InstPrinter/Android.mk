@@ -14,7 +14,7 @@ mips_asm_printer_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsAsmPrinter
+LOCAL_MODULE:= libLLVM70MipsAsmPrinter
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 TBLGEN_TABLES := $(mips_asm_printer_TBLGEN_TABLES)
@@ -34,7 +34,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsAsmPrinter
+LOCAL_MODULE:= libLLVM70MipsAsmPrinter
 
 TBLGEN_TABLES := $(mips_asm_printer_TBLGEN_TABLES)
 TBLGEN_TD_DIR := $(LOCAL_PATH)/..

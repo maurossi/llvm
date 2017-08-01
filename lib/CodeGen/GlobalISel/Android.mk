@@ -26,7 +26,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(global_isel_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMGlobalISel
+LOCAL_MODULE:= libLLVM70GlobalISel
 
 LOCAL_MODULE_TAGS := optional
 
@@ -42,7 +42,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(global_isel_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMGlobalISel
+LOCAL_MODULE:= libLLVM70GlobalISel
 
 LOCAL_MODULE_TAGS := optional
 

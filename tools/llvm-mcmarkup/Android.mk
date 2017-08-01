@@ -11,8 +11,8 @@ llvm_mcmarkup_SRC_FILES := \
   llvm-mcmarkup.cpp
 
 llvm_mcmarkup_STATIC_LIBRARIES := \
-  libLLVMCore \
-  libLLVMSupport \
+  libLLVM70Core \
+  libLLVM70Support \
 
 include $(CLEAR_VARS)
 

@@ -15,7 +15,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsDisassembler
+LOCAL_MODULE:= libLLVM70MipsDisassembler
 
 LOCAL_SRC_FILES := $(mips_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
@@ -35,7 +35,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMMipsDisassembler
+LOCAL_MODULE:= libLLVM70MipsDisassembler
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(mips_disassembler_SRC_FILES)

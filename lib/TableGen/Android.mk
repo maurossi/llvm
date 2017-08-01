@@ -18,7 +18,7 @@ include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_SRC_FILES := $(libtablegen_SRC_FILES)
-LOCAL_MODULE:= libLLVMTableGen
+LOCAL_MODULE:= libLLVM70TableGen
 
 LOCAL_MODULE_TAGS := optional
 
@@ -34,7 +34,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 #include $(CLEAR_VARS)
 #
 #LOCAL_SRC_FILES := $(libtablegen_SRC_FILES)
-#LOCAL_MODULE:= libLLVMTableGen
+#LOCAL_MODULE:= libLLVM70TableGen
 #
 #LOCAL_MODULE_TAGS := optional
 #

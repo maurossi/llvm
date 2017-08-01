@@ -119,7 +119,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(support_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMSupport
+LOCAL_MODULE:= libLLVM70Support
 
 LOCAL_CFLAGS := -D__android__
 
@@ -135,7 +135,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(support_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMSupport
+LOCAL_MODULE:= libLLVM70Support
 
 LOCAL_CFLAGS := -D__android__
 

@@ -22,7 +22,7 @@ TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(aarch64_asm_printer_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMAArch64AsmPrinter
+LOCAL_MODULE:= libLLVM70AArch64AsmPrinter
 
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/..
@@ -48,7 +48,7 @@ LOCAL_SRC_FILES := $(aarch64_asm_printer_SRC_FILES)
 LOCAL_C_INCLUDES+= \
     $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMAArch64AsmPrinter
+LOCAL_MODULE:= libLLVM70AArch64AsmPrinter
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)

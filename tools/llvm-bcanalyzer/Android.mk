@@ -11,9 +11,9 @@ llvm_bcanalyzer_SRC_FILES := \
   llvm-bcanalyzer.cpp
 
 llvm_bcanalyzer_STATIC_LIBRARIES := \
-  libLLVMBitReader                  \
-  libLLVMCore                       \
-  libLLVMSupport                    \
+  libLLVM70BitReader                  \
+  libLLVM70Core                       \
+  libLLVM70Support                    \
 
 include $(CLEAR_VARS)
 

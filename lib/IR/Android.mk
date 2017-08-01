@@ -61,7 +61,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(vmcore_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMCore
+LOCAL_MODULE:= libLLVM70Core
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -80,7 +80,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(vmcore_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMCore
+LOCAL_MODULE:= libLLVM70Core
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(call local-generated-sources-dir)
 

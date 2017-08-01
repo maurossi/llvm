@@ -27,7 +27,7 @@ x86_asm_parser_C_INCLUDES +=	\
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMX86AsmParser
+LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(x86_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(x86_asm_parser_C_INCLUDES)
@@ -48,7 +48,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMX86AsmParser
+LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_SRC_FILES := $(x86_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES += $(x86_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(x86_asm_parser_TBLGEN_TABLES)

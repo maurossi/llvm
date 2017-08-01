@@ -14,7 +14,7 @@ amdgpu_disassembler_SRC_FILES := \
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE := libLLVMAMDGPUAsmDisassembler
+LOCAL_MODULE := libLLVM70AMDGPUAsmDisassembler
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(amdgpu_disassembler_SRC_FILES)
@@ -33,7 +33,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE := libLLVMAMDGPUDisassembler
+LOCAL_MODULE := libLLVM70AMDGPUDisassembler
 
 LOCAL_SRC_FILES := $(amdgpu_disassembler_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..

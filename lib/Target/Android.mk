@@ -13,7 +13,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(target_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMTarget
+LOCAL_MODULE:= libLLVM70Target
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -29,7 +29,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(target_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMTarget
+LOCAL_MODULE:= libLLVM70Target
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

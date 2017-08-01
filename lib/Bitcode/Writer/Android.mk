@@ -12,7 +12,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(bitcode_writer_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBitWriter
+LOCAL_MODULE:= libLLVM70BitWriter
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -28,7 +28,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
 LOCAL_SRC_FILES := $(bitcode_writer_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBitWriter
+LOCAL_MODULE:= libLLVM70BitWriter
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

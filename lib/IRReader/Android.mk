@@ -11,7 +11,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(irreader_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMIRReader
+LOCAL_MODULE:= libLLVM70IRReader
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -29,7 +29,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(irreader_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMIRReader
+LOCAL_MODULE:= libLLVM70IRReader
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
