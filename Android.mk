@@ -125,11 +125,7 @@ endif
 
 # LLVM Command Line Utilities
 subdirs += \
-  utils/count \
-  utils/FileCheck \
-  utils/not \
-  utils/TableGen \
-  utils/yaml-bench \
+  utils/TableGen
 
 include $(LOCAL_PATH)/llvm.mk
 include $(LOCAL_PATH)/shared_llvm.mk
