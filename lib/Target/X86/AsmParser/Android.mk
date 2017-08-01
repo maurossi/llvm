@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 # For the device only
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 x86_asm_parser_SRC_FILES :=	\
 	X86AsmInstrumentation.cpp \
@@ -25,7 +25,7 @@ x86_asm_parser_C_INCLUDES +=	\
 # libX86AsmParser (host)
 #===---------------------------------------------------------------===
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
@@ -46,7 +46,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 #===---------------------------------------------------------------===
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE:= libLLVM70X86AsmParser
 LOCAL_SRC_FILES := $(x86_asm_parser_SRC_FILES)
