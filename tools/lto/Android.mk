@@ -22,7 +22,7 @@ include $(LLVM70_ROOT_PATH)/llvm.mk
 # For the host only
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_MODULE := libLTO
 
