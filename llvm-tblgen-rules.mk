@@ -24,8 +24,8 @@ tblgen_gen_tables := $(addprefix $(generated_sources)/,$(TBLGEN_TABLES60))
 LOCAL_GENERATED_SOURCES += $(tblgen_gen_tables)
 
 tblgen_source_dir := $(LOCAL_PATH)
-ifneq ($(TBLGEN_TD_DIR),)
-tblgen_source_dir := $(TBLGEN_TD_DIR)
+ifneq ($(TBLGEN_TD_DIR60),)
+tblgen_source_dir := $(TBLGEN_TD_DIR60)
 endif
 
 ifneq (,$(filter $(tblgen_source_dir),MCTargetDesc))
