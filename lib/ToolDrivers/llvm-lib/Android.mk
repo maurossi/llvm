@@ -10,7 +10,7 @@ LibDriver_TBLGEN_TABLES70 := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 LOCAL_SRC_FILES := $(LibDriver_SRC_FILES)
 TBLGEN_TABLES70 := $(LibDriver_TBLGEN_TABLES70)
@@ -25,7 +25,7 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 # For the device
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS)
+include $(CLEAR_TBLGEN_VARS70)
 
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 
