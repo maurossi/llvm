@@ -12,7 +12,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(transforms_hello_SRC_FILES)
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
-LOCAL_MODULE:= LLVMHello
+LOCAL_MODULE:= LLVM70Hello
 
 LOCAL_LDFLAGS_darwin := -Wl,-undefined -Wl,dynamic_lookup
 
