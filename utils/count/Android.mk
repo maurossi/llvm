@@ -22,5 +22,5 @@ LOCAL_SRC_FILES := $(count_SRC_FILES)
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
 include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

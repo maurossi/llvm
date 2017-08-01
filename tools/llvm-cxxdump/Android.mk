@@ -55,6 +55,6 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 
 LOCAL_STATIC_LIBRARIES := $(llvm_cxxdump_STATIC_LIBRARIES)
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

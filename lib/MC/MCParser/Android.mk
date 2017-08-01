@@ -21,7 +21,7 @@ LOCAL_MODULE:= libLLVM70MCParser
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device

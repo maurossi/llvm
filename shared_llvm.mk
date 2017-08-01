@@ -122,7 +122,7 @@ else
 LOCAL_MODULE_HOST_OS := darwin linux windows
 endif
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)
 
 ifeq (,$(filter $(TARGET_ARCH),$(LLVM_SUPPORTED_ARCH)))

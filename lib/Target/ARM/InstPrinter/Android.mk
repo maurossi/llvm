@@ -27,7 +27,7 @@ LOCAL_C_INCLUDES += \
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM_HOST_BUILD_MK)
+include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
