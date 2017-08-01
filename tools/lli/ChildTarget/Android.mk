@@ -21,7 +21,7 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_SRC_FILES := $(lli_child_target_SRC_FILES)
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMSupport
+  libLLVM70Support
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 

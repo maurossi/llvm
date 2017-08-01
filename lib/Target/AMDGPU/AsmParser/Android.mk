@@ -19,7 +19,7 @@ amdgpu_asm_parser_C_INCLUDES :=	$(LOCAL_PATH)/..
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE := libLLVMAMDGPUAsmParser
+LOCAL_MODULE := libLLVM70AMDGPUAsmParser
 LOCAL_MODULE_HOST_OS := darwin linux windows
 LOCAL_SRC_FILES := $(amdgpu_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES := $(amdgpu_asm_parser_C_INCLUDES)
@@ -40,7 +40,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE := libLLVMAMDGPUAsmParser
+LOCAL_MODULE := libLLVM70AMDGPUAsmParser
 LOCAL_SRC_FILES := $(amdgpu_asm_parser_SRC_FILES)
 LOCAL_C_INCLUDES := $(amdgpu_asm_parser_C_INCLUDES)
 TBLGEN_TABLES := $(amdgpu_asm_parser_TBLGEN_TABLES)

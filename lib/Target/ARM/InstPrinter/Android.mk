@@ -20,7 +20,7 @@ TBLGEN_TD_DIR := $(LOCAL_PATH)/..
 
 LOCAL_SRC_FILES := $(arm_asm_printer_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMARMAsmPrinter
+LOCAL_MODULE:= libLLVM70ARMAsmPrinter
 
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/..
@@ -46,7 +46,7 @@ LOCAL_SRC_FILES := $(arm_asm_printer_SRC_FILES)
 LOCAL_C_INCLUDES+= \
     $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMARMAsmPrinter
+LOCAL_MODULE:= libLLVM70ARMAsmPrinter
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)

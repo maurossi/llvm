@@ -65,7 +65,7 @@ endif
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMARMCodeGen
+LOCAL_MODULE:= libLLVM70ARMCodeGen
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
@@ -84,7 +84,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 include $(CLEAR_TBLGEN_VARS)
 
-LOCAL_MODULE:= libLLVMARMCodeGen
+LOCAL_MODULE:= libLLVM70ARMCodeGen
 
 LOCAL_SRC_FILES := $(arm_codegen_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/MCTargetDesc

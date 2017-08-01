@@ -22,7 +22,7 @@ LOCAL_SRC_FILES := $(aarch64_target_info_SRC_FILES)
 LOCAL_C_INCLUDES +=	\
 	$(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMAArch64Info
+LOCAL_MODULE:= libLLVM70AArch64Info
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -45,7 +45,7 @@ LOCAL_SRC_FILES := $(aarch64_target_info_SRC_FILES)
 LOCAL_C_INCLUDES +=	\
 	$(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMAArch64Info
+LOCAL_MODULE:= libLLVM70AArch64Info
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)

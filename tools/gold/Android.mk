@@ -33,7 +33,7 @@ llvm_gold_SRC_FILES := \
 
 LOCAL_SRC_FILES := $(llvm_gold_SRC_FILES)
 
-LOCAL_SHARED_LIBRARIES := libLLVM
+LOCAL_SHARED_LIBRARIES := libLLVM70
 
 ifndef USE_MINGW
 LOCAL_LDLIBS += -lpthread -ldl

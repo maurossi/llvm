@@ -26,7 +26,7 @@ LOCAL_SRC_FILES := $(x86_instprinter_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE:= libLLVMX86AsmPrinter
+LOCAL_MODULE:= libLLVM70X86AsmPrinter
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_TBLGEN_RULES_MK)
@@ -46,7 +46,7 @@ LOCAL_SRC_FILES := $(x86_instprinter_SRC_FILES)
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
-LOCAL_MODULE := libLLVMX86AsmPrinter
+LOCAL_MODULE := libLLVM70X86AsmPrinter
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 

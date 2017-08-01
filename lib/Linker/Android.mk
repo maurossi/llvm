@@ -11,7 +11,7 @@ include $(CLEAR_TBLGEN_VARS)
 
 LOCAL_SRC_FILES := $(linker_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLinker
+LOCAL_MODULE:= libLLVM70Linker
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 include $(LLVM_HOST_BUILD_MK)
@@ -26,7 +26,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(linker_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMLinker
+LOCAL_MODULE:= libLLVM70Linker
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

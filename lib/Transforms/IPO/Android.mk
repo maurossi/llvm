@@ -38,7 +38,7 @@ transforms_ipo_SRC_FILES := \
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(transforms_ipo_SRC_FILES)
-LOCAL_MODULE:= libLLVMipo
+LOCAL_MODULE:= libLLVM70ipo
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -53,7 +53,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(transforms_ipo_SRC_FILES)
-LOCAL_MODULE:= libLLVMipo
+LOCAL_MODULE:= libLLVM70ipo
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)

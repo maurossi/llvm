@@ -43,7 +43,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_codeview_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoCodeView
+LOCAL_MODULE:= libLLVM70DebugInfoCodeView
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -60,7 +60,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_codeview_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoCodeView
+LOCAL_MODULE:= libLLVM70DebugInfoCodeView
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)

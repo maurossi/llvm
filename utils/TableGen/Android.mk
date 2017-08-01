@@ -53,8 +53,8 @@ REQUIRES_EH := 1
 REQUIRES_RTTI := 1
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVMTableGen \
-  libLLVMSupport
+  libLLVM70TableGen \
+  libLLVM70Support
 
 LOCAL_LDLIBS += -lm
 LOCAL_LDLIBS_windows := -limagehlp -lpsapi

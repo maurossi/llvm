@@ -15,7 +15,7 @@ runtimedyld_SRC_FILES := \
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(runtimedyld_SRC_FILES)
-LOCAL_MODULE := libLLVMRuntimeDyld
+LOCAL_MODULE := libLLVM70RuntimeDyld
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -28,7 +28,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(runtimedyld_SRC_FILES)
-LOCAL_MODULE := libLLVMRuntimeDyld
+LOCAL_MODULE := libLLVM70RuntimeDyld
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(BUILD_STATIC_LIBRARY)

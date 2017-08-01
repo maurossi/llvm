@@ -11,63 +11,63 @@ llvm_llc_SRC_FILES := \
   llc.cpp
 
 llvm_llc_mips_STATIC_LIBRARIES := \
-  libLLVMMipsAsmParser \
-  libLLVMMipsInfo \
-  libLLVMMipsCodeGen \
-  libLLVMMipsDesc \
-  libLLVMMipsAsmPrinter \
+  libLLVM70MipsAsmParser \
+  libLLVM70MipsInfo \
+  libLLVM70MipsCodeGen \
+  libLLVM70MipsDesc \
+  libLLVM70MipsAsmPrinter \
 
 llvm_llc_x86_STATIC_LIBRARIES := \
-  libLLVMX86Info \
-  libLLVMX86AsmParser \
-  libLLVMX86CodeGen \
-  libLLVMX86Disassembler \
-  libLLVMX86Desc \
-  libLLVMX86AsmPrinter \
-  libLLVMX86Utils
+  libLLVM70X86Info \
+  libLLVM70X86AsmParser \
+  libLLVM70X86CodeGen \
+  libLLVM70X86Disassembler \
+  libLLVM70X86Desc \
+  libLLVM70X86AsmPrinter \
+  libLLVM70X86Utils
 
 llvm_llc_arm_STATIC_LIBRARIES := \
-  libLLVMARMCodeGen \
-  libLLVMARMDisassembler \
-  libLLVMARMAsmParser \
-  libLLVMARMAsmPrinter \
-  libLLVMARMDesc \
-  libLLVMARMInfo
+  libLLVM70ARMCodeGen \
+  libLLVM70ARMDisassembler \
+  libLLVM70ARMAsmParser \
+  libLLVM70ARMAsmPrinter \
+  libLLVM70ARMDesc \
+  libLLVM70ARMInfo
 
 llvm_llc_STATIC_LIBRARIES := \
-  libLLVMAsmPrinter \
-  libLLVMIRReader \
-  libLLVMAsmParser \
-  libLLVMBitReader \
-  libLLVMBitWriter \
-  libLLVMSelectionDAG \
-  libLLVMInstCombine \
-  libLLVMCodeGen \
-  libLLVMInstrumentation \
-  libLLVMObject \
-  libLLVMipo \
-  libLLVMLinker \
-  libLLVMMCDisassembler \
-  libLLVMMC \
-  libLLVMMIRParser \
-  libLLVMMCParser \
-  libLLVMScalarOpts \
-  libLLVMTransformUtils \
-  libLLVMVectorize \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMSupport \
-  libLLVMObject
+  libLLVM70AsmPrinter \
+  libLLVM70IRReader \
+  libLLVM70AsmParser \
+  libLLVM70BitReader \
+  libLLVM70BitWriter \
+  libLLVM70SelectionDAG \
+  libLLVM70InstCombine \
+  libLLVM70CodeGen \
+  libLLVM70Instrumentation \
+  libLLVM70Object \
+  libLLVM70ipo \
+  libLLVM70Linker \
+  libLLVM70MCDisassembler \
+  libLLVM70MC \
+  libLLVM70MIRParser \
+  libLLVM70MCParser \
+  libLLVM70ScalarOpts \
+  libLLVM70TransformUtils \
+  libLLVM70Vectorize \
+  libLLVM70Analysis \
+  libLLVM70Target \
+  libLLVM70Core \
+  libLLVM70Support \
+  libLLVM70Object
 
 llvm_llc_aarch64_STATIC_LIBRARIES := \
-  libLLVMAArch64Info \
-  libLLVMAArch64AsmParser \
-  libLLVMAArch64CodeGen \
-  libLLVMAArch64Disassembler \
-  libLLVMAArch64Desc \
-  libLLVMAArch64AsmPrinter \
-  libLLVMAArch64Utils
+  libLLVM70AArch64Info \
+  libLLVM70AArch64AsmParser \
+  libLLVM70AArch64CodeGen \
+  libLLVM70AArch64Disassembler \
+  libLLVM70AArch64Desc \
+  libLLVM70AArch64AsmPrinter \
+  libLLVM70AArch64Utils
 
 
 
