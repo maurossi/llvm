@@ -45,7 +45,7 @@ tablegen_SRC_FILES := \
 include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_MODULE := llvm-tblgen
+LOCAL_MODULE := llvm70-tblgen
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(tablegen_SRC_FILES)
 
