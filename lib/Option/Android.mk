@@ -35,6 +35,6 @@ LOCAL_MODULE:= libLLVM70Option
 
 LOCAL_CFLAGS := -D__android__
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

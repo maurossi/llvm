@@ -33,6 +33,6 @@ LOCAL_SRC_FILES := $(mc_parser_SRC_FILES)
 
 LOCAL_MODULE:= libLLVM70MCParser
 
-include $(LLVM_DEVICE_BUILD_MK)
+include $(LLVM70_DEVICE_BUILD_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
