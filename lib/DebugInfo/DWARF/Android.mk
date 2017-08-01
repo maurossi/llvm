@@ -33,7 +33,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoDWARF
+LOCAL_MODULE:= libLLVM60DebugInfoDWARF
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -50,7 +50,7 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_dwarf_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMDebugInfoDWARF
+LOCAL_MODULE:= libLLVM60DebugInfoDWARF
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)

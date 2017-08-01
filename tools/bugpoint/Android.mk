@@ -19,27 +19,27 @@ bugpoint_SRC_FILES := \
   bugpoint.cpp        \
 
 bugpoint_STATIC_LIBRARIES := \
-  libLLVMBitWriter \
-  libLLVMCodeGen \
-  libLLVMipo \
-  libLLVMIRReader \
-  libLLVMBitReader \
-  libLLVMAsmParser \
-  libLLVMInstCombine \
-  libLLVMInstrumentation \
-  libLLVMLinker \
-  libLLVMTransformObjCARC \
-  libLLVMObject \
-  libLLVMScalarOpts \
-  libLLVMTransformUtils \
-  libLLVMAnalysis \
-  libLLVMTarget \
-  libLLVMCore \
-  libLLVMMC \
-  libLLVMMCParser \
-  libLLVMProfileData \
-  libLLVMVectorize \
-  libLLVMSupport \
+  libLLVM60BitWriter \
+  libLLVM60CodeGen \
+  libLLVM60ipo \
+  libLLVM60IRReader \
+  libLLVM60BitReader \
+  libLLVM60AsmParser \
+  libLLVM60InstCombine \
+  libLLVM60Instrumentation \
+  libLLVM60Linker \
+  libLLVM60TransformObjCARC \
+  libLLVM60Object \
+  libLLVM60ScalarOpts \
+  libLLVM60TransformUtils \
+  libLLVM60Analysis \
+  libLLVM60Target \
+  libLLVM60Core \
+  libLLVM60MC \
+  libLLVM60MCParser \
+  libLLVM60ProfileData \
+  libLLVM60Vectorize \
+  libLLVM60Support \
 
 include $(CLEAR_VARS)
 

@@ -13,12 +13,12 @@ yaml2obj_SRC_FILES := \
   yaml2elf.cpp        \
 
 yaml2obj_STATIC_LIBRARIES := \
-  libLLVMObject              \
-  libLLVMMC                  \
-  libLLVMMCParser            \
-  libLLVMBitReader           \
-  libLLVMCore                \
-  libLLVMSupport             \
+  libLLVM60Object              \
+  libLLVM60MC                  \
+  libLLVM60MCParser            \
+  libLLVM60BitReader           \
+  libLLVM60Core                \
+  libLLVM60Support             \
 
 include $(CLEAR_VARS)
 

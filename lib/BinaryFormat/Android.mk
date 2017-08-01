@@ -10,7 +10,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(binary_format_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBinaryFormat
+LOCAL_MODULE:= libLLVM60BinaryFormat
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
@@ -26,7 +26,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(binary_format_SRC_FILES)
 
-LOCAL_MODULE:= libLLVMBinaryFormat
+LOCAL_MODULE:= libLLVM60BinaryFormat
 
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_ATTRIBUTES_MK)
