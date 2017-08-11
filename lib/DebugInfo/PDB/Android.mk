@@ -66,7 +66,6 @@ debuginfo_pdb_SRC_FILES := \
   Native/PDBFileBuilder.cpp \
   Native/PDBStringTable.cpp \
   Native/PDBStringTableBuilder.cpp \
-  Native/PDBTypeServerHandler.cpp \
   Native/PublicsStream.cpp \
   Native/PublicsStreamBuilder.cpp \
   Native/RawError.cpp \
