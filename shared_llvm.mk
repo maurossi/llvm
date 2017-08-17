@@ -160,7 +160,15 @@ LOCAL_WHOLE_STATIC_LIBRARIES += \
   $(llvm_device_static_libraries) \
   $(llvm_post_static_libraries)
 
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_EXPORT_C_INCLUDE_DIRS := \
+  $(LOCAL_PATH)/include \
+  $(LOCAL_PATH)/device/include \
+  $(call local-generated-sources-dir)
+
 include $(LLVM70_DEVICE_BUILD_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 include $(BUILD_SHARED_LIBRARY)
 
 endif
