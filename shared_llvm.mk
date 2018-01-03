@@ -120,9 +120,9 @@ LOCAL_LDLIBS_linux := -ldl -lpthread
 # Use prebuilts for linux and darwin unless
 # FORCE_BUILD_LLVM_COMPONENTS is true
 ifneq (true,$(FORCE_BUILD_LLVM_COMPONENTS))
-LOCAL_MODULE_HOST_OS := windows
+LOCAL_MODULE_HOST_OS := linux
 else
-LOCAL_MODULE_HOST_OS := darwin linux windows
+LOCAL_MODULE_HOST_OS := linux
 endif
 
 include $(LLVM70_HOST_BUILD_MK)
