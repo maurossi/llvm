@@ -40,13 +40,13 @@ llvm_x86_static_libraries += \
   libLLVM50AMDGPUUtils
 endif
 
-llvm_mips_static_libraries := \
-  libLLVM50MipsCodeGen \
-  libLLVM50MipsInfo \
-  libLLVM50MipsDesc \
-  libLLVM50MipsAsmParser \
-  libLLVM50MipsAsmPrinter \
-  libLLVM50MipsDisassembler
+#llvm_mips_static_libraries := \
+#  libLLVM50MipsCodeGen \
+#  libLLVM50MipsInfo \
+#  libLLVM50MipsDesc \
+#  libLLVM50MipsAsmParser \
+#  libLLVM50MipsAsmPrinter \
+#  libLLVM50MipsDisassembler
 
 llvm_aarch64_static_libraries := \
   libLLVM50AArch64CodeGen \
@@ -144,8 +144,8 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 LOCAL_WHOLE_STATIC_LIBRARIES_arm += $(llvm_arm_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86 += $(llvm_x86_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_x86_64 += $(llvm_x86_static_libraries)
-LOCAL_WHOLE_STATIC_LIBRARIES_mips += $(llvm_mips_static_libraries)
-LOCAL_WHOLE_STATIC_LIBRARIES_mips64 += $(llvm_mips_static_libraries)
+#LOCAL_WHOLE_STATIC_LIBRARIES_mips += $(llvm_mips_static_libraries)
+#LOCAL_WHOLE_STATIC_LIBRARIES_mips64 += $(llvm_mips_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_arm64 += $(llvm_aarch64_static_libraries)
 LOCAL_WHOLE_STATIC_LIBRARIES_arm64 += $(llvm_arm_static_libraries)
 
