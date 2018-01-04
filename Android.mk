@@ -95,13 +95,13 @@ subdirs += \
   lib/Target/AArch64/Utils
 
 # MIPS Code Generation Libraries
-subdirs += \
-  lib/Target/Mips \
-  lib/Target/Mips/AsmParser \
-  lib/Target/Mips/InstPrinter \
-  lib/Target/Mips/Disassembler \
-  lib/Target/Mips/MCTargetDesc \
-  lib/Target/Mips/TargetInfo
+#subdirs += \
+#  lib/Target/Mips \
+#  lib/Target/Mips/AsmParser \
+#  lib/Target/Mips/InstPrinter \
+#  lib/Target/Mips/Disassembler \
+#  lib/Target/Mips/MCTargetDesc \
+#  lib/Target/Mips/TargetInfo
 
 # X86 Code Generation Libraries
 subdirs += \
