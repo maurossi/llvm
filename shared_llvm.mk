@@ -19,7 +19,8 @@ llvm_arm_static_libraries := \
   libLLVM60ARMAsmPrinter \
   libLLVM60ARMInfo \
   libLLVM60ARMDesc \
-  libLLVM60ARMDisassembler
+  libLLVM60ARMDisassembler \
+  libLLVM60ARMUtils
 
 llvm_x86_static_libraries := \
   libLLVM60X86CodeGen \
