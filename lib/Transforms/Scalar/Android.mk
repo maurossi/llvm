@@ -4,11 +4,13 @@ transforms_scalar_SRC_FILES := \
   ADCE.cpp \
   AlignmentFromAssumptions.cpp \
   BDCE.cpp \
+  CallSiteSplitting.cpp \
   ConstantHoisting.cpp \
   ConstantProp.cpp \
   CorrelatedValuePropagation.cpp \
   DCE.cpp \
   DeadStoreElimination.cpp \
+  DivRemPairs.cpp \
   EarlyCSE.cpp \
   FlattenCFGPass.cpp \
   Float2Int.cpp \
@@ -44,6 +46,7 @@ transforms_scalar_SRC_FILES := \
   LowerExpectIntrinsic.cpp \
   LowerGuardIntrinsic.cpp \
   MemCpyOptimizer.cpp \
+  MergeICmps.cpp \
   MergedLoadStoreMotion.cpp \
   NaryReassociate.cpp \
   NewGVN.cpp \
@@ -61,6 +64,7 @@ transforms_scalar_SRC_FILES := \
   SimplifyCFGPass.cpp \
   Sink.cpp \
   SpeculativeExecution.cpp \
+  SpeculateAroundPHIs.cpp \
   StraightLineStrengthReduce.cpp \
   StructurizeCFG.cpp \
   TailRecursionElimination.cpp
