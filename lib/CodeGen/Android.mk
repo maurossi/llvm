@@ -6,7 +6,6 @@ codegen_SRC_FILES := \
   Analysis.cpp \
   AtomicExpandPass.cpp \
   BasicTargetTransformInfo.cpp \
-  BranchCoalescing.cpp \
   BranchFolding.cpp \
   BranchRelaxation.cpp \
   BuiltinGCs.cpp \
@@ -14,7 +13,6 @@ codegen_SRC_FILES := \
   CallingConvLower.cpp \
   CodeGen.cpp \
   CodeGenPrepare.cpp \
-  CountingFunctionInserter.cpp \
   CriticalAntiDepBreaker.cpp \
   DeadMachineInstructionElim.cpp \
   DetectDeadLanes.cpp \
@@ -24,6 +22,7 @@ codegen_SRC_FILES := \
   EdgeBundles.cpp \
   ExecutionDepsFix.cpp \
   ExpandISelPseudos.cpp \
+  ExpandMemCmp.cpp \
   ExpandPostRAPseudos.cpp \
   ExpandReductions.cpp \
   FaultMaps.cpp \
@@ -45,7 +44,7 @@ codegen_SRC_FILES := \
   LexicalScopes.cpp \
   LiveDebugValues.cpp \
   LiveDebugVariables.cpp \
-  LiveIntervalAnalysis.cpp \
+  LiveIntervals.cpp \
   LiveInterval.cpp \
   LiveIntervalUnion.cpp \
   LivePhysRegs.cpp \
@@ -54,7 +53,7 @@ codegen_SRC_FILES := \
   LiveRangeShrink.cpp \
   LiveRegMatrix.cpp \
   LiveRegUnits.cpp \
-  LiveStackAnalysis.cpp \
+  LiveStacks.cpp \
   LiveVariables.cpp \
   LLVMTargetMachine.cpp \
   LocalStackSlotAllocation.cpp \
@@ -79,6 +78,7 @@ codegen_SRC_FILES := \
   MachineLoopInfo.cpp \
   MachineModuleInfo.cpp \
   MachineModuleInfoImpls.cpp \
+  MachineOperand.cpp \
   MachineOptimizationRemarkEmitter.cpp \
   MachineOutliner.cpp \
   MachinePassRegistry.cpp \
@@ -116,6 +116,7 @@ codegen_SRC_FILES := \
   RegisterPressure.cpp \
   RegisterScavenging.cpp \
   RenameIndependentSubregs.cpp \
+  MIRCanonicalizerPass.cpp \
   RegisterUsageInfo.cpp \
   RegUsageInfoCollector.cpp \
   RegUsageInfoPropagate.cpp \

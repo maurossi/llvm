@@ -12,8 +12,9 @@ x86_mc_desc_SRC_FILES := \
   X86MCCodeEmitter.cpp \
   X86MachObjectWriter.cpp \
   X86ELFObjectWriter.cpp \
+  X86WinCOFFObjectWriter.cpp \
   X86WinCOFFStreamer.cpp \
-  X86WinCOFFObjectWriter.cpp
+  X86WinCOFFTargetStreamer.cpp
 
 # For the host
 # =====================================================

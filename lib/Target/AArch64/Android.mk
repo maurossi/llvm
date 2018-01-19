@@ -46,7 +46,7 @@ aarch64_codegen_SRC_FILES := \
   AArch64TargetMachine.cpp \
   AArch64TargetObjectFile.cpp \
   AArch64TargetTransformInfo.cpp \
-  AArch64VectorByElementOpt.cpp
+  AArch64SIMDInstrOpt.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 aarch64_codegen_TBLGEN_TABLES70 += \

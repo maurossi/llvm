@@ -1,8 +1,10 @@
 LOCAL_PATH:= $(call my-dir)
 
 debuginfo_codeview_SRC_FILES := \
+  AppendingTypeTableBuilder.cpp \
   CodeViewError.cpp \
   CodeViewRecordIO.cpp \
+  ContinuationRecordBuilder.cpp \
   CVSymbolVisitor.cpp \
   CVTypeVisitor.cpp \
   DebugChecksumsSubsection.cpp \
@@ -19,9 +21,13 @@ debuginfo_codeview_SRC_FILES := \
   DebugSymbolsSubsection.cpp \
   EnumTables.cpp \
   Formatters.cpp \
+  GlobalTypeTableBuilder.cpp \
   LazyRandomTypeCollection.cpp \
   Line.cpp \
+  MergingTypeTableBuilder.cpp \
+  RecordName.cpp \
   RecordSerialization.cpp \
+  SimpleTypeSerializer.cpp \
   StringsAndChecksums.cpp \
   SymbolRecordMapping.cpp \
   SymbolDumper.cpp \
@@ -29,9 +35,8 @@ debuginfo_codeview_SRC_FILES := \
   TypeDumpVisitor.cpp \
   TypeIndex.cpp \
   TypeIndexDiscovery.cpp \
-  TypeName.cpp \
+  TypeHashing.cpp \
   TypeRecordMapping.cpp \
-  TypeSerializer.cpp \
   TypeStreamMerger.cpp \
   TypeTableCollection.cpp
 
