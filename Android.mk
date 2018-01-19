@@ -81,7 +81,8 @@ subdirs += \
   lib/Target/ARM/InstPrinter \
   lib/Target/ARM/Disassembler \
   lib/Target/ARM/MCTargetDesc \
-  lib/Target/ARM/TargetInfo
+  lib/Target/ARM/TargetInfo \
+  lib/Target/ARM/Utils
 
 # AArch64 Code Generation Libraries
 subdirs += \
