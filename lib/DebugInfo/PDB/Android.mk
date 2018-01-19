@@ -49,7 +49,6 @@ debuginfo_pdb_SRC_FILES := \
   Native/DbiStreamBuilder.cpp \
   Native/EnumTables.cpp \
   Native/GlobalsStream.cpp \
-  Native/GSI.cpp \
   Native/Hash.cpp \
   Native/HashTable.cpp \
   Native/InfoStream.cpp \
@@ -58,6 +57,8 @@ debuginfo_pdb_SRC_FILES := \
   Native/NativeBuiltinSymbol.cpp \
   Native/NativeCompilandSymbol.cpp \
   Native/NativeEnumModules.cpp \
+  Native/NativeEnumSymbol.cpp \
+  Native/NativeEnumTypes.cpp \
   Native/NativeExeSymbol.cpp \
   Native/NativeRawSymbol.cpp \
   Native/NamedStreamMap.cpp \
@@ -67,7 +68,7 @@ debuginfo_pdb_SRC_FILES := \
   Native/PDBStringTable.cpp \
   Native/PDBStringTableBuilder.cpp \
   Native/PublicsStream.cpp \
-  Native/PublicsStreamBuilder.cpp \
+  Native/GSIStreamBuilder.cpp \
   Native/RawError.cpp \
   Native/SymbolStream.cpp \
   Native/TpiHashing.cpp \

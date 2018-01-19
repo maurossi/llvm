@@ -4,7 +4,8 @@ transforms_vectorize_SRC_FILES := \
   LoadStoreVectorizer.cpp \
   LoopVectorize.cpp \
   SLPVectorizer.cpp \
-  Vectorize.cpp
+  Vectorize.cpp \
+  VPlan.cpp
 
 # For the host
 # =====================================================
