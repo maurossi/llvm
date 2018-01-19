@@ -13,7 +13,8 @@ instrumentation_SRC_FILES := \
   PGOMemOPSizeOpt.cpp \
   SanitizerCoverage.cpp \
   ThreadSanitizer.cpp \
-  EfficiencySanitizer.cpp
+  EfficiencySanitizer.cpp \
+  HWAddressSanitizer.cpp
 
 # For the host
 # =====================================================

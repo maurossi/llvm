@@ -3,7 +3,7 @@ LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
 include $(LLVM70_ROOT_PATH)/llvm.mk
 
 support_SRC_FILES := \
-  AMDGPUCodeObjectMetadata.cpp \
+  AMDGPUMetadata.cpp \
   APFloat.cpp \
   APInt.cpp \
   APSInt.cpp \
@@ -21,6 +21,7 @@ support_SRC_FILES := \
   circular_raw_ostream.cpp \
   Chrono.cpp \
   COM.cpp \
+  CodeGenCoverage.cpp \
   CommandLine.cpp \
   Compression.cpp \
   ConvertUTF.cpp \
@@ -44,6 +45,7 @@ support_SRC_FILES := \
   IntEqClasses.cpp \
   IntervalMap.cpp \
   JamCRC.cpp \
+  KnownBits.cpp \
   LEB128.cpp \
   LineIterator.cpp \
   Locale.cpp \

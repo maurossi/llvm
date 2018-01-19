@@ -20,6 +20,7 @@ analysis_SRC_FILES := \
   CallGraphSCCPass.cpp \
   CallPrinter.cpp \
   CaptureTracking.cpp \
+  CmpInstAnalysis.cpp \
   CostModel.cpp \
   CodeMetrics.cpp \
   ConstantFolding.cpp \
@@ -62,7 +63,7 @@ analysis_SRC_FILES := \
   ObjCARCAliasAnalysis.cpp \
   ObjCARCAnalysisUtils.cpp \
   ObjCARCInstKind.cpp \
-  OptimizationDiagnosticInfo.cpp \
+  OptimizationRemarkEmitter.cpp \
   OrderedBasicBlock.cpp \
   PHITransAddr.cpp \
   PostDominators.cpp \
@@ -75,13 +76,14 @@ analysis_SRC_FILES := \
   ScalarEvolutionAliasAnalysis.cpp \
   ScalarEvolutionExpander.cpp \
   ScalarEvolutionNormalization.cpp \
-  SparsePropagation.cpp \
   TargetLibraryInfo.cpp \
   TargetTransformInfo.cpp \
   Trace.cpp \
   TypeBasedAliasAnalysis.cpp \
   TypeMetadataUtils.cpp \
   ScopedNoAliasAA.cpp \
+  ValueLattice.cpp \
+  ValueLatticeUtils.cpp \
   ValueTracking.cpp \
   VectorUtils.cpp
 

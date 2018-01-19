@@ -4,6 +4,7 @@ transforms_ipo_SRC_FILES := \
   AlwaysInliner.cpp \
   ArgumentPromotion.cpp \
   BarrierNoopPass.cpp \
+  CalledValuePropagation.cpp \
   ConstantMerge.cpp \
   CrossDSOCFI.cpp \
   DeadArgumentElimination.cpp \

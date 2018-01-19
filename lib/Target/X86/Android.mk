@@ -17,6 +17,7 @@ x86_codegen_SRC_FILES := \
   X86AsmPrinter.cpp \
   X86CallFrameOptimization.cpp \
   X86CmovConversion.cpp \
+  X86DomainReassignment.cpp \
   X86ExpandPseudo.cpp \
   X86FastISel.cpp \
   X86FixupBWInsts.cpp \
