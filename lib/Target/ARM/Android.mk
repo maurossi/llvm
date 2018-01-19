@@ -12,7 +12,8 @@ arm_codegen_TBLGEN_TABLES70 := \
   ARMGenFastISel.inc \
   ARMGenCallingConv.inc \
   ARMGenSubtargetInfo.inc \
-  ARMGenDisassemblerTables.inc
+  ARMGenDisassemblerTables.inc \
+  ARMGenSystemRegister.inc
 
 arm_codegen_SRC_FILES := \
   A15SDOptimizer.cpp \
