@@ -230,6 +230,13 @@ $(generated_sources)/ARMGenDecoderTables.inc: $(tblgen_source_dir)/ARM.td \
 	$(call transform-td-to-out70,arm-decoder)
 endif
 
+ifneq ($(findstring ARMGenSystemRegister.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/ARMGenSystemRegister.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/ARMGenSystemRegister.inc: $(tblgen_source_dir)/ARM.td \
+                                          $(tblgen_td_deps) $(LLVM70_TBLGEN)
+	$(call transform-td-to-out70,searchable-tables)
+endif
+
 ifneq ($(findstring Options.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/Options.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/Options.inc: $(tblgen_source_dir)/Options.td \
