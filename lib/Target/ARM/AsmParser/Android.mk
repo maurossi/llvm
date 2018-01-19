@@ -11,7 +11,8 @@ arm_asm_parser_TBLGEN_TABLES70 := \
   ARMGenInstrInfo.inc \
   ARMGenRegisterInfo.inc \
   ARMGenAsmMatcher.inc \
-  ARMGenSubtargetInfo.inc
+  ARMGenSubtargetInfo.inc \
+  ARMGenSystemRegister.inc
 
 arm_asm_parser_TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
 

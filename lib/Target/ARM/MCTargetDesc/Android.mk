@@ -4,7 +4,8 @@ arm_mc_desc_TBLGEN_TABLES70 := \
   ARMGenRegisterInfo.inc \
   ARMGenInstrInfo.inc \
   ARMGenMCCodeEmitter.inc \
-  ARMGenSubtargetInfo.inc
+  ARMGenSubtargetInfo.inc \
+  ARMGenSystemRegister.inc
 
 arm_mc_desc_SRC_FILES := \
   ARMAsmBackend.cpp \

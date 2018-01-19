@@ -19,7 +19,8 @@ llvm_arm_static_libraries := \
   libLLVM70ARMAsmPrinter \
   libLLVM70ARMInfo \
   libLLVM70ARMDesc \
-  libLLVM70ARMDisassembler
+  libLLVM70ARMDisassembler \
+  libLLVM70ARMUtils
 
 llvm_x86_static_libraries := \
   libLLVM70X86CodeGen \
