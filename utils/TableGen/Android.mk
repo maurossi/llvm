@@ -10,6 +10,7 @@ tablegen_SRC_FILES := \
   CallingConvEmitter.cpp \
   CodeEmitterGen.cpp \
   CodeGenDAGPatterns.cpp \
+  CodeGenHwModes.cpp \
   CodeGenInstruction.cpp \
   CodeGenMapTable.cpp \
   CodeGenRegisters.cpp \
@@ -25,6 +26,8 @@ tablegen_SRC_FILES := \
   FastISelEmitter.cpp \
   FixedLenDecoderEmitter.cpp \
   GlobalISelEmitter.cpp \
+  InfoByHwMode.cpp \
+  InstrDocsEmitter.cpp \
   InstrInfoEmitter.cpp \
   IntrinsicEmitter.cpp \
   OptParserEmitter.cpp \
@@ -32,12 +35,14 @@ tablegen_SRC_FILES := \
   RegisterBankEmitter.cpp \
   RegisterInfoEmitter.cpp \
   SearchableTableEmitter.cpp \
+  SDNodeProperties.cpp\
   SubtargetEmitter.cpp \
   SubtargetFeatureInfo.cpp \
   TableGen.cpp \
   Types.cpp \
   X86DisassemblerTables.cpp \
   X86EVEX2VEXTablesEmitter.cpp \
+  X86FoldTablesEmitter.cpp \
   X86ModRMFilters.cpp \
   X86RecognizableInstr.cpp \
   CTagsEmitter.cpp
