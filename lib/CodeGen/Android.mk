@@ -35,6 +35,7 @@ codegen_SRC_FILES := \
   GlobalMerge.cpp \
   IfConversion.cpp \
   ImplicitNullChecks.cpp \
+  IndirectBrExpandPass.cpp \
   InlineSpiller.cpp \
   InterferenceCache.cpp \
   InterleavedAccessPass.cpp \

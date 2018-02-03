@@ -37,6 +37,7 @@ x86_codegen_SRC_FILES := \
   X86OptimizeLEAs.cpp \
   X86PadShortFunction.cpp \
   X86RegisterInfo.cpp \
+  X86RetpolineThunks.cpp \
   X86SelectionDAGInfo.cpp \
   X86ShuffleDecodeConstantPool.cpp \
   X86Subtarget.cpp \
