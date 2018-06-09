@@ -27,6 +27,7 @@ transforms_utils_SRC_FILES := \
   LCSSA.cpp \
   LibCallsShrinkWrap.cpp \
   Local.cpp \
+  LoopRotationUtils.cpp \
   LoopSimplify.cpp \
   LoopUnroll.cpp \
   LoopUnrollPeel.cpp \
@@ -45,6 +46,7 @@ transforms_utils_SRC_FILES := \
   PromoteMemoryToRegister.cpp \
   StripGCRelocates.cpp \
   SSAUpdater.cpp \
+  SSAUpdaterBulk.cpp \
   SanitizerStats.cpp \
   SimplifyCFG.cpp \
   SimplifyIndVar.cpp \
