@@ -10,7 +10,8 @@ x86_instprinter_TBLGEN_TABLES70 := \
 x86_instprinter_SRC_FILES := \
   X86ATTInstPrinter.cpp \
   X86IntelInstPrinter.cpp \
-  X86InstComments.cpp
+  X86InstComments.cpp \
+  X86InstPrinterCommon.cpp
 
 # For the device
 # =====================================================
