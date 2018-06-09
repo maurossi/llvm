@@ -60,6 +60,7 @@ analysis_SRC_FILES := \
   MemorySSAUpdater.cpp \
   ModuleDebugInfoPrinter.cpp \
   ModuleSummaryAnalysis.cpp \
+  MustExecute.cpp \
   ObjCARCAliasAnalysis.cpp \
   ObjCARCAnalysisUtils.cpp \
   ObjCARCInstKind.cpp \
@@ -76,6 +77,7 @@ analysis_SRC_FILES := \
   ScalarEvolutionAliasAnalysis.cpp \
   ScalarEvolutionExpander.cpp \
   ScalarEvolutionNormalization.cpp \
+  SyntheticCountsUtils.cpp \
   TargetLibraryInfo.cpp \
   TargetTransformInfo.cpp \
   Trace.cpp \
