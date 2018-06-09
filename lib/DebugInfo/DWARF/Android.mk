@@ -24,7 +24,6 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFUnitIndex.cpp \
   DWARFUnit.cpp \
   DWARFVerifier.cpp \
-  SyntaxHighlighting.cpp
 
 # For the host
 # =====================================================
