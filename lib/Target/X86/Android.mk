@@ -14,19 +14,24 @@ x86_codegen_TBLGEN_TABLES70 := \
   X86GenEVEX2VEXTables.inc
 
 x86_codegen_SRC_FILES := \
+  ShadowCallStack.cpp \
   X86AsmPrinter.cpp \
   X86CallFrameOptimization.cpp \
+  X86CallingConv.cpp \
   X86CmovConversion.cpp \
   X86DomainReassignment.cpp \
   X86ExpandPseudo.cpp \
   X86FastISel.cpp \
   X86FixupBWInsts.cpp \
   X86FixupLEAs.cpp \
+  X86AvoidStoreForwardingBlocks.cpp \
   X86FixupSetCC.cpp \
+  X86FlagsCopyLowering.cpp \
   X86FloatingPoint.cpp \
   X86FrameLowering.cpp \
   X86ISelDAGToDAG.cpp \
   X86ISelLowering.cpp \
+  X86IndirectBranchTracking.cpp \
   X86InterleavedAccess.cpp \
   X86InstrFMA3Info.cpp \
   X86InstrInfo.cpp \
@@ -47,7 +52,6 @@ x86_codegen_SRC_FILES := \
   X86VZeroUpper.cpp \
   X86WinAllocaExpander.cpp \
   X86WinEHState.cpp \
-  X86CallingConv.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 x86_codegen_TBLGEN_TABLES70 += \
