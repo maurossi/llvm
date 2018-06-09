@@ -20,7 +20,7 @@ codegen_SRC_FILES := \
   DwarfEHPrepare.cpp \
   EarlyIfConversion.cpp \
   EdgeBundles.cpp \
-  ExecutionDepsFix.cpp \
+  ExecutionDomainFix.cpp \
   ExpandISelPseudos.cpp \
   ExpandMemCmp.cpp \
   ExpandPostRAPseudos.cpp \
