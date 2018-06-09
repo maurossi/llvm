@@ -1,14 +1,21 @@
 LOCAL_PATH:= $(call my-dir)
 
 orcjit_SRC_FILES := \
+  Core.cpp \
   ExecutionUtils.cpp \
   IndirectionUtils.cpp \
+  IRCompileLayer.cpp \
+  IRTransformLayer.cpp \
+  Legacy.cpp \
+  Layer.cpp \
   NullResolver.cpp \
+  ObjectTransformLayer.cpp \
   OrcABISupport.cpp \
   OrcCBindings.cpp \
   OrcError.cpp \
   OrcMCJITReplacement.cpp \
-  RPCUtils.cpp
+  RPCUtils.cpp \
+  RTDyldObjectLinkingLayer.cpp
 
 # For the host
 # =====================================================
