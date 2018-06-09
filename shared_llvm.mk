@@ -65,6 +65,7 @@ llvm_post_static_libraries := \
   libLLVM70CodeGen \
   libLLVM70Object \
   libLLVM70ScalarOpts \
+  libLLVM70AggressiveInstCombine \
   libLLVM70InstCombine \
   libLLVM70Instrumentation \
   libLLVM70TransformObjCARC \
