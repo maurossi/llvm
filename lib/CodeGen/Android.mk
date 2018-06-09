@@ -154,6 +154,7 @@ codegen_SRC_FILES := \
   TargetSubtargetInfo.cpp \
   TwoAddressInstructionPass.cpp \
   UnreachableBlockElim.cpp \
+  ValueTypes.cpp \
   VirtRegMap.cpp \
   WinEHPrepare.cpp \
   XRayInstrumentation.cpp
