@@ -31,7 +31,9 @@ tablegen_SRC_FILES := \
   InstrInfoEmitter.cpp \
   IntrinsicEmitter.cpp \
   OptParserEmitter.cpp \
+  PredicateExpander.cpp \
   PseudoLoweringEmitter.cpp \
+  RISCVCompressInstEmitter.cpp \
   RegisterBankEmitter.cpp \
   RegisterInfoEmitter.cpp \
   SearchableTableEmitter.cpp \
@@ -45,6 +47,7 @@ tablegen_SRC_FILES := \
   X86FoldTablesEmitter.cpp \
   X86ModRMFilters.cpp \
   X86RecognizableInstr.cpp \
+  WebAssemblyDisassemblerEmitter.cpp \
   CTagsEmitter.cpp
 
 include $(CLEAR_VARS)
