@@ -6,14 +6,18 @@ global_isel_SRC_FILES := \
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 global_isel_SRC_FILES += \
       CallLowering.cpp \
+      Combiner.cpp \
+      CombinerHelper.cpp \
       IRTranslator.cpp \
       InstructionSelect.cpp \
       InstructionSelector.cpp \
-      MachineIRBuilder.cpp \
-      LegalizerHelper.cpp \
+      LegalityPredicates.cpp \
+      LegalizeMutations.cpp \
       Legalizer.cpp \
+      LegalizerHelper.cpp \
       LegalizerInfo.cpp \
       Localizer.cpp \
+      MachineIRBuilder.cpp \
       RegBankSelect.cpp \
       RegisterBank.cpp \
       RegisterBankInfo.cpp \

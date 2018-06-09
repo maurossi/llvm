@@ -22,6 +22,7 @@ codegen_asmprinter_SRC_FILES := \
   EHStreamer.cpp \
   ErlangGCPrinter.cpp \
   OcamlGCPrinter.cpp \
+  WinCFGuard.cpp \
   WinException.cpp \
   CodeViewDebug.cpp
 
