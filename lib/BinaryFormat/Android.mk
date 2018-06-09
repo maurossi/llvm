@@ -2,7 +2,8 @@ LOCAL_PATH:= $(call my-dir)
 
 binary_format_SRC_FILES := \
   Dwarf.cpp \
-  Magic.cpp
+  Magic.cpp \
+  Wasm.cpp
 
 # For the host
 # =====================================================
