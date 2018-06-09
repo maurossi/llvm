@@ -209,6 +209,13 @@ $(generated_sources)/%GenIntrinsics.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out70,tgt-intrinsic)
 endif
 
+ifneq ($(filter %GenSearchableTables.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenSearchableTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenSearchableTables.inc: $(tblgen_source_dir)/%.td \
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
+	$(call transform-td-to-out70,searchable-tables)
+endif
+
 ifneq ($(filter %GenSystemOperands.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/%GenSystemOperands.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/%GenSystemOperands.inc: $(tblgen_source_dir)/%.td \
