@@ -36,7 +36,6 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUMacroFusion.cpp \
   AMDGPUMCInstLower.cpp \
   AMDGPUOpenCLEnqueuedBlockLowering.cpp \
-  AMDGPUOpenCLImageTypeLoweringPass.cpp \
   AMDGPUPromoteAlloca.cpp \
   AMDGPURegAsmNames.inc.cpp \
   AMDGPURegisterInfo.cpp \
@@ -63,6 +62,7 @@ amdgpu_codegen_SRC_FILES := \
   R600ISelLowering.cpp \
   R600MachineFunctionInfo.cpp \
   R600MachineScheduler.cpp \
+  R600OpenCLImageTypeLoweringPass.cpp \
   R600OptimizeVectorRegisters.cpp \
   R600Packetizer.cpp \
   R600RegisterInfo.cpp \
