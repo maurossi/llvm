@@ -4,6 +4,7 @@ transforms_ipo_SRC_FILES := \
   AlwaysInliner.cpp \
   ArgumentPromotion.cpp \
   BarrierNoopPass.cpp \
+  BlockExtractor.cpp \
   CalledValuePropagation.cpp \
   ConstantMerge.cpp \
   CrossDSOCFI.cpp \
@@ -29,8 +30,10 @@ transforms_ipo_SRC_FILES := \
   PassManagerBuilder.cpp \
   PruneEH.cpp \
   SampleProfile.cpp \
+  SCCP.cpp \
   StripDeadPrototypes.cpp \
   StripSymbols.cpp \
+  SyntheticCountsPropagation.cpp \
   ThinLTOBitcodeWriter.cpp \
   WholeProgramDevirt.cpp
 
