@@ -8,9 +8,11 @@ codegen_SRC_FILES := \
   BasicTargetTransformInfo.cpp \
   BranchFolding.cpp \
   BranchRelaxation.cpp \
+  BreakFalseDeps.cpp \
   BuiltinGCs.cpp \
   CalcSpillWeights.cpp \
   CallingConvLower.cpp \
+  CFIInstrInserter.cpp \
   CodeGen.cpp \
   CodeGenPrepare.cpp \
   CriticalAntiDepBreaker.cpp \
@@ -58,6 +60,7 @@ codegen_SRC_FILES := \
   LiveVariables.cpp \
   LLVMTargetMachine.cpp \
   LocalStackSlotAllocation.cpp \
+  LoopTraversal.cpp \
   LowLevelType.cpp \
   LowerEmuTLS.cpp \
   MachineBasicBlock.cpp \
@@ -107,6 +110,7 @@ codegen_SRC_FILES := \
   ProcessImplicitDefs.cpp \
   PrologEpilogInserter.cpp \
   PseudoSourceValue.cpp \
+  ReachingDefAnalysis.cpp \
   RegAllocBase.cpp \
   RegAllocBasic.cpp \
   RegAllocFast.cpp \
@@ -156,6 +160,7 @@ codegen_SRC_FILES := \
   UnreachableBlockElim.cpp \
   ValueTypes.cpp \
   VirtRegMap.cpp \
+  WasmEHPrepare.cpp \
   WinEHPrepare.cpp \
   XRayInstrumentation.cpp
 
