@@ -62,6 +62,7 @@ subdirs := \
   lib/Support \
   lib/TableGen \
   lib/Target \
+  lib/Transforms/AggressiveInstCombine \
   lib/Transforms/Coroutines \
   lib/Transforms/Hello \
   lib/Transforms/IPO \
