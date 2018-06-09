@@ -2,6 +2,7 @@ LOCAL_PATH:= $(call my-dir)
 
 debuginfo_dwarf_SRC_FILES := \
   DWARFAbbreviationDeclaration.cpp \
+  DWARFAddressRange.cpp \
   DWARFAcceleratorTable.cpp \
   DWARFCompileUnit.cpp \
   DWARFContext.cpp \
@@ -16,6 +17,7 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFDebugMacro.cpp \
   DWARFDebugPubTable.cpp \
   DWARFDebugRangeList.cpp \
+  DWARFDebugRnglists.cpp \
   DWARFDie.cpp \
   DWARFExpression.cpp \
   DWARFFormValue.cpp \
