@@ -87,6 +87,7 @@ support_SRC_FILES := \
   Unicode.cpp \
   YAMLParser.cpp \
   YAMLTraits.cpp \
+  WithColor.cpp \
   raw_os_ostream.cpp \
   raw_ostream.cpp \
   regcomp.c \
