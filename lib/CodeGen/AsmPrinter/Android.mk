@@ -1,6 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 codegen_asmprinter_SRC_FILES := \
+  AccelTable.cpp \
   AddressPool.cpp \
   ARMException.cpp \
   AsmPrinter.cpp \
@@ -11,7 +12,6 @@ codegen_asmprinter_SRC_FILES := \
   DebugLocStream.cpp \
   DIE.cpp \
   DIEHash.cpp \
-  DwarfAccelTable.cpp \
   DwarfCFIException.cpp \
   DwarfCompileUnit.cpp \
   DwarfDebug.cpp \
