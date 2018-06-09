@@ -8,6 +8,7 @@ llvm_pre_static_libraries := \
   libLLVM70Symbolize \
   libLLVM70DebugInfoMSF \
   libLLVM70DebugInfoCodeView \
+  libLLVM70Demangle \
   libLLVM70IRReader \
   libLLVM70BitWriter \
   libLLVM70BitReader \
