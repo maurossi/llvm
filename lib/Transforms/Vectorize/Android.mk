@@ -2,10 +2,13 @@ LOCAL_PATH:= $(call my-dir)
 
 transforms_vectorize_SRC_FILES := \
   LoadStoreVectorizer.cpp \
+  LoopVectorizationLegality.cpp \
   LoopVectorize.cpp \
   SLPVectorizer.cpp \
   Vectorize.cpp \
-  VPlan.cpp
+  VPlan.cpp \
+  VPlanHCFGBuilder.cpp \
+  VPlanVerifier.cpp
 
 # For the host
 # =====================================================
