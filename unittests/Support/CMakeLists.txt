@@ -23,7 +23,6 @@ add_llvm_unittest(SupportTests
   DJBTest.cpp
   EndianStreamTest.cpp
   EndianTest.cpp
-  ErrnoTest.cpp
   ErrorOrTest.cpp
   ErrorTest.cpp
   FileOutputBufferTest.cpp
