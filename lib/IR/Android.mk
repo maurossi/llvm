@@ -50,7 +50,6 @@ vmcore_SRC_FILES := \
   User.cpp \
   Value.cpp \
   ValueSymbolTable.cpp \
-  ValueTypes.cpp \
   Verifier.cpp
 
 # For the host
