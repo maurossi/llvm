@@ -1,9 +1,10 @@
 LOCAL_PATH := $(call my-dir)
 
 mips_codegen_TBLGEN_TABLES70 := \
+  MipsGenRegisterBank.inc \
   MipsGenRegisterInfo.inc \
   MipsGenInstrInfo.inc \
-  MipsGenCodeEmitter.inc \
+  MipsGenGlobalISel.inc \
   MipsGenMCCodeEmitter.inc \
   MipsGenMCPseudoLowering.inc \
   MipsGenAsmWriter.inc \
@@ -24,21 +25,24 @@ mips_codegen_SRC_FILES := \
   Mips16RegisterInfo.cpp \
   MipsAnalyzeImmediate.cpp \
   MipsAsmPrinter.cpp \
+  MipsCallLowering.cpp \
   MipsCCState.cpp \
   MipsConstantIslandPass.cpp \
   MipsDelaySlotFiller.cpp \
   MipsFastISel.cpp \
-  MipsHazardSchedule.cpp \
   MipsInstrInfo.cpp \
+  MipsInstructionSelector.cpp \
   MipsISelDAGToDAG.cpp \
   MipsISelLowering.cpp \
   MipsFrameLowering.cpp \
-  MipsLongBranch.cpp \
+  MipsLegalizerInfo.cpp \
+  MipsBranchExpansion.cpp \
   MipsMCInstLower.cpp \
   MipsMachineFunction.cpp \
   MipsModuleISelDAGToDAG.cpp \
   MipsOptimizePICCall.cpp \
   MipsOs16.cpp \
+  MipsRegisterBankInfo.cpp \
   MipsRegisterInfo.cpp \
   MipsSEFrameLowering.cpp \
   MipsSEInstrInfo.cpp \
@@ -49,6 +53,7 @@ mips_codegen_SRC_FILES := \
   MipsTargetMachine.cpp \
   MipsTargetObjectFile.cpp \
   MicroMipsSizeReduction.cpp
+
 
 # For the host
 # =====================================================
