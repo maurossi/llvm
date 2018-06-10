@@ -12,7 +12,9 @@ amdgpu_codegen_TBLGEN_TABLES70 := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenAsmMatcher.inc \
   AMDGPUGenDisassemblerTables.inc \
-  AMDGPUGenMCPseudoLowering.inc
+  AMDGPUGenMCPseudoLowering.inc \
+  AMDGPUGenSearchableTables.inc \
+  AMDGPUGenGlobalISel.inc
 
 amdgpu_codegen_SRC_FILES := \
   AMDGPUAliasAnalysis.cpp \
@@ -30,6 +32,7 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPULibCalls.cpp \
   AMDGPULibFunc.cpp \
   AMDGPULowerIntrinsics.cpp \
+  AMDGPULowerKernelAttributes.cpp \
   AMDGPUMachineCFGStructurizer.cpp \
   AMDGPUMachineFunction.cpp \
   AMDGPUMachineModuleInfo.cpp \
@@ -47,12 +50,14 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUUnifyDivergentExitNodes.cpp \
   AMDGPUUnifyMetadata.cpp \
   AMDGPUInline.cpp \
+  AMDGPUPerfHintAnalysis.cpp \
   AMDILCFGStructurizer.cpp \
   GCNHazardRecognizer.cpp \
   GCNIterativeScheduler.cpp \
   GCNMinRegStrategy.cpp \
   GCNRegPressure.cpp \
   GCNSchedStrategy.cpp \
+  R600AsmPrinter.cpp \
   R600ClauseMergePass.cpp \
   R600ControlFlowFinalizer.cpp \
   R600EmitClauseMarkers.cpp \
@@ -72,6 +77,7 @@ amdgpu_codegen_SRC_FILES := \
   SIFixVGPRCopies.cpp \
   SIFixWWMLiveness.cpp \
   SIFoldOperands.cpp \
+  SIFormMemoryClauses.cpp \
   SIFrameLowering.cpp \
   SIInsertSkips.cpp \
   SIInsertWaitcnts.cpp \
