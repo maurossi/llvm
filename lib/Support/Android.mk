@@ -32,6 +32,7 @@ support_SRC_FILES := \
   DebugCounter.cpp \
   DeltaAlgorithm.cpp \
   DAGDeltaAlgorithm.cpp \
+  DJB.cpp \
   Error.cpp \
   ErrorHandling.cpp \
   FileUtilities.cpp \
@@ -42,6 +43,7 @@ support_SRC_FILES := \
   GlobPattern.cpp \
   GraphWriter.cpp \
   Hashing.cpp \
+  InitLLVM.cpp \
   IntEqClasses.cpp \
   IntervalMap.cpp \
   JamCRC.cpp \
@@ -85,6 +87,7 @@ support_SRC_FILES := \
   Triple.cpp \
   Twine.cpp \
   Unicode.cpp \
+  UnicodeCaseFold.cpp \
   YAMLParser.cpp \
   YAMLTraits.cpp \
   WithColor.cpp \
