@@ -3,12 +3,15 @@ LOCAL_PATH := $(call my-dir)
 amdgpu_utils_TBLGEN_TABLES70 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenSubtargetInfo.inc \
-  AMDGPUGenInstrInfo.inc
+  AMDGPUGenInstrInfo.inc \
+  AMDGPUGenIntrinsics.inc \
+  AMDGPUGenSearchableTables.inc
 
 amdgpu_utils_SRC_FILES := \
   AMDGPUBaseInfo.cpp \
   AMDKernelCodeTUtils.cpp \
-  AMDGPUAsmUtils.cpp
+  AMDGPUAsmUtils.cpp \
+  AMDGPULaneDominator.cpp
 
 # For the host
 # =====================================================
