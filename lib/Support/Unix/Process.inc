@@ -211,7 +211,7 @@ std::error_code Process::FixupStandardFileDescriptors() {
     assert(errno == EBADF && "expected errno to have EBADF at this point!");
 
     if (NullFD < 0) {
-      if ((NullFD = RetryAfterSignal(-1, ::open, "/dev/null", O_RDWR)) < 0)
+      if ((NullFD = RetryAfterSignal(-1, [] { return ::open("/dev/null", O_RDWR); })) < 0)
         return std::error_code(errno, std::generic_category());
     }
 
