@@ -4,7 +4,12 @@ amdgpu_instprinter_TBLGEN_TABLES70 := \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+  AMDGPUGenSearchableTables.inc \
+  AMDGPUGenSubtargetInfo.inc \
+  R600GenAsmWriter.inc \
+  R600GenInstrInfo.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_instprinter_SRC_FILES := \
   AMDGPUInstPrinter.cpp

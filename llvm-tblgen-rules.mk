@@ -202,11 +202,18 @@ $(generated_sources)/%GenCallingConv.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out70,callingconv)
 endif
 
-ifneq ($(filter %GenIntrinsics.inc,$(tblgen_gen_tables)),)
-$(generated_sources)/%GenIntrinsics.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
-$(generated_sources)/%GenIntrinsics.inc: $(tblgen_source_dir)/%.td \
+ifneq ($(filter %GenIntrinsicEnums.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenIntrinsicEnums.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenIntrinsicEnums.inc: $(tblgen_source_dir)/%.td \
                                      $(tblgen_td_deps) $(LLVM70_TBLGEN)
-	$(call transform-td-to-out70,tgt-intrinsic)
+	$(call transform-td-to-out70,tgt-intrinsic-enums)
+endif
+
+ifneq ($(filter %GenIntrinsicImpl.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenIntrinsicImpl.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenIntrinsicImpl.inc: $(tblgen_source_dir)/%.td \
+                                     $(tblgen_td_deps) $(LLVM70_TBLGEN)
+	$(call transform-td-to-out70,tgt-intrinsic-impl)
 endif
 
 ifneq ($(filter %GenSearchableTables.inc,$(tblgen_gen_tables)),)
@@ -240,6 +247,13 @@ endif
 ifneq ($(findstring ARMGenSystemRegister.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/ARMGenSystemRegister.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/ARMGenSystemRegister.inc: $(tblgen_source_dir)/ARM.td \
+                                          $(tblgen_td_deps) $(LLVM70_TBLGEN)
+	$(call transform-td-to-out70,searchable-tables)
+endif
+
+ifneq ($(findstring InstCombineTables.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/InstCombineTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/InstCombineTables.inc: $(tblgen_source_dir)/InstCombineTables.td \
                                           $(tblgen_td_deps) $(LLVM70_TBLGEN)
 	$(call transform-td-to-out70,searchable-tables)
 endif
