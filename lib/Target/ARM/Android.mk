@@ -35,6 +35,7 @@ arm_codegen_SRC_FILES := \
   ARMMacroFusion.cpp \
   ARMRegisterInfo.cpp \
   ARMOptimizeBarriersPass.cpp \
+  ARMParallelDSP.cpp \
   ARMSelectionDAGInfo.cpp \
   ARMSubtarget.cpp \
   ARMTargetMachine.cpp \

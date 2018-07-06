@@ -7,7 +7,11 @@ amdgpu_asm_parser_TBLGEN_TABLES70 := \
   AMDGPUGenAsmMatcher.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+  AMDGPUGenSearchableTables.inc \
+  AMDGPUGenSubtargetInfo.inc \
+  R600GenInstrInfo.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_asm_parser_TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
 

@@ -67,6 +67,7 @@ analysis_SRC_FILES := \
   OptimizationRemarkEmitter.cpp \
   OrderedBasicBlock.cpp \
   PHITransAddr.cpp \
+  PhiValues.cpp \
   PostDominators.cpp \
   ProfileSummaryInfo.cpp \
   PtrUseVisitor.cpp \
