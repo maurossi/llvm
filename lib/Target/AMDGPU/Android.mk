@@ -7,14 +7,22 @@ amdgpu_codegen_TBLGEN_TABLES70 := \
   AMDGPUGenSubtargetInfo.inc \
   AMDGPUGenMCCodeEmitter.inc \
   AMDGPUGenCallingConv.inc \
-  AMDGPUGenIntrinsics.inc \
-  AMDGPUGenDFAPacketizer.inc \
+  AMDGPUGenIntrinsicEnums.inc \
+  AMDGPUGenIntrinsicImpl.inc \
   AMDGPUGenAsmWriter.inc \
   AMDGPUGenAsmMatcher.inc \
   AMDGPUGenDisassemblerTables.inc \
   AMDGPUGenMCPseudoLowering.inc \
   AMDGPUGenSearchableTables.inc \
-  AMDGPUGenGlobalISel.inc
+  AMDGPUGenGlobalISel.inc \
+  R600GenAsmWriter.inc \
+  R600GenCallingConv.inc \
+  R600GenDAGISel.inc \
+  R600GenDFAPacketizer.inc \
+  R600GenInstrInfo.inc \
+  R600GenMCCodeEmitter.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_codegen_SRC_FILES := \
   AMDGPUAliasAnalysis.cpp \
@@ -32,6 +40,7 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPULibCalls.cpp \
   AMDGPULibFunc.cpp \
   AMDGPULowerIntrinsics.cpp \
+  AMDGPULowerKernelArguments.cpp \
   AMDGPULowerKernelAttributes.cpp \
   AMDGPUMachineCFGStructurizer.cpp \
   AMDGPUMachineFunction.cpp \

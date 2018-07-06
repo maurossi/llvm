@@ -4,8 +4,12 @@ amdgpu_utils_TBLGEN_TABLES70 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenSubtargetInfo.inc \
   AMDGPUGenInstrInfo.inc \
-  AMDGPUGenIntrinsics.inc \
-  AMDGPUGenSearchableTables.inc
+  AMDGPUGenIntrinsicEnums.inc \
+  AMDGPUGenIntrinsicImpl.inc \
+  AMDGPUGenSearchableTables.inc \
+  R600GenInstrInfo.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_utils_SRC_FILES := \
   AMDGPUBaseInfo.cpp \
