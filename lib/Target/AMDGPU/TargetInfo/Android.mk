@@ -2,9 +2,14 @@ LOCAL_PATH := $(call my-dir)
 
 amdgpu_target_info_TBLGEN_TABLES70 := \
   AMDGPUGenInstrInfo.inc \
-  AMDGPUGenIntrinsics.inc \
+  AMDGPUGenIntrinsicEnums.inc \
+  AMDGPUGenIntrinsicImpl.inc \
   AMDGPUGenRegisterInfo.inc \
-  AMDGPUGenSubtargetInfo.inc
+  AMDGPUGenSearchableTables.inc \
+  AMDGPUGenSubtargetInfo.inc \
+  R600GenInstrInfo.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_target_info_SRC_FILES := \
   AMDGPUTargetInfo.cpp

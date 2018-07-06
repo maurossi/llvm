@@ -4,7 +4,12 @@ amdgpu_mc_desc_TBLGEN_TABLES70 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenMCCodeEmitter.inc \
-  AMDGPUGenSubtargetInfo.inc
+  AMDGPUGenSearchableTables.inc \
+  AMDGPUGenSubtargetInfo.inc \
+  R600GenMCCodeEmitter.inc \
+  R600GenInstrInfo.inc \
+  R600GenRegisterInfo.inc \
+  R600GenSubtargetInfo.inc
 
 amdgpu_mc_desc_SRC_FILES := \
   AMDGPUAsmBackend.cpp \
@@ -16,6 +21,7 @@ amdgpu_mc_desc_SRC_FILES := \
   AMDGPUMCTargetDesc.cpp \
   AMDGPUTargetStreamer.cpp \
   R600MCCodeEmitter.cpp \
+  R600MCTargetDesc.cpp \
   SIMCCodeEmitter.cpp
 
 # For the host

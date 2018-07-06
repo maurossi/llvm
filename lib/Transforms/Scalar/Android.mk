@@ -22,6 +22,7 @@ transforms_scalar_SRC_FILES := \
   InductiveRangeCheckElimination.cpp \
   IndVarSimplify.cpp \
   InferAddressSpaces.cpp \
+  InstSimplifyPass.cpp \
   JumpThreading.cpp \
   LICM.cpp \
   LoopAccessAnalysisPrinter.cpp \
@@ -39,6 +40,7 @@ transforms_scalar_SRC_FILES := \
   LoopRotation.cpp \
   LoopSimplifyCFG.cpp \
   LoopStrengthReduce.cpp \
+  LoopUnrollAndJamPass.cpp \
   LoopUnrollPass.cpp \
   LoopUnswitch.cpp \
   LoopVersioningLICM.cpp \

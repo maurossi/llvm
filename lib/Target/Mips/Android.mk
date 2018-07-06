@@ -29,6 +29,7 @@ mips_codegen_SRC_FILES := \
   MipsCCState.cpp \
   MipsConstantIslandPass.cpp \
   MipsDelaySlotFiller.cpp \
+  MipsExpandPseudo.cpp \
   MipsFastISel.cpp \
   MipsInstrInfo.cpp \
   MipsInstructionSelector.cpp \
