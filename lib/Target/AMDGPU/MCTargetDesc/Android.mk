@@ -15,7 +15,6 @@ amdgpu_mc_desc_SRC_FILES := \
   AMDGPUAsmBackend.cpp \
   AMDGPUELFObjectWriter.cpp \
   AMDGPUELFStreamer.cpp \
-  AMDGPUHSAMetadataStreamer.cpp \
   AMDGPUMCAsmInfo.cpp \
   AMDGPUMCCodeEmitter.cpp \
   AMDGPUMCTargetDesc.cpp \
