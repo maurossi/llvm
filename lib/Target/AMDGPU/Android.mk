@@ -33,6 +33,7 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUAsmPrinter.cpp \
   AMDGPUCodeGenPrepare.cpp \
   AMDGPUFrameLowering.cpp \
+  AMDGPUHSAMetadataStreamer.cpp \
   AMDGPUInstrInfo.cpp \
   AMDGPUIntrinsicInfo.cpp \
   AMDGPUISelDAGToDAG.cpp \
