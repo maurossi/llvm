@@ -47,6 +47,7 @@ support_SRC_FILES := \
   IntEqClasses.cpp \
   IntervalMap.cpp \
   JamCRC.cpp \
+  JSON.cpp \
   KnownBits.cpp \
   LEB128.cpp \
   LineIterator.cpp \
