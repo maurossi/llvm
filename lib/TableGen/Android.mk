@@ -4,6 +4,7 @@ include $(LLVM70_ROOT_PATH)/llvm.mk
 
 libtablegen_SRC_FILES := \
   Error.cpp \
+  JSONBackend.cpp \
   Main.cpp \
   Record.cpp \
   SetTheory.cpp \
