@@ -20,6 +20,7 @@ arm_codegen_SRC_FILES := \
   ARMAsmPrinter.cpp \
   ARMBaseInstrInfo.cpp \
   ARMBaseRegisterInfo.cpp \
+  ARMCodeGenPrepare.cpp \
   ARMConstantIslandPass.cpp \
   ARMConstantPoolValue.cpp \
   ARMExpandPseudoInsts.cpp \
