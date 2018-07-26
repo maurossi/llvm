@@ -22,6 +22,7 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFExpression.cpp \
   DWARFFormValue.cpp \
   DWARFGdbIndex.cpp \
+  DWARFListTable.cpp \
   DWARFTypeUnit.cpp \
   DWARFUnitIndex.cpp \
   DWARFUnit.cpp \
