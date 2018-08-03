@@ -8,6 +8,7 @@ debuginfo_dwarf_SRC_FILES := \
   DWARFContext.cpp \
   DWARFDataExtractor.cpp \
   DWARFDebugAbbrev.cpp \
+  DWARFDebugAddr.cpp \
   DWARFDebugArangeSet.cpp \
   DWARFDebugAranges.cpp \
   DWARFDebugFrame.cpp \
