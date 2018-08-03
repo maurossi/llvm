@@ -34,6 +34,8 @@ TBLGEN_TD_DIR70 := $(aarch64_asm_parser_TBLGEN_TD_DIR70)
 
 include $(LLVM70_HOST_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 # Override the default optimization level to work around taking forever (~50m)
 # to compile AArch64AsmParser.cpp on Mac with gcc 4.2,
 # or on Linux with mingw32msvc-gcc 4.2, which is used to cross-compile
@@ -58,5 +60,7 @@ TBLGEN_TD_DIR70 := $(aarch64_asm_parser_TBLGEN_TD_DIR70)
 
 include $(LLVM70_DEVICE_BUILD_MK)
 include $(LLVM70_TBLGEN_RULES_MK)
+include $(LLVM70_GEN_ATTRIBUTES_MK)
+include $(LLVM70_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
