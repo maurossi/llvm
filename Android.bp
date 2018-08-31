@@ -28,6 +28,7 @@ llvm_defaults {
         "-Wwrite-strings",
         "-Werror",
         "-Dsprintf=sprintf",
+        "-DLLVM_BUILD_GLOBAL_ISEL",
     ],
 
     cppflags: [
