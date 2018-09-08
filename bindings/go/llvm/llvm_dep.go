@@ -14,6 +14,6 @@
 
 // +build !byollvm
 
-package llvm
+package llvm60
 
 var _ run_build_sh

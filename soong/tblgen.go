@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package llvm
+package llvm60
 
 import (
 	"path/filepath"
@@ -25,20 +25,20 @@ import (
 )
 
 func init() {
-	android.RegisterModuleType("llvm_tblgen", llvmTblgenFactory)
+	android.RegisterModuleType("llvm60_tblgen", llvm60TblgenFactory)
 }
 
 var (
-	pctx = android.NewPackageContext("android/soong/llvm")
+	pctx = android.NewPackageContext("android/soong/llvm60")
 
-	llvmTblgen = pctx.HostBinToolVariable("llvmTblgen", "llvm-tblgen")
+	llvm60Tblgen = pctx.HostBinToolVariable("llvm60Tblgen", "llvm60-tblgen")
 
-	tblgenRule = pctx.StaticRule("tblgenRule", blueprint.RuleParams{
+	tblgenRule60 = pctx.StaticRule("tblgenRule60", blueprint.RuleParams{
 		Depfile:     "${out}.d",
 		Deps:        blueprint.DepsGCC,
-		Command:     "${llvmTblgen} ${includes} ${generator} -d ${depfile} -o ${out} ${in}",
-		CommandDeps: []string{"${llvmTblgen}"},
-		Description: "LLVM TableGen $in => $out",
+		Command:     "${llvm60Tblgen} ${includes} ${generator} -d ${depfile} -o ${out} ${in}",
+		CommandDeps: []string{"${llvm60Tblgen}"},
+		Description: "LLVM60 TableGen $in => $out",
 	}, "includes", "depfile", "generator")
 )
 
@@ -63,8 +63,8 @@ func (t *tblgen) GenerateAndroidBuildActions(ctx android.ModuleContext) {
 
 	includes := []string{
 		"-I " + ctx.ModuleDir(),
-		"-I external/llvm/include",
-		"-I external/llvm/lib/Target",
+		"-I external/llvm60/include",
+		"-I external/llvm60/lib/Target",
 		"-I " + filepath.Dir(in.String()),
 	}
 
@@ -73,7 +73,7 @@ func (t *tblgen) GenerateAndroidBuildActions(ctx android.ModuleContext) {
 		generator := outToGenerator(ctx, o)
 
 		ctx.ModuleBuild(pctx, android.ModuleBuildParams{
-			Rule:   tblgenRule,
+			Rule:   tblgenRule60,
 			Input:  in,
 			Output: out,
 			Args: map[string]string{
@@ -157,7 +157,7 @@ func (t *tblgen) GeneratedSourceFiles() android.Paths {
 	return t.generatedHeaders
 }
 
-func llvmTblgenFactory() android.Module {
+func llvm60TblgenFactory() android.Module {
 	t := &tblgen{}
 	t.AddProperties(&t.properties)
 	android.InitAndroidModule(t)

@@ -1,15 +1,15 @@
 //===---------------------------------------------------------------===
-// llvm-config command line tool
+// llvm60-config command line tool
 //===---------------------------------------------------------------===
 
 cc_binary_host {
-    name: "llvm-config",
-    defaults: ["llvm-defaults"],
+    name: "llvm60-config",
+    defaults: ["llvm60-defaults"],
     generated_headers: ["llvm-gen-config"],
     srcs: ["llvm-config.cpp"],
     static_libs: [
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM60Core",
+        "libLLVM60Support",
     ],
 }
 

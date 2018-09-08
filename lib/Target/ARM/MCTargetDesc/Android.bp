@@ -1,8 +1,8 @@
 cc_library_static {
-    name: "libLLVMARMDesc",
+    name: "libLLVM60ARMDesc",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-arm-defaults",
+        "llvm60-lib-defaults",
+        "llvm60-arm-defaults",
     ],
     srcs: ["*.cpp"],
 }

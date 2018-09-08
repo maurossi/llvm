@@ -4,14 +4,14 @@
 
 cc_binary_host {
     name: "llvm-size",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm60-defaults"],
     srcs: ["llvm-size.cpp"],
     static_libs: [
-        "libLLVMObject",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMBitReader",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM60Object",
+        "libLLVM60MC",
+        "libLLVM60MCParser",
+        "libLLVM60BitReader",
+        "libLLVM60Core",
+        "libLLVM60Support",
     ],
 }

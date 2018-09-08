@@ -4,15 +4,15 @@
 
 cc_binary_host {
     name: "obj2yaml",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm60-defaults"],
     srcs: ["*.cpp"],
     static_libs: [
-        "libLLVMObject",
-        "libLLVMObjectYAML",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMBitReader",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM60Object",
+        "libLLVM60ObjectYAML",
+        "libLLVM60MC",
+        "libLLVM60MCParser",
+        "libLLVM60BitReader",
+        "libLLVM60Core",
+        "libLLVM60Support",
     ],
 }

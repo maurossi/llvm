@@ -1,8 +1,8 @@
 cc_library_static {
-    name: "libLLVMX86Utils",
+    name: "libLLVM60X86Utils",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-x86-defaults",
+        "llvm60-lib-defaults",
+        "llvm60-x86-defaults",
     ],
     srcs: ["*.cpp"],
 }

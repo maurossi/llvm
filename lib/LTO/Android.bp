@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMLTO",
+    name: "libLLVM60LTO",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm60-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }
