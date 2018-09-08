@@ -1,15 +1,15 @@
 //===---------------------------------------------------------------===
-// llvm-config command line tool
+// llvm50-config command line tool
 //===---------------------------------------------------------------===
 
 cc_binary_host {
-    name: "llvm-config",
-    defaults: ["llvm-defaults"],
+    name: "llvm50-config",
+    defaults: ["llvm50-defaults"],
     generated_headers: ["llvm-gen-config"],
     srcs: ["llvm-config.cpp"],
     static_libs: [
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM50Core",
+        "libLLVM50Support",
     ],
 }
 

@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-package llvm
+package llvm50
 
 /*
 #include "llvm/Config/llvm-config.h"

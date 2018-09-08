@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMVectorize",
+    name: "libLLVM50Vectorize",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm50-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }

@@ -1,11 +1,11 @@
 cc_binary_host {
     name: "llvm-dis",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["llvm-dis.cpp"],
     static_libs: [
-        "libLLVMAnalysis",
-        "libLLVMBitReader",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM50Analysis",
+        "libLLVM50BitReader",
+        "libLLVM50Core",
+        "libLLVM50Support",
     ],
 }

@@ -4,16 +4,16 @@
 
 cc_binary_host {
     name: "llvm-dwarfdump",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["llvm-dwarfdump.cpp"],
     static_libs: [
-        "libLLVMDebugInfoDWARF",
-        "libLLVMDebugInfoPDB",
-        "libLLVMObject",
-        "libLLVMBitReader",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM50DebugInfoDWARF",
+        "libLLVM50DebugInfoPDB",
+        "libLLVM50Object",
+        "libLLVM50BitReader",
+        "libLLVM50MC",
+        "libLLVM50MCParser",
+        "libLLVM50Core",
+        "libLLVM50Support",
     ],
 }

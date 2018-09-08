@@ -4,10 +4,10 @@
 
 cc_binary_host {
     name: "llvm-mcmarkup",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["llvm-mcmarkup.cpp"],
     static_libs: [
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM50Core",
+        "libLLVM50Support",
     ],
 }

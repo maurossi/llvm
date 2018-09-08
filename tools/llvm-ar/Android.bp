@@ -4,9 +4,9 @@
 
 cc_binary_host {
     name: "llvm-ar",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["llvm-ar.cpp"],
-    shared_libs: ["libLLVM"],
+    shared_libs: ["libLLVM50"],
     symlinks: [
         "llvm-lib",
         "llvm-ranlib",

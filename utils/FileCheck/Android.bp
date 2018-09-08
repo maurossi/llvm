@@ -1,8 +1,8 @@
 cc_binary_host {
     name: "FileCheck",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["FileCheck.cpp"],
-    static_libs: ["libLLVMSupport"],
+    static_libs: ["libLLVM50Support"],
     cflags: [
         "-D__STDC_LIMIT_MACROS",
         "-D__STDC_CONSTANT_MACROS",

@@ -1,8 +1,8 @@
 cc_library_static {
-    name: "libLLVMX86AsmParser",
+    name: "libLLVM50X86AsmParser",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-x86-defaults",
+        "llvm50-lib-defaults",
+        "llvm50-x86-defaults",
     ],
     srcs: ["*.cpp"],
 }

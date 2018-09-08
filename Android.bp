@@ -1,14 +1,14 @@
 cc_defaults {
-    name: "llvm-defaults",
-    defaults: ["llvm-defaults-no-generated-headers"],
-    header_libs: ["llvm-headers"],
+    name: "llvm50-defaults",
+    defaults: ["llvm50-defaults-no-generated-headers"],
+    header_libs: ["llvm50-headers"],
 }
 
 // This module defines all of the defaults used to compiled llvm, except for
 // the generated headers.  It is necessary to avoid a circular dependency
 // from the tblgen tool used to generate the headers to the generated headers.
 llvm_defaults {
-    name: "llvm-defaults-no-generated-headers",
+    name: "llvm50-defaults-no-generated-headers",
 
     host_supported: true,
     clang: true,
@@ -42,7 +42,7 @@ llvm_defaults {
         "-Wno-error=user-defined-warnings",
     ],
 
-    header_libs: ["llvm-headers-no-generated-headers"],
+    header_libs: ["llvm50-headers-no-generated-headers"],
 
     target: {
         android: {
@@ -97,7 +97,7 @@ llvm_defaults {
 }
 
 cc_library_headers {
-    name: "llvm-headers-no-generated-headers",
+    name: "llvm50-headers-no-generated-headers",
     vendor_available: true,
     host_supported: true,
     export_include_dirs: ["include"],
@@ -118,20 +118,20 @@ cc_library_headers {
 }
 
 cc_library_headers {
-    name: "llvm-headers",
+    name: "llvm50-headers",
     vendor_available: true,
     host_supported: true,
-    header_libs: ["llvm-headers-no-generated-headers"],
-    export_header_lib_headers: ["llvm-headers-no-generated-headers"],
+    header_libs: ["llvm50-headers-no-generated-headers"],
+    export_header_lib_headers: ["llvm50-headers-no-generated-headers"],
     generated_headers: [
-        "llvm-gen-attributes",
-        "llvm-gen-intrinsics",
-        "llvm-gen-revision",
+        "llvm50-gen-attributes",
+        "llvm50-gen-intrinsics",
+        "llvm50-gen-revision",
     ],
     export_generated_headers: [
-        "llvm-gen-attributes",
-        "llvm-gen-intrinsics",
-        "llvm-gen-revision",
+        "llvm50-gen-attributes",
+        "llvm50-gen-intrinsics",
+        "llvm50-gen-revision",
     ],
     target: {
         windows: {
@@ -140,28 +140,28 @@ cc_library_headers {
     },
 }
 
-llvm_tblgen {
-    name: "llvm-gen-attributes",
+llvm50_tblgen {
+    name: "llvm50-gen-attributes",
     in: "include/llvm/IR/Attributes.td",
     outs: ["llvm/IR/Attributes.gen"],
 }
 
-llvm_tblgen {
-    name: "llvm-gen-intrinsics",
+llvm50_tblgen {
+    name: "llvm50-gen-intrinsics",
     in: "include/llvm/IR/Intrinsics.td",
     outs: ["llvm/IR/Intrinsics.gen"],
 }
 
 genrule {
-    name: "llvm-gen-revision",
+    name: "llvm50-gen-revision",
     out: ["llvm/Support/VCSRevision.h"],
     srcs: [".git/logs/HEAD"],
     tool_files: ["git_sha1_gen.py"],
     cmd: "python $(location git_sha1_gen.py) --output $(out)",
 }
 
-force_build_llvm_components_defaults {
-    name: "force_build_llvm_components",
+force_build_llvm50_components_defaults {
+    name: "force_build_llvm50_components",
     // Host build disabled by soong/llvm.go unless FORCE_BUILD_LLVM_COMPONENTS
     // environment variable is set
 }
@@ -169,105 +169,105 @@ force_build_llvm_components_defaults {
 // LLVM shared library build
 
 llvm_arm_static_libraries = [
-    "libLLVMARMCodeGen",
-    "libLLVMARMAsmParser",
-    "libLLVMARMAsmPrinter",
-    "libLLVMARMInfo",
-    "libLLVMARMDesc",
-    "libLLVMARMDisassembler",
+    "libLLVM50ARMCodeGen",
+    "libLLVM50ARMAsmParser",
+    "libLLVM50ARMAsmPrinter",
+    "libLLVM50ARMInfo",
+    "libLLVM50ARMDesc",
+    "libLLVM50ARMDisassembler",
 ]
 
 llvm_x86_static_libraries = [
-    "libLLVMX86CodeGen",
-    "libLLVMX86Info",
-    "libLLVMX86Desc",
-    "libLLVMX86AsmParser",
-    "libLLVMX86AsmPrinter",
-    "libLLVMX86Utils",
-    "libLLVMX86Disassembler",
+    "libLLVM50X86CodeGen",
+    "libLLVM50X86Info",
+    "libLLVM50X86Desc",
+    "libLLVM50X86AsmParser",
+    "libLLVM50X86AsmPrinter",
+    "libLLVM50X86Utils",
+    "libLLVM50X86Disassembler",
 ]
 
 llvm_mips_static_libraries = [
-    "libLLVMMipsCodeGen",
-    "libLLVMMipsInfo",
-    "libLLVMMipsDesc",
-    "libLLVMMipsAsmParser",
-    "libLLVMMipsAsmPrinter",
-    "libLLVMMipsDisassembler",
+    "libLLVM50MipsCodeGen",
+    "libLLVM50MipsInfo",
+    "libLLVM50MipsDesc",
+    "libLLVM50MipsAsmParser",
+    "libLLVM50MipsAsmPrinter",
+    "libLLVM50MipsDisassembler",
 ]
 
 llvm_aarch64_static_libraries = [
-    "libLLVMAArch64CodeGen",
-    "libLLVMAArch64Info",
-    "libLLVMAArch64Desc",
-    "libLLVMAArch64AsmParser",
-    "libLLVMAArch64AsmPrinter",
-    "libLLVMAArch64Utils",
-    "libLLVMAArch64Disassembler",
+    "libLLVM50AArch64CodeGen",
+    "libLLVM50AArch64Info",
+    "libLLVM50AArch64Desc",
+    "libLLVM50AArch64AsmParser",
+    "libLLVM50AArch64AsmPrinter",
+    "libLLVM50AArch64Utils",
+    "libLLVM50AArch64Disassembler",
 ]
 
 llvm_amdgpu_static_libraries = [
-    "libLLVMAMDGPUCodeGen",
-    "libLLVMAMDGPUInfo",
-    "libLLVMAMDGPUDesc",
-    "libLLVMAMDGPUAsmParser",
-    "libLLVMAMDGPUAsmPrinter",
-    "libLLVMAMDGPUUtils",
+    "libLLVM50AMDGPUCodeGen",
+    "libLLVM50AMDGPUInfo",
+    "libLLVM50AMDGPUDesc",
+    "libLLVM50AMDGPUAsmParser",
+    "libLLVM50AMDGPUAsmPrinter",
+    "libLLVM50AMDGPUUtils",
 ]
 
 
 cc_library_shared {
     host_supported: true,
-    name: "libLLVM",
+    name: "libLLVM50",
     defaults: [
-        "llvm-defaults",
-        "force_build_llvm_components",
+        "llvm50-defaults",
+        "force_build_llvm50_components",
     ],
 
     whole_static_libs: [
         // pre static libraries
-        "libLLVMLinker",
-        "libLLVMipo",
-        "libLLVMDebugInfoDWARF",
-        "libLLVMDebugInfoMSF",
-        "libLLVMDebugInfoPDB",
-        "libLLVMSymbolize",
-        "libLLVMIRReader",
-        "libLLVMBitWriter",
-        "libLLVMBitReader",
-        "libLLVMPasses",
+        "libLLVM50Linker",
+        "libLLVM50ipo",
+        "libLLVM50DebugInfoDWARF",
+        "libLLVM50DebugInfoMSF",
+        "libLLVM50DebugInfoPDB",
+        "libLLVM50Symbolize",
+        "libLLVM50IRReader",
+        "libLLVM50BitWriter",
+        "libLLVM50BitReader",
+        "libLLVM50Passes",
 
         // post static libraries
-        "libLLVMLTO",
-        "libLLVMAsmPrinter",
-        "libLLVMSelectionDAG",
-        "libLLVMCodeGen",
-        "libLLVMDebugInfoCodeView",
-        "libLLVMObject",
-        "libLLVMScalarOpts",
-        "libLLVMInstCombine",
-        "libLLVMInstrumentation",
-        "libLLVMTransformObjCARC",
-        "libLLVMTransformUtils",
-        "libLLVMAnalysis",
-        "libLLVMTarget",
-        "libLLVMGlobalISel",
-        "libLLVMMCDisassembler",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMCore",
-        "libLLVMAsmParser",
-        "libLLVMOption",
-        "libLLVMSupport",
-        "libLLVMVectorize",
-        "libLLVMProfileData",
-        "libLLVMProfileDataCoverage",
-        "libLLVMLibDriver",
-        "libLLVMExecutionEngine",
-        "libLLVMRuntimeDyld",
-        "libLLVMMCJIT",
-        "libLLVMOrcJIT",
-        "libLLVMBinaryFormat",
+        "libLLVM50LTO",
+        "libLLVM50AsmPrinter",
+        "libLLVM50SelectionDAG",
+        "libLLVM50CodeGen",
+        "libLLVM50DebugInfoCodeView",
+        "libLLVM50Object",
+        "libLLVM50ScalarOpts",
+        "libLLVM50InstCombine",
+        "libLLVM50Instrumentation",
+        "libLLVM50TransformObjCARC",
+        "libLLVM50TransformUtils",
+        "libLLVM50Analysis",
+        "libLLVM50Target",
+        "libLLVM50GlobalISel",
+        "libLLVM50MCDisassembler",
+        "libLLVM50MC",
+        "libLLVM50MCParser",
+        "libLLVM50Core",
+        "libLLVM50AsmParser",
+        "libLLVM50Option",
+        "libLLVM50Support",
+        "libLLVM50Vectorize",
+        "libLLVM50ProfileData",
+        "libLLVM50ProfileDataCoverage",
+        "libLLVM50LibDriver",
+        "libLLVM50ExecutionEngine",
+        "libLLVM50RuntimeDyld",
+        "libLLVM50MCJIT",
+        "libLLVM50OrcJIT",
+        "libLLVM50BinaryFormat",
     ],
 
     export_include_dirs: ["include"],

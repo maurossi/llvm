@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMAnalysis",
+    name: "libLLVM50Analysis",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm50-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }

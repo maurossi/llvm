@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-package llvm
+package llvm50
 
 /*
 #include "llvm-c/Transforms/Scalar.h"

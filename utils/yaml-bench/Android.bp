@@ -3,7 +3,7 @@
 
 cc_binary_host {
     name: "yaml-bench",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["YAMLBench.cpp"],
-    static_libs: ["libLLVMSupport"],
+    static_libs: ["libLLVM50Support"],
 }

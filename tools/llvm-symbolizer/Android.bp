@@ -1,24 +1,24 @@
 cc_binary {
     name: "llvm-symbolizer",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs:  ["llvm-symbolizer.cpp"],
     target: {
         host: {
             static_libs: [
-                "libLLVMSymbolize",
-                "libLLVMDebugInfoDWARF",
-                "libLLVMDebugInfoPDB",
-                "libLLVMDebugInfoCodeView",
-                "libLLVMObject",
-                "libLLVMBitReader",
-                "libLLVMMC",
-                "libLLVMMCParser",
-                "libLLVMCore",
-                "libLLVMSupport",
+                "libLLVM50Symbolize",
+                "libLLVM50DebugInfoDWARF",
+                "libLLVM50DebugInfoPDB",
+                "libLLVM50DebugInfoCodeView",
+                "libLLVM50Object",
+                "libLLVM50BitReader",
+                "libLLVM50MC",
+                "libLLVM50MCParser",
+                "libLLVM50Core",
+                "libLLVM50Support",
             ],
         },
         android: {
-            shared_libs: ["libLLVM"],
+            shared_libs: ["libLLVM50"],
         },
     },
 }

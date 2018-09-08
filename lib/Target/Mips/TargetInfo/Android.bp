@@ -1,8 +1,8 @@
 cc_library_static {
-    name: "libLLVMMipsInfo",
+    name: "libLLVM50MipsInfo",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-mips-defaults",
+        "llvm50-lib-defaults",
+        "llvm50-mips-defaults",
     ],
     srcs: ["*.cpp"],
 }

@@ -1,20 +1,20 @@
 cc_library_static {
-    name: "libLLVMAMDGPUCodeGen",
+    name: "libLLVM50AMDGPUCodeGen",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-amdgpu-defaults",
+        "llvm50-lib-defaults",
+        "llvm50-amdgpu-defaults",
     ],
     srcs: ["*.cpp"],
 }
 
 cc_defaults {
-    name: "llvm-amdgpu-defaults",
-    generated_headers: ["llvm-gen-amdgpu"],
-    static_libs: ["llvm-amdgpu-headers"],
+    name: "llvm50-amdgpu-defaults",
+    generated_headers: ["llvm50-gen-amdgpu"],
+    static_libs: ["llvm50-amdgpu-headers"],
 }
 
 cc_library_static {
-    name: "llvm-amdgpu-headers",
+    name: "llvm50-amdgpu-headers",
     host_supported: true,
     target: {
         windows: {
@@ -24,8 +24,8 @@ cc_library_static {
     export_include_dirs: ["."],
 }
 
-llvm_tblgen {
-    name: "llvm-gen-amdgpu",
+llvm50_tblgen {
+    name: "llvm50-gen-amdgpu",
     in: "AMDGPU.td",
     outs: [
         "AMDGPUGenRegisterInfo.inc",

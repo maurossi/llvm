@@ -4,11 +4,11 @@
 
 cc_binary_host {
     name: "llvm-bcanalyzer",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm50-defaults"],
     srcs: ["llvm-bcanalyzer.cpp"],
     static_libs: [
-        "libLLVMBitReader",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM50BitReader",
+        "libLLVM50Core",
+        "libLLVM50Support",
     ],
 }

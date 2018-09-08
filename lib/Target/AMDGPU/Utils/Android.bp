@@ -1,8 +1,8 @@
 cc_library_static {
-    name: "libLLVMAMDGPUUtils",
+    name: "libLLVM50AMDGPUUtils",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-amdgpu-defaults",
+        "llvm50-lib-defaults",
+        "llvm50-amdgpu-defaults",
     ],
     srcs: ["*.cpp"],
 }

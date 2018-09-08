@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMOption",
+    name: "libLLVM50Option",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm50-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }

@@ -1,11 +1,11 @@
 cc_binary_host {
-    name: "llvm-tblgen",
-    defaults: ["llvm-defaults-no-generated-headers"],
+    name: "llvm50-tblgen",
+    defaults: ["llvm50-defaults-no-generated-headers"],
     srcs: ["*.cpp"],
 
     static_libs: [
-        "libLLVMTableGen",
-        "libLLVMSupport",
+        "libLLVM50TableGen",
+        "libLLVM50Support",
     ],
 
     host_ldlibs: ["-lm"],
@@ -13,8 +13,8 @@ cc_binary_host {
         windows: {
             enabled: false,
         },
-        // llvm-defaults turns off host builds by default, turn it back on for
-        // modules that are used to build llvm-tblgen
+        // llvm50-defaults turns off host builds by default, turn it back on for
+        // modules that are used to build llvm50-tblgen
         host: {
             enabled: true,
         },
