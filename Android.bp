@@ -125,10 +125,12 @@ cc_library_headers {
     generated_headers: [
         "llvm-gen-attributes",
         "llvm-gen-intrinsics",
+        "llvm-gen-revision",
     ],
     export_generated_headers: [
         "llvm-gen-attributes",
         "llvm-gen-intrinsics",
+        "llvm-gen-revision",
     ],
     target: {
         windows: {
@@ -147,6 +149,14 @@ llvm_tblgen {
     name: "llvm-gen-intrinsics",
     in: "include/llvm/IR/Intrinsics.td",
     outs: ["llvm/IR/Intrinsics.gen"],
+}
+
+genrule {
+    name: "llvm-gen-revision",
+    out: ["llvm/Support/VCSRevision.h"],
+    srcs: [".git/logs/HEAD"],
+    tool_files: ["git_sha1_gen.py"],
+    cmd: "python $(location git_sha1_gen.py) --output $(out)",
 }
 
 force_build_llvm_components_defaults {
