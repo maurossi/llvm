@@ -1,14 +1,14 @@
 cc_binary_host {
     name: "verify-uselistorder",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm70-defaults"],
     srcs: ["verify-uselistorder.cpp"],
     static_libs: [
-        "libLLVMAsmParser",
-        "libLLVMBitReader",
-        "libLLVMBitWriter",
-        "libLLVMAnalysis",
-        "libLLVMCore",
-        "libLLVMIRReader",
-        "libLLVMSupport",
+        "libLLVM70AsmParser",
+        "libLLVM70BitReader",
+        "libLLVM70BitWriter",
+        "libLLVM70Analysis",
+        "libLLVM70Core",
+        "libLLVM70IRReader",
+        "libLLVM70Support",
     ],
 }

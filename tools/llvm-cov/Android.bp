@@ -4,16 +4,16 @@
 
 cc_binary_host {
     name: "llvm-cov",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm70-defaults"],
     srcs: ["*.cpp"],
     static_libs: [
-        "libLLVMObject",
-        "libLLVMProfileDataCoverage",
-        "libLLVMProfileData",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMBitReader",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM70Object",
+        "libLLVM70ProfileDataCoverage",
+        "libLLVM70ProfileData",
+        "libLLVM70MC",
+        "libLLVM70MCParser",
+        "libLLVM70BitReader",
+        "libLLVM70Core",
+        "libLLVM70Support",
     ],
 }

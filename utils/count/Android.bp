@@ -4,6 +4,6 @@
 
 cc_binary_host {
     name: "count",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm70-defaults"],
     srcs: ["count.c"],
 }

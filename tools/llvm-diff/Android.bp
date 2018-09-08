@@ -4,7 +4,7 @@
 
 cc_binary_host {
     name: "llvm-diff",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm70-defaults"],
     srcs: [
         "llvm-diff.cpp",
         "DiffConsumer.cpp",
@@ -12,10 +12,10 @@ cc_binary_host {
         "DiffLog.cpp",
     ],
     static_libs: [
-        "libLLVMIRReader",
-        "libLLVMBitReader",
-        "libLLVMAsmParser",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM70IRReader",
+        "libLLVM70BitReader",
+        "libLLVM70AsmParser",
+        "libLLVM70Core",
+        "libLLVM70Support",
     ],
 }

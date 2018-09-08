@@ -4,16 +4,16 @@
 
 cc_binary_host {
     name: "lli-child-target",
-    defaults: ["llvm-defaults"],
+    defaults: ["llvm70-defaults"],
     srcs: ["ChildTarget.cpp"],
     static_libs: [
-        "libLLVMOrcJIT",
-        "libLLVMRuntimeDyld",
-        "libLLVMObject",
-        "libLLVMBitReader",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMCore",
-        "libLLVMSupport",
+        "libLLVM70OrcJIT",
+        "libLLVM70RuntimeDyld",
+        "libLLVM70Object",
+        "libLLVM70BitReader",
+        "libLLVM70MC",
+        "libLLVM70MCParser",
+        "libLLVM70Core",
+        "libLLVM70Support",
     ],
 }

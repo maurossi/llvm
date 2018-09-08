@@ -1,20 +1,20 @@
 cc_library_static {
-    name: "libLLVMAMDGPUCodeGen",
+    name: "libLLVM70AMDGPUCodeGen",
     defaults: [
-        "llvm-lib-defaults",
-        "llvm-amdgpu-defaults",
+        "llvm70-lib-defaults",
+        "llvm70-amdgpu-defaults",
     ],
     srcs: ["*.cpp"],
 }
 
 cc_defaults {
-    name: "llvm-amdgpu-defaults",
-    generated_headers: ["llvm-gen-amdgpu", "llvm-gen-r600"],
-    static_libs: ["llvm-amdgpu-headers"],
+    name: "llvm70-amdgpu-defaults",
+    generated_headers: ["llvm70-gen-amdgpu", "llvm70-gen-r600"],
+    static_libs: ["llvm70-amdgpu-headers"],
 }
 
 cc_library_static {
-    name: "llvm-amdgpu-headers",
+    name: "llvm70-amdgpu-headers",
     host_supported: true,
     target: {
         windows: {
@@ -24,8 +24,8 @@ cc_library_static {
     export_include_dirs: ["."],
 }
 
-llvm_tblgen {
-    name: "llvm-gen-amdgpu",
+llvm70_tblgen {
+    name: "llvm70-gen-amdgpu",
     in: "AMDGPU.td",
     outs: [
         "AMDGPUGenRegisterInfo.inc",
@@ -45,8 +45,8 @@ llvm_tblgen {
     ],
 }
 
-llvm_tblgen {
-    name: "llvm-gen-r600",
+llvm70_tblgen {
+    name: "llvm70-gen-r600",
     in: "R600.td",
     outs: [
         "R600GenAsmWriter.inc",

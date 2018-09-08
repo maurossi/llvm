@@ -18,10 +18,10 @@
 // =====================================================
 
 cc_library_host_shared {
-    name: "LLVMgold",
-    defaults: ["llvm-defaults"],
+    name: "LLVM70gold",
+    defaults: ["llvm70-defaults"],
     srcs: ["gold-plugin.cpp"],
-    shared_libs: ["libLLVM"],
+    shared_libs: ["libLLVM70"],
     include_dirs: ["toolchain/binutils/binutils-2.25/include"],
     compile_multilib: "first",
 }

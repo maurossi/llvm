@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-package llvm
+package llvm70
 
 /*
 #include "llvm-c/Transforms/IPO.h"
