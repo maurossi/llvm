@@ -23,6 +23,7 @@ tablegen_SRC_FILES := \
   DAGISelMatcher.cpp \
   DFAPacketizerEmitter.cpp \
   DisassemblerEmitter.cpp \
+  ExegesisEmitter.cpp \
   FastISelEmitter.cpp \
   FixedLenDecoderEmitter.cpp \
   GlobalISelEmitter.cpp \
