@@ -42,7 +42,6 @@ transforms_utils_SRC_FILES := \
   MetaRenamer.cpp \
   ModuleUtils.cpp \
   NameAnonGlobals.cpp \
-  OrderedInstructions.cpp \
   PredicateInfo.cpp \
   PromoteMemoryToRegister.cpp \
   StripGCRelocates.cpp \
