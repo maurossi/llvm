@@ -36,6 +36,7 @@ analysis_SRC_FILES := \
   IndirectCallPromotionAnalysis.cpp \
   InlineCost.cpp \
   InstCount.cpp \
+  InstructionPrecedenceTracking.cpp \
   InstructionSimplify.cpp \
   Interval.cpp \
   IntervalPartition.cpp \
@@ -66,6 +67,7 @@ analysis_SRC_FILES := \
   ObjCARCInstKind.cpp \
   OptimizationRemarkEmitter.cpp \
   OrderedBasicBlock.cpp \
+  OrderedInstructions.cpp \
   PHITransAddr.cpp \
   PhiValues.cpp \
   PostDominators.cpp \

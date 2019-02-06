@@ -7,7 +7,6 @@ codegen_asmprinter_SRC_FILES := \
   AsmPrinter.cpp \
   AsmPrinterDwarf.cpp \
   AsmPrinterInlineAsm.cpp \
-  DbgValueHistoryCalculator.cpp \
   DebugHandlerBase.cpp \
   DebugLocStream.cpp \
   DIE.cpp \

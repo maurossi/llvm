@@ -54,10 +54,8 @@ debuginfo_pdb_SRC_FILES := \
   Native/InfoStream.cpp \
   Native/InfoStreamBuilder.cpp \
   Native/ModuleDebugStream.cpp \
-  Native/NativeBuiltinSymbol.cpp \
   Native/NativeCompilandSymbol.cpp \
   Native/NativeEnumModules.cpp \
-  Native/NativeEnumSymbol.cpp \
   Native/NativeEnumTypes.cpp \
   Native/NativeExeSymbol.cpp \
   Native/NativeRawSymbol.cpp \

@@ -14,8 +14,7 @@ amdgpu_utils_TBLGEN_TABLES70 := \
 amdgpu_utils_SRC_FILES := \
   AMDGPUBaseInfo.cpp \
   AMDKernelCodeTUtils.cpp \
-  AMDGPUAsmUtils.cpp \
-  AMDGPULaneDominator.cpp
+  AMDGPUAsmUtils.cpp
 
 # For the host
 # =====================================================

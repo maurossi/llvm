@@ -85,7 +85,6 @@ codegen_SRC_FILES := \
   MachineOperand.cpp \
   MachineOptimizationRemarkEmitter.cpp \
   MachineOutliner.cpp \
-  MachinePassRegistry.cpp \
   MachinePipeliner.cpp \
   MachinePostDominators.cpp \
   MachineRegionInfo.cpp \
