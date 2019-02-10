@@ -1,8 +1,12 @@
 LOCAL_PATH:= $(call my-dir)
 
 binary_format_SRC_FILES := \
+  AMDGPUMetadataVerifier.cpp \
   Dwarf.cpp \
   Magic.cpp \
+  MsgPackReader.cpp \
+  MsgPackTypes.cpp \
+  MsgPackWriter.cpp \
   Wasm.cpp
 
 # For the host
