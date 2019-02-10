@@ -31,7 +31,9 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUAnnotateUniformValues.cpp \
   AMDGPUArgumentUsageInfo.cpp \
   AMDGPUAsmPrinter.cpp \
+  AMDGPUAtomicOptimizer.cpp \
   AMDGPUCodeGenPrepare.cpp \
+  AMDGPUFixFunctionBitcasts.cpp \
   AMDGPUFrameLowering.cpp \
   AMDGPUHSAMetadataStreamer.cpp \
   AMDGPUInstrInfo.cpp \
@@ -81,9 +83,11 @@ amdgpu_codegen_SRC_FILES := \
   R600OptimizeVectorRegisters.cpp \
   R600Packetizer.cpp \
   R600RegisterInfo.cpp \
+  SIAddIMGInit.cpp \
   SIAnnotateControlFlow.cpp \
   SIDebuggerInsertNops.cpp \
   SIFixSGPRCopies.cpp \
+  SIFixupVectorISel.cpp \
   SIFixVGPRCopies.cpp \
   SIFixWWMLiveness.cpp \
   SIFoldOperands.cpp \
@@ -105,7 +109,9 @@ amdgpu_codegen_SRC_FILES := \
   SIRegisterInfo.cpp \
   SIShrinkInstructions.cpp \
   SIWholeQuadMode.cpp \
-  GCNILPSched.cpp
+  GCNILPSched.cpp \
+  GCNDPPCombine.cpp \
+  SIModeRegister.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 amdgpu_codegen_TBLGEN_TABLES70 += \
