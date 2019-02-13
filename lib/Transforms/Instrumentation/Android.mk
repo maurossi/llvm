@@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 instrumentation_SRC_FILES := \
   AddressSanitizer.cpp \
   BoundsChecking.cpp \
+  ControlHeightReduction.cpp \
   DataFlowSanitizer.cpp \
   GCOVProfiling.cpp \
   MemorySanitizer.cpp \
