@@ -13,7 +13,8 @@ aarch64_codegen_TBLGEN_TABLES70 := \
   AArch64GenFastISel.inc \
   AArch64GenDisassemblerTables.inc \
   AArch64GenMCPseudoLowering.inc \
-  AArch64GenSystemOperands.inc
+  AArch64GenSystemOperands.inc \
+  AArch64GenExegesis.inc
 
 aarch64_codegen_SRC_FILES := \
   AArch64A57FPLoadBalancing.cpp \
