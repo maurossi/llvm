@@ -237,6 +237,13 @@ $(generated_sources)/%GenDFAPacketizer.inc: $(tblgen_source_dir)/%.td \
 	$(call transform-td-to-out70,dfa-packetizer)
 endif
 
+ifneq ($(filter %GenExegesis.inc,$(tblgen_gen_tables)),)
+$(generated_sources)/%GenExegesis.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
+$(generated_sources)/%GenExegesis.inc: $(tblgen_source_dir)/%.td \
+                                     $(tblgen_td_deps) | $(LLVM70_TBLGEN)
+	$(call transform-td-to-out70,exegesis)
+endif
+
 ifneq ($(findstring ARMGenDecoderTables.inc,$(tblgen_gen_tables)),)
 $(generated_sources)/ARMGenDecoderTables.inc: TBLGEN_LOCAL_MODULE := $(LOCAL_MODULE)
 $(generated_sources)/ARMGenDecoderTables.inc: $(tblgen_source_dir)/ARM.td \
