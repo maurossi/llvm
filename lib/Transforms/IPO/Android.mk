@@ -17,6 +17,7 @@ transforms_ipo_SRC_FILES := \
   GlobalDCE.cpp \
   GlobalOpt.cpp \
   GlobalSplit.cpp \
+  HotColdSplitting.cpp \
   IPConstantPropagation.cpp \
   IPO.cpp \
   InferFunctionAttrs.cpp \
