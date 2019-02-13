@@ -47,6 +47,7 @@ transforms_scalar_SRC_FILES := \
   LowerAtomic.cpp \
   LowerExpectIntrinsic.cpp \
   LowerGuardIntrinsic.cpp \
+  MakeGuardsExplicit.cpp \
   MemCpyOptimizer.cpp \
   MergeICmps.cpp \
   MergedLoadStoreMotion.cpp \
@@ -69,7 +70,8 @@ transforms_scalar_SRC_FILES := \
   SpeculateAroundPHIs.cpp \
   StraightLineStrengthReduce.cpp \
   StructurizeCFG.cpp \
-  TailRecursionElimination.cpp
+  TailRecursionElimination.cpp \
+  WarnMissedTransforms.cpp
 
 # For the host
 # =====================================================
