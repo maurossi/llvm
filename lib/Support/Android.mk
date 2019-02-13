@@ -3,6 +3,8 @@ LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
 include $(LLVM70_ROOT_PATH)/llvm.mk
 
 support_SRC_FILES := \
+  AArch64TargetParser.cpp \
+  ARMTargetParser.cpp \
   AMDGPUMetadata.cpp \
   APFloat.cpp \
   APInt.cpp \
@@ -17,6 +19,7 @@ support_SRC_FILES := \
   BinaryStreamWriter.cpp \
   BlockFrequency.cpp \
   BranchProbability.cpp \
+  BuryPointer.cpp \
   CachePruning.cpp \
   circular_raw_ostream.cpp \
   Chrono.cpp \
@@ -36,6 +39,7 @@ support_SRC_FILES := \
   Error.cpp \
   ErrorHandling.cpp \
   FileUtilities.cpp \
+  FileCheck.cpp \
   FileOutputBuffer.cpp \
   FoldingSet.cpp \
   FormattedStream.cpp \
@@ -46,6 +50,7 @@ support_SRC_FILES := \
   InitLLVM.cpp \
   IntEqClasses.cpp \
   IntervalMap.cpp \
+  ItaniumManglingCanonicalizer.cpp \
   JamCRC.cpp \
   JSON.cpp \
   KnownBits.cpp \
@@ -78,6 +83,7 @@ support_SRC_FILES := \
   StringPool.cpp \
   StringSaver.cpp \
   StringRef.cpp \
+  SymbolRemappingReader.cpp \
   SystemUtils.cpp \
   TarWriter.cpp \
   TargetParser.cpp \
@@ -89,6 +95,8 @@ support_SRC_FILES := \
   Twine.cpp \
   Unicode.cpp \
   UnicodeCaseFold.cpp \
+  VersionTuple.cpp \
+  VirtualFileSystem.cpp \
   YAMLParser.cpp \
   YAMLTraits.cpp \
   WithColor.cpp \
