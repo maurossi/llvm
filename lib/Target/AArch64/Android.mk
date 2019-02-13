@@ -19,8 +19,10 @@ aarch64_codegen_SRC_FILES := \
   AArch64A57FPLoadBalancing.cpp \
   AArch64AdvSIMDScalarPass.cpp \
   AArch64AsmPrinter.cpp \
+  AArch64BranchTargets.cpp \
   AArch64CleanupLocalDynamicTLSPass.cpp \
   AArch64CollectLOH.cpp \
+  AArch64CompressJumpTables.cpp \
   AArch64CondBrTuning.cpp \
   AArch64ConditionalCompares.cpp \
   AArch64DeadRegisterDefinitionsPass.cpp \
@@ -37,10 +39,12 @@ aarch64_codegen_SRC_FILES := \
   AArch64LoadStoreOptimizer.cpp \
   AArch64MacroFusion.cpp \
   AArch64MCInstLower.cpp \
+  AArch64PreLegalizerCombiner.cpp \
   AArch64PromoteConstant.cpp \
   AArch64PBQPRegAlloc.cpp \
   AArch64RegisterInfo.cpp \
   AArch64SelectionDAGInfo.cpp \
+  AArch64SpeculationHardening.cpp \
   AArch64StorePairSuppress.cpp \
   AArch64Subtarget.cpp \
   AArch64TargetMachine.cpp \
