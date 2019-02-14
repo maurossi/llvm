@@ -41,6 +41,7 @@ codegen_SRC_FILES := \
   InlineSpiller.cpp \
   InterferenceCache.cpp \
   InterleavedAccessPass.cpp \
+  InterleavedLoadCombinePass.cpp \
   IntrinsicLowering.cpp \
   LatencyPriorityQueue.cpp \
   LazyMachineBlockFrequencyInfo.cpp \
