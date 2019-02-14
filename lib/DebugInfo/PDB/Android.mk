@@ -55,10 +55,20 @@ debuginfo_pdb_SRC_FILES := \
   Native/InfoStreamBuilder.cpp \
   Native/ModuleDebugStream.cpp \
   Native/NativeCompilandSymbol.cpp \
+  Native/NativeEnumGlobals.cpp \
   Native/NativeEnumModules.cpp \
   Native/NativeEnumTypes.cpp \
   Native/NativeExeSymbol.cpp \
   Native/NativeRawSymbol.cpp \
+  Native/NativeSymbolEnumerator.cpp \
+  Native/NativeTypeArray.cpp \
+  Native/NativeTypeBuiltin.cpp \
+  Native/NativeTypeEnum.cpp \
+  Native/NativeTypeFunctionSig.cpp \
+  Native/NativeTypePointer.cpp \
+  Native/NativeTypeTypedef.cpp \
+  Native/NativeTypeUDT.cpp \
+  Native/NativeTypeVTShape.cpp \
   Native/NamedStreamMap.cpp \
   Native/NativeSession.cpp \
   Native/PDBFile.cpp \
@@ -68,6 +78,7 @@ debuginfo_pdb_SRC_FILES := \
   Native/PublicsStream.cpp \
   Native/GSIStreamBuilder.cpp \
   Native/RawError.cpp \
+  Native/SymbolCache.cpp \
   Native/SymbolStream.cpp \
   Native/TpiHashing.cpp \
   Native/TpiStream.cpp \
