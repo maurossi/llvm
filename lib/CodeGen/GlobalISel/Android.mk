@@ -5,9 +5,12 @@ global_isel_SRC_FILES := \
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 global_isel_SRC_FILES += \
+      CSEInfo.cpp \
+      CSEMIRBuilder.cpp \
       CallLowering.cpp \
       Combiner.cpp \
       CombinerHelper.cpp \
+      GISelChangeObserver.cpp \
       IRTranslator.cpp \
       InstructionSelect.cpp \
       InstructionSelector.cpp \
