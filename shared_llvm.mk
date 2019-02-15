@@ -1,105 +1,105 @@
 LOCAL_PATH:= $(call my-dir)
 
 llvm_pre_static_libraries := \
-  libLLVM70Linker \
-  libLLVM70ipo \
-  libLLVM70DebugInfoDWARF \
-  libLLVM70DebugInfoPDB \
-  libLLVM70Symbolize \
-  libLLVM70DebugInfoMSF \
-  libLLVM70DebugInfoCodeView \
-  libLLVM70Demangle \
-  libLLVM70IRReader \
-  libLLVM70BitWriter \
-  libLLVM70BitReader \
-  libLLVM70GlobalISel
+  libLLVM80Linker \
+  libLLVM80ipo \
+  libLLVM80DebugInfoDWARF \
+  libLLVM80DebugInfoPDB \
+  libLLVM80Symbolize \
+  libLLVM80DebugInfoMSF \
+  libLLVM80DebugInfoCodeView \
+  libLLVM80Demangle \
+  libLLVM80IRReader \
+  libLLVM80BitWriter \
+  libLLVM80BitReader \
+  libLLVM80GlobalISel
 
 llvm_arm_static_libraries := \
-  libLLVM70ARMCodeGen \
-  libLLVM70ARMAsmParser \
-  libLLVM70ARMAsmPrinter \
-  libLLVM70ARMInfo \
-  libLLVM70ARMDesc \
-  libLLVM70ARMDisassembler \
-  libLLVM70ARMUtils
+  libLLVM80ARMCodeGen \
+  libLLVM80ARMAsmParser \
+  libLLVM80ARMAsmPrinter \
+  libLLVM80ARMInfo \
+  libLLVM80ARMDesc \
+  libLLVM80ARMDisassembler \
+  libLLVM80ARMUtils
 
 llvm_x86_static_libraries := \
-  libLLVM70X86CodeGen \
-  libLLVM70X86Info \
-  libLLVM70X86Desc \
-  libLLVM70X86AsmParser \
-  libLLVM70X86AsmPrinter \
-  libLLVM70X86Utils \
-  libLLVM70X86Disassembler
+  libLLVM80X86CodeGen \
+  libLLVM80X86Info \
+  libLLVM80X86Desc \
+  libLLVM80X86AsmParser \
+  libLLVM80X86AsmPrinter \
+  libLLVM80X86Utils \
+  libLLVM80X86Disassembler
 
 ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
 llvm_x86_static_libraries += \
-  libLLVM70AMDGPUCodeGen \
-  libLLVM70AMDGPUInfo \
-  libLLVM70AMDGPUDesc \
-  libLLVM70AMDGPUAsmParser \
-  libLLVM70AMDGPUAsmPrinter \
-  libLLVM70AMDGPUUtils
+  libLLVM80AMDGPUCodeGen \
+  libLLVM80AMDGPUInfo \
+  libLLVM80AMDGPUDesc \
+  libLLVM80AMDGPUAsmParser \
+  libLLVM80AMDGPUAsmPrinter \
+  libLLVM80AMDGPUUtils
 endif
 
 llvm_mips_static_libraries := \
-  libLLVM70MipsCodeGen \
-  libLLVM70MipsInfo \
-  libLLVM70MipsDesc \
-  libLLVM70MipsAsmParser \
-  libLLVM70MipsAsmPrinter \
-  libLLVM70MipsDisassembler
+  libLLVM80MipsCodeGen \
+  libLLVM80MipsInfo \
+  libLLVM80MipsDesc \
+  libLLVM80MipsAsmParser \
+  libLLVM80MipsAsmPrinter \
+  libLLVM80MipsDisassembler
 
 llvm_aarch64_static_libraries := \
-  libLLVM70AArch64CodeGen \
-  libLLVM70AArch64Info \
-  libLLVM70AArch64Desc \
-  libLLVM70AArch64AsmParser \
-  libLLVM70AArch64AsmPrinter \
-  libLLVM70AArch64Utils \
-  libLLVM70AArch64Disassembler
+  libLLVM80AArch64CodeGen \
+  libLLVM80AArch64Info \
+  libLLVM80AArch64Desc \
+  libLLVM80AArch64AsmParser \
+  libLLVM80AArch64AsmPrinter \
+  libLLVM80AArch64Utils \
+  libLLVM80AArch64Disassembler
 
 llvm_post_static_libraries := \
-  libLLVM70AsmPrinter \
-  libLLVM70SelectionDAG \
-  libLLVM70CodeGen \
-  libLLVM70Object \
-  libLLVM70ScalarOpts \
-  libLLVM70AggressiveInstCombine \
-  libLLVM70InstCombine \
-  libLLVM70Instrumentation \
-  libLLVM70TransformObjCARC \
-  libLLVM70TransformUtils \
-  libLLVM70Analysis \
-  libLLVM70Target \
-  libLLVM70MCDisassembler \
-  libLLVM70MC \
-  libLLVM70MCParser \
-  libLLVM70Core \
-  libLLVM70AsmParser \
-  libLLVM70Option \
-  libLLVM70Support \
-  libLLVM70Vectorize \
-  libLLVM70ProfileData \
-  libLLVM70LibDriver \
-  libLLVM70BinaryFormat
+  libLLVM80AsmPrinter \
+  libLLVM80SelectionDAG \
+  libLLVM80CodeGen \
+  libLLVM80Object \
+  libLLVM80ScalarOpts \
+  libLLVM80AggressiveInstCombine \
+  libLLVM80InstCombine \
+  libLLVM80Instrumentation \
+  libLLVM80TransformObjCARC \
+  libLLVM80TransformUtils \
+  libLLVM80Analysis \
+  libLLVM80Target \
+  libLLVM80MCDisassembler \
+  libLLVM80MC \
+  libLLVM80MCParser \
+  libLLVM80Core \
+  libLLVM80AsmParser \
+  libLLVM80Option \
+  libLLVM80Support \
+  libLLVM80Vectorize \
+  libLLVM80ProfileData \
+  libLLVM80LibDriver \
+  libLLVM80BinaryFormat
 
 llvm_host_static_libraries := \
-  libLLVM70ExecutionEngine \
-  libLLVM70RuntimeDyld \
-  libLLVM70MCJIT \
-  libLLVM70OrcJIT
+  libLLVM80ExecutionEngine \
+  libLLVM80RuntimeDyld \
+  libLLVM80MCJIT \
+  libLLVM80OrcJIT
 
 llvm_device_static_libraries := \
-  libLLVM70ExecutionEngine \
-  libLLVM70RuntimeDyld \
-  libLLVM70MCJIT
+  libLLVM80ExecutionEngine \
+  libLLVM80RuntimeDyld \
+  libLLVM80MCJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
 LOCAL_IS_HOST_MODULE := true
 
-LOCAL_MODULE:= libLLVM70
+LOCAL_MODULE:= libLLVM80
 
 LOCAL_MODULE_TAGS := optional
 
@@ -125,10 +125,10 @@ else
 LOCAL_MODULE_HOST_OS := linux
 endif
 
-include $(LLVM70_HOST_BUILD_MK)
+include $(LLVM80_HOST_BUILD_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)
 
-ifeq (,$(filter $(TARGET_ARCH),$(LLVM70_SUPPORTED_ARCH)))
+ifeq (,$(filter $(TARGET_ARCH),$(LLVM80_SUPPORTED_ARCH)))
 $(warning TODO $(TARGET_ARCH): Enable llvm build)
 endif
 
@@ -136,7 +136,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 # DEVICE LLVM shared library build
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVM70
+LOCAL_MODULE:= libLLVM80
 
 LOCAL_MODULE_TAGS := optional
 
@@ -169,9 +169,9 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
   $(LOCAL_PATH)/device/include \
   $(call local-generated-sources-dir)
 
-include $(LLVM70_DEVICE_BUILD_MK)
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_DEVICE_BUILD_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_SHARED_LIBRARY)
 
 endif

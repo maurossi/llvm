@@ -42,7 +42,7 @@ libfuzzer_srcs := \
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVM70FuzzerNoMain
+LOCAL_MODULE := libLLVM80FuzzerNoMain
 LOCAL_C_INCLUDES := external/compiler-rt/include
 LOCAL_SRC_FILES := $(libfuzzer_srcs)
 LOCAL_SANITIZE := never
@@ -51,16 +51,16 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVM70Fuzzer
+LOCAL_MODULE := libLLVM80Fuzzer
 LOCAL_SRC_FILES := FuzzerMain.cpp
-LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM70FuzzerNoMain
+LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM80FuzzerNoMain
 LOCAL_SANITIZE := never
 LOCAL_MULTILIB := both
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVM70FuzzerNoMain
+LOCAL_MODULE := libLLVM80FuzzerNoMain
 LOCAL_C_INCLUDES := external/compiler-rt/include
 LOCAL_SRC_FILES := $(libfuzzer_srcs)
 LOCAL_SANITIZE := never
@@ -69,9 +69,9 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
-LOCAL_MODULE := libLLVM70Fuzzer
+LOCAL_MODULE := libLLVM80Fuzzer
 LOCAL_SRC_FILES := FuzzerMain.cpp
-LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM70FuzzerNoMain
+LOCAL_WHOLE_STATIC_LIBRARIES := libLLVM80FuzzerNoMain
 LOCAL_SANITIZE := never
 LOCAL_MULTILIB := both
 include $(BUILD_HOST_STATIC_LIBRARY)

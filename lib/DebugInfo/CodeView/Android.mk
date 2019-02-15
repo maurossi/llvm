@@ -50,12 +50,12 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_codeview_SRC_FILES)
 
-LOCAL_MODULE:= libLLVM70DebugInfoCodeView
+LOCAL_MODULE:= libLLVM80DebugInfoCodeView
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -67,9 +67,9 @@ REQUIRES_RTTI := 1
 
 LOCAL_SRC_FILES := $(debuginfo_codeview_SRC_FILES)
 
-LOCAL_MODULE:= libLLVM70DebugInfoCodeView
+LOCAL_MODULE:= libLLVM80DebugInfoCodeView
 
-include $(LLVM70_DEVICE_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_DEVICE_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

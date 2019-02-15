@@ -1,48 +1,48 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
-include $(LLVM70_ROOT_PATH)/llvm.mk
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+include $(LLVM80_ROOT_PATH)/llvm.mk
 
 llvm_cxxdump_SRC_FILES := \
   Error.cpp \
   llvm-cxxdump.cpp
 
 llvm_cxxdump_STATIC_LIBRARIES := \
-  libLLVM70ARMAsmParser \
-  libLLVM70ARMInfo \
-  libLLVM70ARMDesc \
-  libLLVM70ARMAsmPrinter \
-  libLLVM70ARMDisassembler \
-  libLLVM70AArch64Info \
-  libLLVM70AArch64AsmParser \
-  libLLVM70AArch64Desc \
-  libLLVM70AArch64AsmPrinter \
-  libLLVM70AArch64Utils \
-  libLLVM70AArch64Disassembler \
-  libLLVM70MipsInfo \
-  libLLVM70MipsAsmParser \
-  libLLVM70MipsDesc \
-  libLLVM70MipsAsmPrinter \
-  libLLVM70MipsDisassembler \
-  libLLVM70X86Info \
-  libLLVM70X86Desc \
-  libLLVM70X86AsmParser \
-  libLLVM70X86CodeGen \
-  libLLVM70X86AsmPrinter \
-  libLLVM70X86Utils \
-  libLLVM70X86Disassembler \
-  libLLVM70AsmPrinter \
-  libLLVM70CodeGen \
-  libLLVM70Analysis \
-  libLLVM70Target \
-  libLLVM70Object \
-  libLLVM70MCParser \
-  libLLVM70MC \
-  libLLVM70MCDisassembler \
-  libLLVM70BitReader \
-  libLLVM70Core \
-  libLLVM70AsmParser \
-  libLLVM70Support \
+  libLLVM80ARMAsmParser \
+  libLLVM80ARMInfo \
+  libLLVM80ARMDesc \
+  libLLVM80ARMAsmPrinter \
+  libLLVM80ARMDisassembler \
+  libLLVM80AArch64Info \
+  libLLVM80AArch64AsmParser \
+  libLLVM80AArch64Desc \
+  libLLVM80AArch64AsmPrinter \
+  libLLVM80AArch64Utils \
+  libLLVM80AArch64Disassembler \
+  libLLVM80MipsInfo \
+  libLLVM80MipsAsmParser \
+  libLLVM80MipsDesc \
+  libLLVM80MipsAsmPrinter \
+  libLLVM80MipsDisassembler \
+  libLLVM80X86Info \
+  libLLVM80X86Desc \
+  libLLVM80X86AsmParser \
+  libLLVM80X86CodeGen \
+  libLLVM80X86AsmPrinter \
+  libLLVM80X86Utils \
+  libLLVM80X86Disassembler \
+  libLLVM80AsmPrinter \
+  libLLVM80CodeGen \
+  libLLVM80Analysis \
+  libLLVM80Target \
+  libLLVM80Object \
+  libLLVM80MCParser \
+  libLLVM80MC \
+  libLLVM80MCDisassembler \
+  libLLVM80BitReader \
+  libLLVM80Core \
+  libLLVM80AsmParser \
+  libLLVM80Support \
 
 
 include $(CLEAR_VARS)
@@ -55,6 +55,6 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 
 LOCAL_STATIC_LIBRARIES := $(llvm_cxxdump_STATIC_LIBRARIES)
 
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

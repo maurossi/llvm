@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
 
 #===---------------------------------------------------------------===
 # llvm-config command line tool
@@ -12,8 +12,8 @@ llvm_config_SRC_FILES := \
   llvm-config.cpp
 
 llvm_config_STATIC_LIBRARIES := \
-  libLLVM70Core \
-  libLLVM70Support
+  libLLVM80Core \
+  libLLVM80Support
 
 LOCAL_MODULE := llvm-config
 LOCAL_MODULE_TAGS := optional
@@ -44,6 +44,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES := \
   $(LOCAL_PATH)/Android.mk \
   $(LOCAL_GENERATED_SOURCES)
 
-include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM70_HOST_BUILD_MK)
+include $(LLVM80_ROOT_PATH)/llvm.mk
+include $(LLVM80_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -1,4 +1,4 @@
-LOCAL_MODULE_TARGET_ARCH := $(LLVM70_SUPPORTED_ARCH)
+LOCAL_MODULE_TARGET_ARCH := $(LLVM80_SUPPORTED_ARCH)
 
 LOCAL_CLANG := true
 
@@ -64,22 +64,22 @@ LOCAL_CPPFLAGS :=	\
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
 	bionic \
-	$(LLVM70_ROOT_PATH)	\
-	$(LLVM70_ROOT_PATH)/include	\
-	$(LLVM70_ROOT_PATH)/device/include	\
+	$(LLVM80_ROOT_PATH)	\
+	$(LLVM80_ROOT_PATH)/include	\
+	$(LLVM80_ROOT_PATH)/device/include	\
 	$(LOCAL_C_INCLUDES)
 
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-device-td-to-out70
+define transform-device-td-to-out80
 @mkdir -p $(dir $@)
 @echo "Device TableGen (gen-$(1)): $(TBLGEN_LOCAL_MODULE) <= $<"
-$(hide) $(LLVM70_TBLGEN) \
+$(hide) $(LLVM80_TBLGEN) \
 	-I $(dir $<)	\
-	-I $(LLVM70_ROOT_PATH)/include	\
-	-I $(LLVM70_ROOT_PATH)/device/include	\
-	-I $(LLVM70_ROOT_PATH)/lib/Target	\
+	-I $(LLVM80_ROOT_PATH)/include	\
+	-I $(LLVM80_ROOT_PATH)/device/include	\
+	-I $(LLVM80_ROOT_PATH)/lib/Target	\
     -gen-$(strip $(1)) \
     -o $@ $<
 endef

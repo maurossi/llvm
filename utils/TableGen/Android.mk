@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
-include $(LLVM70_ROOT_PATH)/llvm.mk
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+include $(LLVM80_ROOT_PATH)/llvm.mk
 
 tablegen_SRC_FILES := \
   AsmMatcherEmitter.cpp \
@@ -54,7 +54,7 @@ tablegen_SRC_FILES := \
 include $(CLEAR_VARS)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
-LOCAL_MODULE := llvm70-tblgen
+LOCAL_MODULE := llvm80-tblgen
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(tablegen_SRC_FILES)
 
@@ -62,13 +62,13 @@ REQUIRES_EH := 1
 REQUIRES_RTTI := 1
 
 LOCAL_STATIC_LIBRARIES := \
-  libLLVM70TableGen \
-  libLLVM70Support
+  libLLVM80TableGen \
+  libLLVM80Support
 
 LOCAL_LDLIBS += -lm
 LOCAL_LDLIBS_windows := -limagehlp -lpsapi
 LOCAL_LDLIBS_darwin := -lpthread -ldl
 LOCAL_LDLIBS_linux := -lpthread -ldl
 
-include $(LLVM70_HOST_BUILD_MK)
+include $(LLVM80_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -11,13 +11,13 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(asm_parser_SRC_FILES)
 
-LOCAL_MODULE:= libLLVM70AsmParser
+LOCAL_MODULE:= libLLVM80AsmParser
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 include $(LOCAL_PATH)/../../llvm-host-build.mk
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -27,10 +27,10 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(asm_parser_SRC_FILES)
 
-LOCAL_MODULE:= libLLVM70AsmParser
+LOCAL_MODULE:= libLLVM80AsmParser
 
 include $(LOCAL_PATH)/../../llvm-device-build.mk
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

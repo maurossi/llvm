@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-aarch64_mc_desc_TBLGEN_TABLES70 := \
+aarch64_mc_desc_TBLGEN_TABLES80 := \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenMCCodeEmitter.inc \
@@ -23,41 +23,41 @@ aarch64_mc_desc_SRC_FILES := \
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS70)
+include $(CLEAR_TBLGEN_VARS80)
 
 
-LOCAL_MODULE:= libLLVM70AArch64Desc
+LOCAL_MODULE:= libLLVM80AArch64Desc
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
 LOCAL_SRC_FILES := $(aarch64_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
-TBLGEN_TABLES70 := $(aarch64_mc_desc_TBLGEN_TABLES70)
+TBLGEN_TD_DIR80 := $(LOCAL_PATH)/..
+TBLGEN_TABLES80 := $(aarch64_mc_desc_TBLGEN_TABLES80)
 
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_TBLGEN_RULES_MK)
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_TBLGEN_RULES_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS70)
+include $(CLEAR_TBLGEN_VARS80)
 
-LOCAL_MODULE:= libLLVM70AArch64Desc
+LOCAL_MODULE:= libLLVM80AArch64Desc
 
 LOCAL_SRC_FILES := $(aarch64_mc_desc_SRC_FILES)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 
-TBLGEN_TD_DIR70 := $(LOCAL_PATH)/..
-TBLGEN_TABLES70 := $(aarch64_mc_desc_TBLGEN_TABLES70)
+TBLGEN_TD_DIR80 := $(LOCAL_PATH)/..
+TBLGEN_TABLES80 := $(aarch64_mc_desc_TBLGEN_TABLES80)
 
-include $(LLVM70_DEVICE_BUILD_MK)
-include $(LLVM70_TBLGEN_RULES_MK)
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_DEVICE_BUILD_MK)
+include $(LLVM80_TBLGEN_RULES_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
