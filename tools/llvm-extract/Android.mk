@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,17 +11,17 @@ llvm_extract_SRC_FILES := \
   llvm-extract.cpp
 
 llvm_extract_STATIC_LIBRARIES := \
-  libLLVM70IRReader                \
-  libLLVM70AsmParser               \
-  libLLVM70Object                  \
-  libLLVM70BitReader               \
-  libLLVM70BitWriter               \
-  libLLVM70ipo                     \
-  libLLVM70TransformUtils          \
-  libLLVM70Analysis                \
-  libLLVM70Target                  \
-  libLLVM70Core                    \
-  libLLVM70Support                 \
+  libLLVM80IRReader                \
+  libLLVM80AsmParser               \
+  libLLVM80Object                  \
+  libLLVM80BitReader               \
+  libLLVM80BitWriter               \
+  libLLVM80ipo                     \
+  libLLVM80TransformUtils          \
+  libLLVM80Analysis                \
+  libLLVM80Target                  \
+  libLLVM80Core                    \
+  libLLVM80Support                 \
 
 include $(CLEAR_VARS)
 
@@ -36,8 +36,8 @@ LOCAL_STATIC_LIBRARIES := $(llvm_extract_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_ATTRIBUTES_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_ROOT_PATH)/llvm.mk
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

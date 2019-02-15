@@ -65,9 +65,9 @@ LOCAL_CPPFLAGS_darwin += \
 
 # Make sure bionic is first so we can include system headers.
 LOCAL_C_INCLUDES :=	\
-	$(LLVM70_ROOT_PATH)	\
-	$(LLVM70_ROOT_PATH)/include	\
-	$(LLVM70_ROOT_PATH)/host/include	\
+	$(LLVM80_ROOT_PATH)	\
+	$(LLVM80_ROOT_PATH)/include	\
+	$(LLVM80_ROOT_PATH)/host/include	\
 	$(LOCAL_C_INCLUDES)
 
 # Add on ncurses to have support for terminfo
@@ -80,8 +80,8 @@ LOCAL_IS_HOST_MODULE := true
 ifeq ($(HOST_PREFER_32_BIT),true)
 LOCAL_MULTILIB := 32
 else
-ifeq (libLLVM70, $(filter libLLVM70,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
-# Skip building a 32-bit shared object if they are using libLLVM70.
+ifeq (libLLVM80, $(filter libLLVM80,$(LOCAL_SHARED_LIBRARIES)$(LOCAL_SHARED_LIBRARIES_$(HOST_OS))))
+# Skip building a 32-bit shared object if they are using libLLVM80.
 LOCAL_MULTILIB := first
 endif
 endif
@@ -89,14 +89,14 @@ endif
 ###########################################################
 ## Commands for running tblgen to compile a td file
 ###########################################################
-define transform-host-td-to-out70
+define transform-host-td-to-out80
 @mkdir -p $(dir $@)
 @echo "Host TableGen: $(TBLGEN_LOCAL_MODULE) (gen-$(1)) <= $<"
-$(hide) $(LLVM70_TBLGEN) \
+$(hide) $(LLVM80_TBLGEN) \
 	-I $(dir $<)	\
-	-I $(LLVM70_ROOT_PATH)/include	\
-	-I $(LLVM70_ROOT_PATH)/host/include	\
-	-I $(LLVM70_ROOT_PATH)/lib/Target	\
+	-I $(LLVM80_ROOT_PATH)/include	\
+	-I $(LLVM80_ROOT_PATH)/host/include	\
+	-I $(LLVM80_ROOT_PATH)/lib/Target	\
 	$(if $(strip $(CLANG_ROOT_PATH)),-I $(CLANG_ROOT_PATH)/include,)	\
 	-gen-$(strip $(1))	\
 	-o $@ $<

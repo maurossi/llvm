@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -19,45 +19,45 @@ llvm_c_test_SRC_FILES := \
   targets.c              \
 
 llvm_c_test_STATIC_LIBRARIES := \
-  libLLVM70BitReader \
-  libLLVM70ARMCodeGen \
-  libLLVM70ARMInfo \
-  libLLVM70ARMDesc \
-  libLLVM70ARMAsmPrinter \
-  libLLVM70ARMDisassembler \
-  libLLVM70AArch64CodeGen \
-  libLLVM70AArch64Info \
-  libLLVM70AArch64Desc \
-  libLLVM70AArch64AsmPrinter \
-  libLLVM70AArch64Utils \
-  libLLVM70AArch64Disassembler \
-  libLLVM70MipsCodeGen \
-  libLLVM70MipsInfo \
-  libLLVM70MipsDesc \
-  libLLVM70MipsAsmPrinter \
-  libLLVM70MipsDisassembler \
-  libLLVM70X86CodeGen \
-  libLLVM70X86Info \
-  libLLVM70X86Desc \
-  libLLVM70X86AsmPrinter \
-  libLLVM70X86Utils \
-  libLLVM70X86Disassembler \
-  libLLVM70AsmPrinter \
-  libLLVM70SelectionDAG \
-  libLLVM70CodeGen \
-  libLLVM70Instrumentation \
-  libLLVM70ScalarOpts \
-  libLLVM70TransformUtils \
-  libLLVM70Analysis \
-  libLLVM70Target \
-  libLLVM70MC \
-  libLLVM70Object \
-  libLLVM70MCParser \
-  libLLVM70Core \
-  libLLVM70AsmParser \
-  libLLVM70Option \
-  libLLVM70Support \
-  libLLVM70MCDisassembler \
+  libLLVM80BitReader \
+  libLLVM80ARMCodeGen \
+  libLLVM80ARMInfo \
+  libLLVM80ARMDesc \
+  libLLVM80ARMAsmPrinter \
+  libLLVM80ARMDisassembler \
+  libLLVM80AArch64CodeGen \
+  libLLVM80AArch64Info \
+  libLLVM80AArch64Desc \
+  libLLVM80AArch64AsmPrinter \
+  libLLVM80AArch64Utils \
+  libLLVM80AArch64Disassembler \
+  libLLVM80MipsCodeGen \
+  libLLVM80MipsInfo \
+  libLLVM80MipsDesc \
+  libLLVM80MipsAsmPrinter \
+  libLLVM80MipsDisassembler \
+  libLLVM80X86CodeGen \
+  libLLVM80X86Info \
+  libLLVM80X86Desc \
+  libLLVM80X86AsmPrinter \
+  libLLVM80X86Utils \
+  libLLVM80X86Disassembler \
+  libLLVM80AsmPrinter \
+  libLLVM80SelectionDAG \
+  libLLVM80CodeGen \
+  libLLVM80Instrumentation \
+  libLLVM80ScalarOpts \
+  libLLVM80TransformUtils \
+  libLLVM80Analysis \
+  libLLVM80Target \
+  libLLVM80MC \
+  libLLVM80Object \
+  libLLVM80MCParser \
+  libLLVM80Core \
+  libLLVM80AsmParser \
+  libLLVM80Option \
+  libLLVM80Support \
+  libLLVM80MCDisassembler \
 
 include $(CLEAR_VARS)
 
@@ -72,7 +72,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_c_test_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_ROOT_PATH)/llvm.mk
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

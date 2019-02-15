@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,60 +11,60 @@ llvm_dwp_SRC_FILES := \
   llvm-dwp.cpp
 
 llvm_dwp_STATIC_LIBRARIES := \
-  libLLVM70DebugInfoDWARF \
-  libLLVM70Object \
-  libLLVM70BitReader \
-  libLLVM70ARMCodeGen \
-  libLLVM70ARMAsmParser \
-  libLLVM70ARMAsmPrinter \
-  libLLVM70ARMInfo \
-  libLLVM70ARMDesc \
-  libLLVM70ARMDisassembler \
-  libLLVM70MipsCodeGen \
-  libLLVM70MipsInfo \
-  libLLVM70MipsDesc \
-  libLLVM70MipsAsmParser \
-  libLLVM70MipsAsmPrinter \
-  libLLVM70MipsDisassembler \
-  libLLVM70X86CodeGen \
-  libLLVM70X86Info \
-  libLLVM70X86Desc \
-  libLLVM70X86AsmParser \
-  libLLVM70X86AsmPrinter \
-  libLLVM70X86Utils \
-  libLLVM70X86Disassembler \
-  libLLVM70AArch64CodeGen \
-  libLLVM70AArch64Info \
-  libLLVM70AArch64Desc \
-  libLLVM70AArch64AsmParser \
-  libLLVM70AArch64AsmPrinter \
-  libLLVM70AArch64Utils \
-  libLLVM70AArch64Disassembler \
-  libLLVM70ExecutionEngine \
-  libLLVM70RuntimeDyld \
-  libLLVM70MCJIT \
-  libLLVM70OrcJIT \
-  libLLVM70AsmPrinter \
-  libLLVM70SelectionDAG \
-  libLLVM70CodeGen \
-  libLLVM70Object \
-  libLLVM70ScalarOpts \
-  libLLVM70InstCombine \
-  libLLVM70Instrumentation \
-  libLLVM70TransformObjCARC \
-  libLLVM70TransformUtils \
-  libLLVM70Vectorize \
-  libLLVM70Analysis \
-  libLLVM70Target \
-  libLLVM70MCDisassembler \
-  libLLVM70MC \
-  libLLVM70MCParser \
-  libLLVM70Core \
-  libLLVM70AsmParser \
-  libLLVM70Option \
-  libLLVM70LTO \
-  libLLVM70Support \
-  libLLVM70ProfileData
+  libLLVM80DebugInfoDWARF \
+  libLLVM80Object \
+  libLLVM80BitReader \
+  libLLVM80ARMCodeGen \
+  libLLVM80ARMAsmParser \
+  libLLVM80ARMAsmPrinter \
+  libLLVM80ARMInfo \
+  libLLVM80ARMDesc \
+  libLLVM80ARMDisassembler \
+  libLLVM80MipsCodeGen \
+  libLLVM80MipsInfo \
+  libLLVM80MipsDesc \
+  libLLVM80MipsAsmParser \
+  libLLVM80MipsAsmPrinter \
+  libLLVM80MipsDisassembler \
+  libLLVM80X86CodeGen \
+  libLLVM80X86Info \
+  libLLVM80X86Desc \
+  libLLVM80X86AsmParser \
+  libLLVM80X86AsmPrinter \
+  libLLVM80X86Utils \
+  libLLVM80X86Disassembler \
+  libLLVM80AArch64CodeGen \
+  libLLVM80AArch64Info \
+  libLLVM80AArch64Desc \
+  libLLVM80AArch64AsmParser \
+  libLLVM80AArch64AsmPrinter \
+  libLLVM80AArch64Utils \
+  libLLVM80AArch64Disassembler \
+  libLLVM80ExecutionEngine \
+  libLLVM80RuntimeDyld \
+  libLLVM80MCJIT \
+  libLLVM80OrcJIT \
+  libLLVM80AsmPrinter \
+  libLLVM80SelectionDAG \
+  libLLVM80CodeGen \
+  libLLVM80Object \
+  libLLVM80ScalarOpts \
+  libLLVM80InstCombine \
+  libLLVM80Instrumentation \
+  libLLVM80TransformObjCARC \
+  libLLVM80TransformUtils \
+  libLLVM80Vectorize \
+  libLLVM80Analysis \
+  libLLVM80Target \
+  libLLVM80MCDisassembler \
+  libLLVM80MC \
+  libLLVM80MCParser \
+  libLLVM80Core \
+  libLLVM80AsmParser \
+  libLLVM80Option \
+  libLLVM80LTO \
+  libLLVM80Support \
+  libLLVM80ProfileData
 
 include $(CLEAR_VARS)
 
@@ -79,7 +79,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_dwp_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_ROOT_PATH)/llvm.mk
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

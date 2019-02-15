@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM70_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,12 +11,12 @@ llvm_size_SRC_FILES := \
   llvm-size.cpp
 
 llvm_size_STATIC_LIBRARIES := \
-  libLLVM70Object               \
-  libLLVM70MC                   \
-  libLLVM70MCParser             \
-  libLLVM70BitReader            \
-  libLLVM70Core                 \
-  libLLVM70Support
+  libLLVM80Object               \
+  libLLVM80MC                   \
+  libLLVM80MCParser             \
+  libLLVM80BitReader            \
+  libLLVM80Core                 \
+  libLLVM80Support
 
 include $(CLEAR_VARS)
 
@@ -31,7 +31,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_size_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM70_ROOT_PATH)/llvm.mk
-include $(LLVM70_HOST_BUILD_MK)
-include $(LLVM70_GEN_INTRINSICS_MK)
+include $(LLVM80_ROOT_PATH)/llvm.mk
+include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM80_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)
