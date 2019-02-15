@@ -8,6 +8,7 @@ transforms_utils_SRC_FILES := \
   BuildLibCalls.cpp \
   BypassSlowDivision.cpp \
   CallPromotionUtils.cpp \
+  CanonicalizeAliases.cpp \
   CloneFunction.cpp \
   CloneModule.cpp \
   CodeExtractor.cpp \
@@ -20,6 +21,7 @@ transforms_utils_SRC_FILES := \
   FunctionComparator.cpp \
   FunctionImportUtils.cpp \
   GlobalStatus.cpp \
+  GuardUtils.cpp \
   InlineFunction.cpp \
   ImportedFunctionsInliningStatistics.cpp \
   InstructionNamer.cpp \
