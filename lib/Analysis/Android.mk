@@ -32,6 +32,8 @@ analysis_SRC_FILES := \
   DominanceFrontier.cpp \
   EHPersonalities.cpp \
   GlobalsModRef.cpp \
+  GuardUtils.cpp \
+  IVDescriptors.cpp \
   IVUsers.cpp \
   IndirectCallPromotionAnalysis.cpp \
   InlineCost.cpp \
@@ -45,6 +47,7 @@ analysis_SRC_FILES := \
   LazyBlockFrequencyInfo.cpp \
   LazyCallGraph.cpp \
   LazyValueInfo.cpp \
+  LegacyDivergenceAnalysis.cpp \
   Lint.cpp \
   Loads.cpp \
   LoopAccessAnalysis.cpp \
@@ -80,6 +83,8 @@ analysis_SRC_FILES := \
   ScalarEvolutionAliasAnalysis.cpp \
   ScalarEvolutionExpander.cpp \
   ScalarEvolutionNormalization.cpp \
+  StackSafetyAnalysis.cpp \
+  SyncDependenceAnalysis.cpp \
   SyntheticCountsUtils.cpp \
   TargetLibraryInfo.cpp \
   TargetTransformInfo.cpp \
