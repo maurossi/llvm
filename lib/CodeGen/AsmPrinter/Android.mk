@@ -6,6 +6,7 @@ codegen_asmprinter_SRC_FILES := \
   ARMException.cpp \
   AsmPrinter.cpp \
   AsmPrinterDwarf.cpp \
+  DbgEntityHistoryCalculator.cpp \
   AsmPrinterInlineAsm.cpp \
   DebugHandlerBase.cpp \
   DebugLocStream.cpp \
@@ -23,7 +24,8 @@ codegen_asmprinter_SRC_FILES := \
   OcamlGCPrinter.cpp \
   WinCFGuard.cpp \
   WinException.cpp \
-  CodeViewDebug.cpp
+  CodeViewDebug.cpp \
+  WasmException.cpp
 
 # For the host
 # =====================================================
