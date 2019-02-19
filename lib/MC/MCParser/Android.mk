@@ -9,7 +9,8 @@ mc_parser_SRC_FILES := \
   MCAsmLexer.cpp \
   MCAsmParser.cpp \
   MCAsmParserExtension.cpp \
-  MCTargetAsmParser.cpp
+  MCTargetAsmParser.cpp \
+  WasmAsmParser.cpp
 
 # For the host
 # =====================================================
