@@ -40,8 +40,10 @@ vmcore_SRC_FILES := \
   Operator.cpp \
   OptBisect.cpp \
   Pass.cpp \
+  PassInstrumentation.cpp \
   PassManager.cpp \
   PassRegistry.cpp \
+  PassTimingInfo.cpp \
   SafepointIRVerifier.cpp \
   ProfileSummary.cpp \
   Statepoint.cpp \
