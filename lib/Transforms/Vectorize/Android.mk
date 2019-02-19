@@ -8,6 +8,8 @@ transforms_vectorize_SRC_FILES := \
   Vectorize.cpp \
   VPlan.cpp \
   VPlanHCFGBuilder.cpp \
+  VPlanHCFGTransforms.cpp \
+  VPlanSLP.cpp \
   VPlanVerifier.cpp
 
 # For the host
