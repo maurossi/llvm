@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMipo",
+    name: "libLLVM80ipo",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm80-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }
