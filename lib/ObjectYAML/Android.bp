@@ -1,7 +1,7 @@
 cc_library_static {
-    name: "libLLVMObjectYAML",
+    name: "libLLVM80ObjectYAML",
     defaults: [
-        "llvm-lib-defaults",
+        "llvm80-lib-defaults",
     ],
     srcs: ["*.cpp"],
 }

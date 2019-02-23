@@ -1,14 +1,14 @@
 cc_defaults {
-    name: "llvm-defaults",
-    defaults: ["llvm-defaults-no-generated-headers"],
-    header_libs: ["llvm-headers"],
+    name: "llvm80-defaults",
+    defaults: ["llvm80-defaults-no-generated-headers"],
+    header_libs: ["llvm80-headers"],
 }
 
 // This module defines all of the defaults used to compiled llvm, except for
 // the generated headers.  It is necessary to avoid a circular dependency
 // from the tblgen tool used to generate the headers to the generated headers.
 llvm_defaults {
-    name: "llvm-defaults-no-generated-headers",
+    name: "llvm80-defaults-no-generated-headers",
 
     host_supported: true,
     clang: true,
@@ -41,7 +41,7 @@ llvm_defaults {
         "-Wno-error=user-defined-warnings",
     ],
 
-    header_libs: ["llvm-headers-no-generated-headers"],
+    header_libs: ["llvm80-headers-no-generated-headers"],
 
     target: {
         android: {
@@ -96,7 +96,7 @@ llvm_defaults {
 }
 
 cc_library_headers {
-    name: "llvm-headers-no-generated-headers",
+    name: "llvm80-headers-no-generated-headers",
     vendor_available: true,
     host_supported: true,
     export_include_dirs: ["include"],
@@ -117,20 +117,20 @@ cc_library_headers {
 }
 
 cc_library_headers {
-    name: "llvm-headers",
+    name: "llvm80-headers",
     vendor_available: true,
     host_supported: true,
-    header_libs: ["llvm-headers-no-generated-headers"],
-    export_header_lib_headers: ["llvm-headers-no-generated-headers"],
+    header_libs: ["llvm80-headers-no-generated-headers"],
+    export_header_lib_headers: ["llvm80-headers-no-generated-headers"],
     generated_headers: [
-        "llvm-gen-attributes",
-        "llvm-gen-intrinsics",
-        "llvm-gen-revision",
+        "llvm80-gen-attributes",
+        "llvm80-gen-intrinsics",
+        "llvm80-gen-revision",
     ],
     export_generated_headers: [
-        "llvm-gen-attributes",
-        "llvm-gen-intrinsics",
-        "llvm-gen-revision",
+        "llvm80-gen-attributes",
+        "llvm80-gen-intrinsics",
+        "llvm80-gen-revision",
     ],
     target: {
         windows: {
@@ -139,14 +139,14 @@ cc_library_headers {
     },
 }
 
-llvm_tblgen {
-    name: "llvm-gen-attributes",
+llvm80_tblgen {
+    name: "llvm80-gen-attributes",
     in: "include/llvm/IR/Attributes.td",
     outs: ["llvm/IR/Attributes.inc"],
 }
 
-llvm_tblgen {
-    name: "llvm-gen-intrinsics",
+llvm80_tblgen {
+    name: "llvm80-gen-intrinsics",
     in: "include/llvm/IR/Intrinsics.td",
     outs: [
         "llvm/IR/IntrinsicEnums.inc",
@@ -155,15 +155,15 @@ llvm_tblgen {
 }
 
 genrule {
-    name: "llvm-gen-revision",
+    name: "llvm80-gen-revision",
     out: ["llvm/Support/VCSRevision.h"],
     srcs: [".git/logs/HEAD*"],
     tool_files: ["git_sha1_gen.py"],
     cmd: "python $(location git_sha1_gen.py) --output $(out)",
 }
 
-force_build_llvm_components_defaults {
-    name: "force_build_llvm_components",
+force_build_llvm80_components_defaults {
+    name: "force_build_llvm80_components",
     // Host build disabled by soong/llvm.go unless FORCE_BUILD_LLVM_COMPONENTS
     // environment variable is set
 }
@@ -171,108 +171,108 @@ force_build_llvm_components_defaults {
 // LLVM shared library build
 
 llvm_arm_static_libraries = [
-    "libLLVMARMCodeGen",
-    "libLLVMARMAsmParser",
-    "libLLVMARMAsmPrinter",
-    "libLLVMARMInfo",
-    "libLLVMARMDesc",
-    "libLLVMARMDisassembler",
-    "libLLVMARMUtils",
+    "libLLVM80ARMCodeGen",
+    "libLLVM80ARMAsmParser",
+    "libLLVM80ARMAsmPrinter",
+    "libLLVM80ARMInfo",
+    "libLLVM80ARMDesc",
+    "libLLVM80ARMDisassembler",
+    "libLLVM80ARMUtils",
 ]
 
 llvm_x86_static_libraries = [
-    "libLLVMX86CodeGen",
-    "libLLVMX86Info",
-    "libLLVMX86Desc",
-    "libLLVMX86AsmParser",
-    "libLLVMX86AsmPrinter",
-    "libLLVMX86Utils",
-    "libLLVMX86Disassembler",
+    "libLLVM80X86CodeGen",
+    "libLLVM80X86Info",
+    "libLLVM80X86Desc",
+    "libLLVM80X86AsmParser",
+    "libLLVM80X86AsmPrinter",
+    "libLLVM80X86Utils",
+    "libLLVM80X86Disassembler",
 ]
 
 llvm_mips_static_libraries = [
-    "libLLVMMipsCodeGen",
-    "libLLVMMipsInfo",
-    "libLLVMMipsDesc",
-    "libLLVMMipsAsmParser",
-    "libLLVMMipsAsmPrinter",
-    "libLLVMMipsDisassembler",
+    "libLLVM80MipsCodeGen",
+    "libLLVM80MipsInfo",
+    "libLLVM80MipsDesc",
+    "libLLVM80MipsAsmParser",
+    "libLLVM80MipsAsmPrinter",
+    "libLLVM80MipsDisassembler",
 ]
 
 llvm_aarch64_static_libraries = [
-    "libLLVMAArch64CodeGen",
-    "libLLVMAArch64Info",
-    "libLLVMAArch64Desc",
-    "libLLVMAArch64AsmParser",
-    "libLLVMAArch64AsmPrinter",
-    "libLLVMAArch64Utils",
-    "libLLVMAArch64Disassembler",
+    "libLLVM80AArch64CodeGen",
+    "libLLVM80AArch64Info",
+    "libLLVM80AArch64Desc",
+    "libLLVM80AArch64AsmParser",
+    "libLLVM80AArch64AsmPrinter",
+    "libLLVM80AArch64Utils",
+    "libLLVM80AArch64Disassembler",
 ]
 
 llvm_amdgpu_static_libraries = [
-    "libLLVMAMDGPUCodeGen",
-    "libLLVMAMDGPUInfo",
-    "libLLVMAMDGPUDesc",
-    "libLLVMAMDGPUAsmParser",
-    "libLLVMAMDGPUAsmPrinter",
-    "libLLVMAMDGPUUtils",
+    "libLLVM80AMDGPUCodeGen",
+    "libLLVM80AMDGPUInfo",
+    "libLLVM80AMDGPUDesc",
+    "libLLVM80AMDGPUAsmParser",
+    "libLLVM80AMDGPUAsmPrinter",
+    "libLLVM80AMDGPUUtils",
 ]
 
 
 cc_library_shared {
     host_supported: true,
-    name: "libLLVM",
+    name: "libLLVM80",
     defaults: [
-        "llvm-defaults",
-        "force_build_llvm_components",
+        "llvm80-defaults",
+        "force_build_llvm80_components",
     ],
 
     whole_static_libs: [
         // pre static libraries
-        "libLLVMLinker",
-        "libLLVMipo",
-        "libLLVMDebugInfoDWARF",
-        "libLLVMDebugInfoMSF",
-        "libLLVMDebugInfoPDB",
-        "libLLVMSymbolize",
-        "libLLVMIRReader",
-        "libLLVMBitWriter",
-        "libLLVMBitReader",
-        "libLLVMPasses",
-        "libLLVMDemangle",
+        "libLLVM80Linker",
+        "libLLVM80ipo",
+        "libLLVM80DebugInfoDWARF",
+        "libLLVM80DebugInfoMSF",
+        "libLLVM80DebugInfoPDB",
+        "libLLVM80Symbolize",
+        "libLLVM80IRReader",
+        "libLLVM80BitWriter",
+        "libLLVM80BitReader",
+        "libLLVM80Passes",
+        "libLLVM80Demangle",
 
         // post static libraries
-        "libLLVMLTO",
-        "libLLVMAsmPrinter",
-        "libLLVMSelectionDAG",
-        "libLLVMCodeGen",
-        "libLLVMDebugInfoCodeView",
-        "libLLVMObject",
-        "libLLVMScalarOpts",
-        "libLLVMAggressiveInstCombine",
-        "libLLVMInstCombine",
-        "libLLVMInstrumentation",
-        "libLLVMTransformObjCARC",
-        "libLLVMTransformUtils",
-        "libLLVMAnalysis",
-        "libLLVMTarget",
-        "libLLVMGlobalISel",
-        "libLLVMMCDisassembler",
-        "libLLVMMC",
-        "libLLVMMCParser",
-        "libLLVMCore",
-        "libLLVMAsmParser",
-        "libLLVMOption",
-        "libLLVMSupport",
-        "libLLVMVectorize",
-        "libLLVMProfileData",
-        "libLLVMProfileDataCoverage",
-        "libLLVMLibDriver",
-        "libLLVMExecutionEngine",
-        "libLLVMRuntimeDyld",
-        "libLLVMMCJIT",
-        "libLLVMOrcJIT",
-        "libLLVMBinaryFormat",
+        "libLLVM80LTO",
+        "libLLVM80AsmPrinter",
+        "libLLVM80SelectionDAG",
+        "libLLVM80CodeGen",
+        "libLLVM80DebugInfoCodeView",
+        "libLLVM80Object",
+        "libLLVM80ScalarOpts",
+        "libLLVM80AggressiveInstCombine",
+        "libLLVM80InstCombine",
+        "libLLVM80Instrumentation",
+        "libLLVM80TransformObjCARC",
+        "libLLVM80TransformUtils",
+        "libLLVM80Analysis",
+        "libLLVM80Target",
+        "libLLVM80GlobalISel",
+        "libLLVM80MCDisassembler",
+        "libLLVM80MC",
+        "libLLVM80MCParser",
+        "libLLVM80Core",
+        "libLLVM80AsmParser",
+        "libLLVM80Option",
+        "libLLVM80Support",
+        "libLLVM80Vectorize",
+        "libLLVM80ProfileData",
+        "libLLVM80ProfileDataCoverage",
+        "libLLVM80LibDriver",
+        "libLLVM80ExecutionEngine",
+        "libLLVM80RuntimeDyld",
+        "libLLVM80MCJIT",
+        "libLLVM80OrcJIT",
+        "libLLVM80BinaryFormat",
     ],
 
     export_include_dirs: ["include"],
