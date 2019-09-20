@@ -216,6 +216,7 @@ llvm_amdgpu_static_libraries = [
     "libLLVM70AMDGPUAsmParser",
     "libLLVM70AMDGPUAsmPrinter",
     "libLLVM70AMDGPUUtils",
+    "libLLVM70AMDGPUDisassembler",
 ]
 
 
