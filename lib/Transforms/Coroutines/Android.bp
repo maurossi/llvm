@@ -1,0 +1,7 @@
+cc_library_static {
+    name: "libLLVM80Coroutines",
+    defaults: [
+        "llvm80-lib-defaults",
+    ],
+    srcs: ["*.cpp"],
+}

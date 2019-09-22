@@ -274,6 +274,7 @@ cc_library_shared {
         "libLLVM80MCJIT",
         "libLLVM80OrcJIT",
         "libLLVM80BinaryFormat",
+        "libLLVM80Coroutines",
     ],
 
     export_include_dirs: ["include"],
