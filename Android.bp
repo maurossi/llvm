@@ -277,6 +277,7 @@ cc_library_shared {
         "libLLVM90MIRParser",
         "libLLVM90Remarks",
         "libLLVM90JITLink",
+        "libLLVM90Coroutines",
     ],
 
     export_include_dirs: ["include"],
