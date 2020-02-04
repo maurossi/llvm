@@ -15,7 +15,8 @@ orcjit_SRC_FILES := \
   OrcError.cpp \
   OrcMCJITReplacement.cpp \
   RPCUtils.cpp \
-  RTDyldObjectLinkingLayer.cpp
+  RTDyldObjectLinkingLayer.cpp \
+  ThreadSafeModule.cpp
 
 # For the host
 # =====================================================
