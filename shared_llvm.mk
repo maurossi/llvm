@@ -39,7 +39,8 @@ llvm_x86_static_libraries += \
   libLLVM80AMDGPUDesc \
   libLLVM80AMDGPUAsmParser \
   libLLVM80AMDGPUAsmPrinter \
-  libLLVM80AMDGPUUtils
+  libLLVM80AMDGPUUtils \
+  libLLVM80AMDGPUDisassembler
 endif
 
 llvm_mips_static_libraries := \
