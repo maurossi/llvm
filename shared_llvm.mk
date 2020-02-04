@@ -82,7 +82,8 @@ llvm_post_static_libraries := \
   libLLVM80Vectorize \
   libLLVM80ProfileData \
   libLLVM80LibDriver \
-  libLLVM80BinaryFormat
+  libLLVM80BinaryFormat \
+  libLLVM80Coroutines
 
 llvm_host_static_libraries := \
   libLLVM80ExecutionEngine \
