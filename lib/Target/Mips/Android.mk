@@ -41,6 +41,7 @@ mips_codegen_SRC_FILES := \
   MipsMCInstLower.cpp \
   MipsMachineFunction.cpp \
   MipsModuleISelDAGToDAG.cpp \
+  MipsPreLegalizerCombiner.cpp \
   MipsOptimizePICCall.cpp \
   MipsOs16.cpp \
   MipsRegisterBankInfo.cpp \
