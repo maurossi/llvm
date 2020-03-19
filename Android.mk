@@ -79,7 +79,6 @@ subdirs := \
 subdirs += \
   lib/Target/ARM \
   lib/Target/ARM/AsmParser \
-  lib/Target/ARM/InstPrinter \
   lib/Target/ARM/Disassembler \
   lib/Target/ARM/MCTargetDesc \
   lib/Target/ARM/TargetInfo \
@@ -89,7 +88,6 @@ subdirs += \
 subdirs += \
   lib/Target/AArch64  \
   lib/Target/AArch64/AsmParser \
-  lib/Target/AArch64/InstPrinter \
   lib/Target/AArch64/Disassembler \
   lib/Target/AArch64/MCTargetDesc \
   lib/Target/AArch64/TargetInfo \
@@ -99,7 +97,6 @@ subdirs += \
 subdirs += \
   lib/Target/Mips \
   lib/Target/Mips/AsmParser \
-  lib/Target/Mips/InstPrinter \
   lib/Target/Mips/Disassembler \
   lib/Target/Mips/MCTargetDesc \
   lib/Target/Mips/TargetInfo
@@ -108,7 +105,6 @@ subdirs += \
 subdirs += \
   lib/Target/X86 \
   lib/Target/X86/AsmParser \
-  lib/Target/X86/InstPrinter \
   lib/Target/X86/Disassembler \
   lib/Target/X86/MCTargetDesc \
   lib/Target/X86/TargetInfo \
@@ -119,7 +115,6 @@ ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
 subdirs += \
   lib/Target/AMDGPU \
   lib/Target/AMDGPU/AsmParser \
-  lib/Target/AMDGPU/InstPrinter \
   lib/Target/AMDGPU/Disassembler \
   lib/Target/AMDGPU/MCTargetDesc \
   lib/Target/AMDGPU/TargetInfo \

@@ -42,7 +42,6 @@ analysis_SRC_FILES := \
   InstructionSimplify.cpp \
   Interval.cpp \
   IntervalPartition.cpp \
-  IteratedDominanceFrontier.cpp \
   LazyBranchProbabilityInfo.cpp \
   LazyBlockFrequencyInfo.cpp \
   LazyCallGraph.cpp \

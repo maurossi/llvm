@@ -14,7 +14,6 @@ x86_codegen_TBLGEN_TABLES90 := \
   X86GenEVEX2VEXTables.inc
 
 x86_codegen_SRC_FILES := \
-  ShadowCallStack.cpp \
   X86AsmPrinter.cpp \
   X86CallFrameOptimization.cpp \
   X86CallingConv.cpp \

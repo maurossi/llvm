@@ -37,7 +37,6 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUFrameLowering.cpp \
   AMDGPUHSAMetadataStreamer.cpp \
   AMDGPUInstrInfo.cpp \
-  AMDGPUIntrinsicInfo.cpp \
   AMDGPUISelDAGToDAG.cpp \
   AMDGPUISelLowering.cpp \
   AMDGPULibCalls.cpp \
@@ -52,7 +51,6 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUMCInstLower.cpp \
   AMDGPUOpenCLEnqueuedBlockLowering.cpp \
   AMDGPUPromoteAlloca.cpp \
-  AMDGPURegAsmNames.inc.cpp \
   AMDGPURegisterInfo.cpp \
   AMDGPURewriteOutArguments.cpp \
   AMDGPUSubtarget.cpp \
@@ -85,11 +83,9 @@ amdgpu_codegen_SRC_FILES := \
   R600RegisterInfo.cpp \
   SIAddIMGInit.cpp \
   SIAnnotateControlFlow.cpp \
-  SIDebuggerInsertNops.cpp \
   SIFixSGPRCopies.cpp \
   SIFixupVectorISel.cpp \
   SIFixVGPRCopies.cpp \
-  SIFixWWMLiveness.cpp \
   SIFoldOperands.cpp \
   SIFormMemoryClauses.cpp \
   SIFrameLowering.cpp \

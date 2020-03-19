@@ -17,7 +17,6 @@ llvm_pre_static_libraries := \
 llvm_arm_static_libraries := \
   libLLVM90ARMCodeGen \
   libLLVM90ARMAsmParser \
-  libLLVM90ARMAsmPrinter \
   libLLVM90ARMInfo \
   libLLVM90ARMDesc \
   libLLVM90ARMDisassembler \
@@ -28,7 +27,6 @@ llvm_x86_static_libraries := \
   libLLVM90X86Info \
   libLLVM90X86Desc \
   libLLVM90X86AsmParser \
-  libLLVM90X86AsmPrinter \
   libLLVM90X86Utils \
   libLLVM90X86Disassembler
 
@@ -38,7 +36,6 @@ llvm_x86_static_libraries += \
   libLLVM90AMDGPUInfo \
   libLLVM90AMDGPUDesc \
   libLLVM90AMDGPUAsmParser \
-  libLLVM90AMDGPUAsmPrinter \
   libLLVM90AMDGPUUtils \
   libLLVM90AMDGPUDisassembler
 endif
@@ -48,7 +45,6 @@ llvm_mips_static_libraries := \
   libLLVM90MipsInfo \
   libLLVM90MipsDesc \
   libLLVM90MipsAsmParser \
-  libLLVM90MipsAsmPrinter \
   libLLVM90MipsDisassembler
 
 llvm_aarch64_static_libraries := \
@@ -56,7 +52,6 @@ llvm_aarch64_static_libraries := \
   libLLVM90AArch64Info \
   libLLVM90AArch64Desc \
   libLLVM90AArch64AsmParser \
-  libLLVM90AArch64AsmPrinter \
   libLLVM90AArch64Utils \
   libLLVM90AArch64Disassembler
 

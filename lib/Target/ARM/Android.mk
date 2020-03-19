@@ -48,8 +48,7 @@ arm_codegen_SRC_FILES := \
   ThumbRegisterInfo.cpp \
   Thumb2ITBlockPass.cpp \
   Thumb2InstrInfo.cpp \
-  Thumb2SizeReduction.cpp \
-  ARMComputeBlockSize.cpp
+  Thumb2SizeReduction.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
 arm_codegen_TBLGEN_TABLES90 += \

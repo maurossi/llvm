@@ -23,7 +23,6 @@ codegen_SRC_FILES := \
   EarlyIfConversion.cpp \
   EdgeBundles.cpp \
   ExecutionDomainFix.cpp \
-  ExpandISelPseudos.cpp \
   ExpandMemCmp.cpp \
   ExpandPostRAPseudos.cpp \
   ExpandReductions.cpp \

@@ -19,7 +19,6 @@ vmcore_SRC_FILES := \
   DiagnosticInfo.cpp \
   DiagnosticPrinter.cpp \
   Dominators.cpp \
-  DomTreeUpdater.cpp \
   Function.cpp \
   GVMaterializer.cpp \
   Globals.cpp \

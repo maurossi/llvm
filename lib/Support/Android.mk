@@ -73,6 +73,7 @@ support_SRC_FILES := \
   ScaledNumber.cpp \
   ScopedPrinter.cpp \
   SHA1.cpp \
+  Signposts.cpp \
   SmallPtrSet.cpp \
   SmallVector.cpp \
   SourceMgr.cpp \

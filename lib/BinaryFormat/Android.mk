@@ -5,7 +5,6 @@ binary_format_SRC_FILES := \
   Dwarf.cpp \
   Magic.cpp \
   MsgPackReader.cpp \
-  MsgPackTypes.cpp \
   MsgPackWriter.cpp \
   Wasm.cpp
 

@@ -1,9 +1,9 @@
 LOCAL_PATH:= $(call my-dir)
 
 bitcode_reader_SRC_FILES := \
+  BitcodeAnalyzer.cpp \
   BitReader.cpp \
   BitcodeReader.cpp \
-  BitstreamReader.cpp \
   MetadataLoader.cpp \
   ValueList.cpp
 
