@@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 transforms_ipo_SRC_FILES := \
   AlwaysInliner.cpp \
   ArgumentPromotion.cpp \
+  Attributor.cpp \
   BarrierNoopPass.cpp \
   BlockExtractor.cpp \
   CalledValuePropagation.cpp \
