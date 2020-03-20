@@ -30,6 +30,7 @@ transforms_scalar_SRC_FILES := \
   LoopDeletion.cpp \
   LoopDataPrefetch.cpp \
   LoopDistribute.cpp \
+  LoopFuse.cpp \
   LoopIdiomRecognize.cpp \
   LoopInstSimplify.cpp \
   LoopInterchange.cpp \
@@ -40,13 +41,14 @@ transforms_scalar_SRC_FILES := \
   LoopRotation.cpp \
   LoopSimplifyCFG.cpp \
   LoopStrengthReduce.cpp \
-  LoopUnrollAndJamPass.cpp \
   LoopUnrollPass.cpp \
+  LoopUnrollAndJamPass.cpp \
   LoopUnswitch.cpp \
   LoopVersioningLICM.cpp \
   LowerAtomic.cpp \
   LowerExpectIntrinsic.cpp \
   LowerGuardIntrinsic.cpp \
+  LowerWidenableCondition.cpp \
   MakeGuardsExplicit.cpp \
   MemCpyOptimizer.cpp \
   MergeICmps.cpp \
