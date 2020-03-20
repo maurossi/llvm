@@ -1,6 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 arm_mc_desc_TBLGEN_TABLES90 := \
+  ARMGenAsmWriter.inc \
   ARMGenRegisterInfo.inc \
   ARMGenInstrInfo.inc \
   ARMGenMCCodeEmitter.inc \
