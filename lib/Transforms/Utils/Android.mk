@@ -53,6 +53,7 @@ transforms_utils_SRC_FILES := \
   SimplifyCFG.cpp \
   SimplifyIndVar.cpp \
   SimplifyLibCalls.cpp \
+  SizeOpts.cpp \
   SplitModule.cpp \
   StripNonLineTableDebugInfo.cpp \
   SymbolRewriter.cpp \
