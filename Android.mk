@@ -60,6 +60,7 @@ subdirs := \
   lib/Option \
   lib/Passes \
   lib/ProfileData \
+  lib/Remarks \
   lib/Support \
   lib/TableGen \
   lib/Target \

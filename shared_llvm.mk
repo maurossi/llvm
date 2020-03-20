@@ -80,7 +80,8 @@ llvm_post_static_libraries := \
   libLLVM90ProfileData \
   libLLVM90LibDriver \
   libLLVM90BinaryFormat \
-  libLLVM90Coroutines
+  libLLVM90Coroutines \
+  libLLVM90Remarks
 
 llvm_host_static_libraries := \
   libLLVM90ExecutionEngine \
