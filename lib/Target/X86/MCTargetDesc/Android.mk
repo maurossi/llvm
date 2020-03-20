@@ -6,6 +6,10 @@ x86_mc_desc_TBLGEN_TABLES90 := \
   X86GenSubtargetInfo.inc
 
 x86_mc_desc_SRC_FILES := \
+  X86ATTInstPrinter.cpp \
+  X86IntelInstPrinter.cpp \
+  X86InstComments.cpp \
+  X86InstPrinterCommon.cpp \
   X86AsmBackend.cpp \
   X86MCTargetDesc.cpp \
   X86MCAsmInfo.cpp \
