@@ -1,14 +1,20 @@
 LOCAL_PATH:= $(call my-dir)
 
 orcjit_SRC_FILES := \
+  CompileOnDemandLayer.cpp \
+  CompileUtils.cpp \
   Core.cpp \
   ExecutionUtils.cpp \
   IndirectionUtils.cpp \
   IRCompileLayer.cpp \
   IRTransformLayer.cpp \
+  JITTargetMachineBuilder.cpp \
+  LazyReexports.cpp \
   Legacy.cpp \
   Layer.cpp \
+  LLJIT.cpp \
   NullResolver.cpp \
+  ObjectLinkingLayer.cpp \
   ObjectTransformLayer.cpp \
   OrcABISupport.cpp \
   OrcCBindings.cpp \
