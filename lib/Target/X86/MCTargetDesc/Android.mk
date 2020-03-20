@@ -1,6 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 
 x86_mc_desc_TBLGEN_TABLES90 := \
+  X86GenAsmWriter.inc \
+  X86GenAsmWriter1.inc \
   X86GenRegisterInfo.inc \
   X86GenInstrInfo.inc \
   X86GenSubtargetInfo.inc
