@@ -9,6 +9,7 @@ transforms_vectorize_SRC_FILES := \
   VPlan.cpp \
   VPlanHCFGBuilder.cpp \
   VPlanHCFGTransforms.cpp \
+  VPlanPredicator.cpp \
   VPlanSLP.cpp \
   VPlanVerifier.cpp
 
