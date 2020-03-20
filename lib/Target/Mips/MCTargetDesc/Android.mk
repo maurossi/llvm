@@ -12,6 +12,7 @@ mips_mc_desc_SRC_FILES := \
   MipsAsmBackend.cpp \
   MipsELFObjectWriter.cpp \
   MipsELFStreamer.cpp \
+  MipsInstPrinter.cpp \
   MipsMCAsmInfo.cpp \
   MipsMCCodeEmitter.cpp \
   MipsMCExpr.cpp \
