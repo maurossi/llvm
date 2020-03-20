@@ -87,12 +87,14 @@ llvm_host_static_libraries := \
   libLLVM90ExecutionEngine \
   libLLVM90RuntimeDyld \
   libLLVM90MCJIT \
-  libLLVM90OrcJIT
+  libLLVM90OrcJIT \
+  libLLVM90JITLink
 
 llvm_device_static_libraries := \
   libLLVM90ExecutionEngine \
   libLLVM90RuntimeDyld \
-  libLLVM90MCJIT
+  libLLVM90MCJIT \
+  libLLVM90JITLink
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)

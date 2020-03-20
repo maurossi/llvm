@@ -32,6 +32,7 @@ subdirs := \
   lib/Bitstream/Reader \
   lib/ExecutionEngine \
   lib/ExecutionEngine/RuntimeDyld \
+  lib/ExecutionEngine/JITLink \
   lib/ExecutionEngine/MCJIT \
   lib/ExecutionEngine/Orc \
   lib/ExecutionEngine/Interpreter \
