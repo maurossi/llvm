@@ -12,6 +12,7 @@ llvm_pre_static_libraries := \
   libLLVM90IRReader \
   libLLVM90BitWriter \
   libLLVM90BitReader \
+  libLLVM90BitstreamReader \
   libLLVM90GlobalISel
 
 llvm_arm_static_libraries := \

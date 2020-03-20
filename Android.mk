@@ -29,6 +29,7 @@ subdirs := \
   lib/BinaryFormat \
   lib/Bitcode/Reader \
   lib/Bitcode/Writer \
+  lib/Bitstream/Reader \
   lib/ExecutionEngine \
   lib/ExecutionEngine/RuntimeDyld \
   lib/ExecutionEngine/MCJIT \
