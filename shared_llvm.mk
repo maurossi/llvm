@@ -81,7 +81,8 @@ llvm_post_static_libraries := \
   libLLVM90LibDriver \
   libLLVM90BinaryFormat \
   libLLVM90Coroutines \
-  libLLVM90Remarks
+  libLLVM90Remarks \
+  libLLVM90MIRParser
 
 llvm_host_static_libraries := \
   libLLVM90ExecutionEngine \
