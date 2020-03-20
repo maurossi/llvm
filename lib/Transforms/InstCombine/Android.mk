@@ -7,6 +7,7 @@ transforms_inst_combine_SRC_FILES := \
   InstructionCombining.cpp \
   InstCombineAddSub.cpp \
   InstCombineAndOrXor.cpp \
+  InstCombineAtomicRMW.cpp \
   InstCombineCalls.cpp \
   InstCombineCasts.cpp \
   InstCombineCompares.cpp \
