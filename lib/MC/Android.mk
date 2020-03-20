@@ -9,6 +9,8 @@ mc_SRC_FILES := \
   MCAsmInfoDarwin.cpp \
   MCAsmInfoELF.cpp \
   MCAsmInfoWasm.cpp \
+  MCAsmInfoXCOFF.cpp \
+  MCAsmMacro.cpp \
   MCAsmStreamer.cpp \
   MCAssembler.cpp \
   MCCodeEmitter.cpp \
@@ -39,6 +41,7 @@ mc_SRC_FILES := \
   MCSectionELF.cpp \
   MCSectionMachO.cpp \
   MCSectionWasm.cpp \
+  MCSectionXCOFF.cpp \
   MCStreamer.cpp \
   MCSubtargetInfo.cpp \
   MCSymbol.cpp \
@@ -50,11 +53,14 @@ mc_SRC_FILES := \
   MCWin64EH.cpp \
   MCWinCOFFStreamer.cpp \
   MCWinEH.cpp \
+  MCXCOFFObjectTargetWriter.cpp \
+  MCXCOFFStreamer.cpp \
   MachObjectWriter.cpp \
   StringTableBuilder.cpp \
   SubtargetFeature.cpp \
   WasmObjectWriter.cpp \
-  WinCOFFObjectWriter.cpp
+  WinCOFFObjectWriter.cpp \
+  XCOFFObjectWriter.cpp
 
 # For the host
 # =====================================================
