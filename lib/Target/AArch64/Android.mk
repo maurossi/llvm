@@ -21,12 +21,14 @@ aarch64_codegen_SRC_FILES := \
   AArch64AdvSIMDScalarPass.cpp \
   AArch64AsmPrinter.cpp \
   AArch64BranchTargets.cpp \
+  AArch64CallingConvention.cpp \
   AArch64CleanupLocalDynamicTLSPass.cpp \
   AArch64CollectLOH.cpp \
   AArch64CompressJumpTables.cpp \
   AArch64CondBrTuning.cpp \
   AArch64ConditionalCompares.cpp \
   AArch64DeadRegisterDefinitionsPass.cpp \
+  AArch64ExpandImm.cpp \
   AArch64ExpandPseudoInsts.cpp \
   AArch64FalkorHWPFFix.cpp \
   AArch64FastISel.cpp \
@@ -46,6 +48,7 @@ aarch64_codegen_SRC_FILES := \
   AArch64RegisterInfo.cpp \
   AArch64SelectionDAGInfo.cpp \
   AArch64SpeculationHardening.cpp \
+  AArch64StackTagging.cpp \
   AArch64StorePairSuppress.cpp \
   AArch64Subtarget.cpp \
   AArch64TargetMachine.cpp \

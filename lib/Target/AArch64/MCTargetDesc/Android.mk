@@ -11,6 +11,7 @@ aarch64_mc_desc_SRC_FILES := \
   AArch64AsmBackend.cpp \
   AArch64ELFObjectWriter.cpp \
   AArch64ELFStreamer.cpp \
+  AArch64InstPrinter.cpp \
   AArch64MCAsmInfo.cpp \
   AArch64MCCodeEmitter.cpp \
   AArch64MCExpr.cpp \
