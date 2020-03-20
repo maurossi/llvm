@@ -4,6 +4,9 @@ binary_format_SRC_FILES := \
   AMDGPUMetadataVerifier.cpp \
   Dwarf.cpp \
   Magic.cpp \
+  Minidump.cpp \
+  MsgPackDocument.cpp \
+  MsgPackDocumentYAML.cpp \
   MsgPackReader.cpp \
   MsgPackWriter.cpp \
   Wasm.cpp
