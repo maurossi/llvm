@@ -1,11 +1,13 @@
 LOCAL_PATH := $(call my-dir)
 
 amdgpu_mc_desc_TBLGEN_TABLES90 := \
+  AMDGPUGenAsmWriter.inc \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenMCCodeEmitter.inc \
   AMDGPUGenSearchableTables.inc \
   AMDGPUGenSubtargetInfo.inc \
+  R600GenAsmWriter.inc \
   R600GenMCCodeEmitter.inc \
   R600GenInstrInfo.inc \
   R600GenRegisterInfo.inc \
