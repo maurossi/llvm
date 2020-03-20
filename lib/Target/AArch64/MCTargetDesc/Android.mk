@@ -1,6 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 
 aarch64_mc_desc_TBLGEN_TABLES90 := \
+  AArch64GenAsmWriter.inc \
+  AArch64GenAsmWriter1.inc \
   AArch64GenRegisterInfo.inc \
   AArch64GenInstrInfo.inc \
   AArch64GenMCCodeEmitter.inc \
