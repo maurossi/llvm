@@ -20,6 +20,8 @@ arm_codegen_SRC_FILES := \
   ARMAsmPrinter.cpp \
   ARMBaseInstrInfo.cpp \
   ARMBaseRegisterInfo.cpp \
+  ARMBasicBlockInfo.cpp \
+  ARMCallingConv.cpp \
   ARMCodeGenPrepare.cpp \
   ARMConstantIslandPass.cpp \
   ARMConstantPoolValue.cpp \
@@ -31,6 +33,7 @@ arm_codegen_SRC_FILES := \
   ARMISelLowering.cpp \
   ARMInstrInfo.cpp \
   ARMLoadStoreOptimizer.cpp \
+  ARMLowOverheadLoops.cpp \
   ARMMCInstLower.cpp \
   ARMMachineFunctionInfo.cpp \
   ARMMacroFusion.cpp \

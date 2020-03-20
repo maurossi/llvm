@@ -11,6 +11,7 @@ arm_mc_desc_SRC_FILES := \
   ARMAsmBackend.cpp \
   ARMELFObjectWriter.cpp \
   ARMELFStreamer.cpp \
+  ARMInstPrinter.cpp \
   ARMMachObjectWriter.cpp \
   ARMMachORelocationInfo.cpp \
   ARMMCAsmInfo.cpp \
