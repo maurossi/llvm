@@ -1,6 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 mips_mc_desc_TBLGEN_TABLES90 := \
+  MipsGenAsmWriter.inc \
   MipsGenRegisterInfo.inc \
   MipsGenInstrInfo.inc \
   MipsGenMCCodeEmitter.inc \
