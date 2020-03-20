@@ -28,12 +28,14 @@ codegen_SRC_FILES := \
   ExpandReductions.cpp \
   FaultMaps.cpp \
   FEntryInserter.cpp \
+  FinalizeISel.cpp \
   FuncletLayout.cpp \
   GCMetadata.cpp \
   GCMetadataPrinter.cpp \
   GCRootLowering.cpp \
   GCStrategy.cpp \
   GlobalMerge.cpp \
+  HardwareLoops.cpp \
   IfConversion.cpp \
   ImplicitNullChecks.cpp \
   IndirectBrExpandPass.cpp \
@@ -144,6 +146,8 @@ codegen_SRC_FILES := \
   StackMaps.cpp \
   StackProtector.cpp \
   StackSlotColoring.cpp \
+  SwiftErrorValueTracking.cpp \
+  SwitchLoweringUtils.cpp \
   TailDuplication.cpp \
   TailDuplicator.cpp \
   TargetFrameLoweringImpl.cpp \
