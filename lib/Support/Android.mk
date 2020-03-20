@@ -27,6 +27,7 @@ support_SRC_FILES := \
   CodeGenCoverage.cpp \
   CommandLine.cpp \
   Compression.cpp \
+  CRC.cpp \
   ConvertUTF.cpp \
   ConvertUTFWrapper.cpp \
   CrashRecoveryContext.cpp \
@@ -38,8 +39,8 @@ support_SRC_FILES := \
   DJB.cpp \
   Error.cpp \
   ErrorHandling.cpp \
-  FileUtilities.cpp \
   FileCheck.cpp \
+  FileUtilities.cpp \
   FileOutputBuffer.cpp \
   FoldingSet.cpp \
   FormattedStream.cpp \
@@ -64,6 +65,7 @@ support_SRC_FILES := \
   MemoryBuffer.cpp \
   MD5.cpp \
   NativeFormatting.cpp \
+  Optional.cpp \
   Options.cpp \
   Parallel.cpp \
   PluginLoader.cpp \
@@ -89,6 +91,7 @@ support_SRC_FILES := \
   TarWriter.cpp \
   TargetParser.cpp \
   ThreadPool.cpp \
+  TimeProfiler.cpp \
   Timer.cpp \
   ToolOutputFile.cpp \
   TrigramIndex.cpp \
@@ -98,9 +101,9 @@ support_SRC_FILES := \
   UnicodeCaseFold.cpp \
   VersionTuple.cpp \
   VirtualFileSystem.cpp \
+  WithColor.cpp \
   YAMLParser.cpp \
   YAMLTraits.cpp \
-  WithColor.cpp \
   raw_os_ostream.cpp \
   raw_ostream.cpp \
   regcomp.c \
@@ -109,6 +112,7 @@ support_SRC_FILES := \
   regfree.c \
   regstrlcpy.c \
   xxhash.cpp \
+  Z3Solver.cpp \
   Atomic.cpp \
   DynamicLibrary.cpp \
   Errno.cpp \
