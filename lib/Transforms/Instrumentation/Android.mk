@@ -3,15 +3,18 @@ LOCAL_PATH:= $(call my-dir)
 instrumentation_SRC_FILES := \
   AddressSanitizer.cpp \
   BoundsChecking.cpp \
+  CGProfile.cpp \
   ControlHeightReduction.cpp \
   DataFlowSanitizer.cpp \
   GCOVProfiling.cpp \
   MemorySanitizer.cpp \
   IndirectCallPromotion.cpp \
   Instrumentation.cpp \
+  InstrOrderFile.cpp \
   InstrProfiling.cpp \
   PGOInstrumentation.cpp \
   PGOMemOPSizeOpt.cpp \
+  PoisonChecking.cpp \
   SanitizerCoverage.cpp \
   ThreadSanitizer.cpp \
   HWAddressSanitizer.cpp
