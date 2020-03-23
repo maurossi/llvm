@@ -95,7 +95,8 @@ llvm_host_static_libraries := \
 llvm_device_static_libraries := \
   libLLVM80ExecutionEngine \
   libLLVM80RuntimeDyld \
-  libLLVM80MCJIT
+  libLLVM80MCJIT \
+  libLLVM80OrcJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
