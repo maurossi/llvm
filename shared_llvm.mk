@@ -95,6 +95,7 @@ llvm_device_static_libraries := \
   libLLVM90ExecutionEngine \
   libLLVM90RuntimeDyld \
   libLLVM90MCJIT \
+  libLLVM90OrcJIT \
   libLLVM90JITLink
 
 # HOST LLVM shared library build
