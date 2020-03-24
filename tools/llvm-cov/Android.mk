@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM90_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -18,13 +18,13 @@ llvm_cov_SRC_FILES := \
   TestingSupport.cpp
 
 llvm_cov_STATIC_LIBRARIES := \
-  libLLVM80Object              \
-  libLLVM80ProfileData         \
-  libLLVM80MC                  \
-  libLLVM80MCParser            \
-  libLLVM80BitReader           \
-  libLLVM80Core                \
-  libLLVM80Support             \
+  libLLVM90Object              \
+  libLLVM90ProfileData         \
+  libLLVM90MC                  \
+  libLLVM90MCParser            \
+  libLLVM90BitReader           \
+  libLLVM90Core                \
+  libLLVM90Support             \
 
 include $(CLEAR_VARS)
 
@@ -39,7 +39,7 @@ LOCAL_STATIC_LIBRARIES := $(llvm_cov_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM80_ROOT_PATH)/llvm.mk
-include $(LLVM80_HOST_BUILD_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_ROOT_PATH)/llvm.mk
+include $(LLVM90_HOST_BUILD_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

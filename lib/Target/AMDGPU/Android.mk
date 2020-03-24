@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-amdgpu_codegen_TBLGEN_TABLES80 := \
+amdgpu_codegen_TBLGEN_TABLES90 := \
   AMDGPUGenRegisterInfo.inc \
   AMDGPUGenInstrInfo.inc \
   AMDGPUGenDAGISel.inc  \
@@ -114,7 +114,7 @@ amdgpu_codegen_SRC_FILES := \
   SIModeRegister.cpp
 
 ifeq ($(FORCE_BUILD_LLVM_GLOBAL_ISEL),true)
-amdgpu_codegen_TBLGEN_TABLES80 += \
+amdgpu_codegen_TBLGEN_TABLES90 += \
   AMDGPUGenRegisterBank.inc
 
 amdgpu_codegen_SRC_FILES += \
@@ -127,37 +127,37 @@ endif
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS80)
+include $(CLEAR_TBLGEN_VARS90)
 
-TBLGEN_TABLES80 := $(amdgpu_codegen_TBLGEN_TABLES80)
+TBLGEN_TABLES90 := $(amdgpu_codegen_TBLGEN_TABLES90)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 
-LOCAL_MODULE := libLLVM80AMDGPUCodeGen
+LOCAL_MODULE := libLLVM90AMDGPUCodeGen
 
 LOCAL_MODULE_HOST_OS := darwin linux windows
 
-include $(LLVM80_HOST_BUILD_MK)
-include $(LLVM80_TBLGEN_RULES_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_HOST_BUILD_MK)
+include $(LLVM90_TBLGEN_RULES_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device only
 # =====================================================
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 include $(CLEAR_VARS)
-include $(CLEAR_TBLGEN_VARS80)
+include $(CLEAR_TBLGEN_VARS90)
 
-TBLGEN_TABLES80 := $(amdgpu_codegen_TBLGEN_TABLES80)
+TBLGEN_TABLES90 := $(amdgpu_codegen_TBLGEN_TABLES90)
 
 LOCAL_SRC_FILES := $(amdgpu_codegen_SRC_FILES)
 
-LOCAL_MODULE := libLLVM80AMDGPUCodeGen
+LOCAL_MODULE := libLLVM90AMDGPUCodeGen
 
-include $(LLVM80_DEVICE_BUILD_MK)
-include $(LLVM80_TBLGEN_RULES_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_DEVICE_BUILD_MK)
+include $(LLVM90_TBLGEN_RULES_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif

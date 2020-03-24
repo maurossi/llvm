@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM90_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,57 +11,57 @@ llvm_sancov_SRC_FILES := \
   sancov.cc \
 
 llvm_sancov_STATIC_LIBRARIES := \
-  libLLVM80IRReader \
-  libLLVM80ARMCodeGen \
-  libLLVM80ARMInfo \
-  libLLVM80ARMDesc \
-  libLLVM80ARMAsmPrinter \
-  libLLVM80ARMDisassembler \
-  libLLVM80AArch64CodeGen \
-  libLLVM80AArch64Info \
-  libLLVM80AArch64Desc \
-  libLLVM80AArch64AsmPrinter \
-  libLLVM80AArch64Utils \
-  libLLVM80AArch64Disassembler \
-  libLLVM80MipsCodeGen \
-  libLLVM80MipsInfo \
-  libLLVM80MipsDesc \
-  libLLVM80MipsAsmPrinter \
-  libLLVM80MipsDisassembler \
-  libLLVM80X86CodeGen \
-  libLLVM80X86Info \
-  libLLVM80X86Desc \
-  libLLVM80X86AsmPrinter \
-  libLLVM80X86Utils \
-  libLLVM80X86Disassembler \
-  libLLVM80Symbolize \
-  libLLVM80DebugInfoDWARF \
-  libLLVM80DebugInfoPDB \
-  libLLVM80AsmPrinter \
-  libLLVM80SelectionDAG \
-  libLLVM80CodeGen \
-  libLLVM80TransformObjCARC \
-  libLLVM80Vectorize \
-  libLLVM80ScalarOpts \
-  libLLVM80Passes \
-  libLLVM80ipo \
-  libLLVM80Linker \
-  libLLVM80InstCombine \
-  libLLVM80Instrumentation \
-  libLLVM80TransformUtils \
-  libLLVM80Analysis \
-  libLLVM80Target \
-  libLLVM80Object \
-  libLLVM80BitReader \
-  libLLVM80BitWriter \
-  libLLVM80MC \
-  libLLVM80MCParser \
-  libLLVM80ProfileData \
-  libLLVM80Core \
-  libLLVM80AsmParser \
-  libLLVM80Option \
-  libLLVM80Support \
-  libLLVM80MCDisassembler \
+  libLLVM90IRReader \
+  libLLVM90ARMCodeGen \
+  libLLVM90ARMInfo \
+  libLLVM90ARMDesc \
+  libLLVM90ARMAsmPrinter \
+  libLLVM90ARMDisassembler \
+  libLLVM90AArch64CodeGen \
+  libLLVM90AArch64Info \
+  libLLVM90AArch64Desc \
+  libLLVM90AArch64AsmPrinter \
+  libLLVM90AArch64Utils \
+  libLLVM90AArch64Disassembler \
+  libLLVM90MipsCodeGen \
+  libLLVM90MipsInfo \
+  libLLVM90MipsDesc \
+  libLLVM90MipsAsmPrinter \
+  libLLVM90MipsDisassembler \
+  libLLVM90X86CodeGen \
+  libLLVM90X86Info \
+  libLLVM90X86Desc \
+  libLLVM90X86AsmPrinter \
+  libLLVM90X86Utils \
+  libLLVM90X86Disassembler \
+  libLLVM90Symbolize \
+  libLLVM90DebugInfoDWARF \
+  libLLVM90DebugInfoPDB \
+  libLLVM90AsmPrinter \
+  libLLVM90SelectionDAG \
+  libLLVM90CodeGen \
+  libLLVM90TransformObjCARC \
+  libLLVM90Vectorize \
+  libLLVM90ScalarOpts \
+  libLLVM90Passes \
+  libLLVM90ipo \
+  libLLVM90Linker \
+  libLLVM90InstCombine \
+  libLLVM90Instrumentation \
+  libLLVM90TransformUtils \
+  libLLVM90Analysis \
+  libLLVM90Target \
+  libLLVM90Object \
+  libLLVM90BitReader \
+  libLLVM90BitWriter \
+  libLLVM90MC \
+  libLLVM90MCParser \
+  libLLVM90ProfileData \
+  libLLVM90Core \
+  libLLVM90AsmParser \
+  libLLVM90Option \
+  libLLVM90Support \
+  libLLVM90MCDisassembler \
 
 include $(CLEAR_VARS)
 
@@ -71,6 +71,6 @@ LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := $(llvm_sancov_SRC_FILES)
 LOCAL_STATIC_LIBRARIES := $(llvm_sancov_STATIC_LIBRARIES)
 
-include $(LLVM80_ROOT_PATH)/llvm.mk
-include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM90_ROOT_PATH)/llvm.mk
+include $(LLVM90_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

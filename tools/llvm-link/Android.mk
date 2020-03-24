@@ -4,19 +4,19 @@ llvm_link_SRC_FILES := \
   llvm-link.cpp
 
 llvm_link_STATIC_LIBRARIES := \
-  libLLVM80Linker \
-  libLLVM80IRReader \
-  libLLVM80Object \
-  libLLVM80MC \
-  libLLVM80MCParser \
-  libLLVM80BitReader \
-  libLLVM80BitWriter \
-  libLLVM80AsmParser \
-  libLLVM80TransformUtils \
-  libLLVM80Analysis \
-  libLLVM80Target \
-  libLLVM80Core \
-  libLLVM80Support
+  libLLVM90Linker \
+  libLLVM90IRReader \
+  libLLVM90Object \
+  libLLVM90MC \
+  libLLVM90MCParser \
+  libLLVM90BitReader \
+  libLLVM90BitWriter \
+  libLLVM90AsmParser \
+  libLLVM90TransformUtils \
+  libLLVM90Analysis \
+  libLLVM90Target \
+  libLLVM90Core \
+  libLLVM90Support
 
 #===---------------------------------------------------------------===
 # llvm-link command line tool (host)
@@ -31,8 +31,8 @@ LOCAL_SRC_FILES := $(llvm_link_SRC_FILES)
 LOCAL_STATIC_LIBRARIES := $(llvm_link_STATIC_LIBRARIES)
 LOCAL_LDLIBS += -lpthread
 
-include $(LLVM80_HOST_BUILD_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM90_HOST_BUILD_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
 include $(BUILD_HOST_EXECUTABLE)
 
 #===---------------------------------------------------------------===
@@ -48,7 +48,7 @@ LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_SRC_FILES := $(llvm_link_SRC_FILES)
 LOCAL_STATIC_LIBRARIES := $(llvm_link_STATIC_LIBRARIES)
 
-include $(LLVM80_DEVICE_BUILD_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
+include $(LLVM90_DEVICE_BUILD_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
 include $(BUILD_EXECUTABLE)
 endif

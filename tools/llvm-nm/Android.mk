@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM90_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,43 +11,43 @@ llvm_nm_SRC_FILES := \
   llvm-nm.cpp
 
 llvm_nm_STATIC_LIBRARIES := \
-  libLLVM80ARMCodeGen \
-  libLLVM80ARMInfo \
-  libLLVM80ARMDesc \
-  libLLVM80ARMAsmPrinter \
-  libLLVM80ARMAsmParser \
-  libLLVM80ARMDisassembler \
-  libLLVM80AArch64CodeGen \
-  libLLVM80AArch64Info \
-  libLLVM80AArch64AsmParser \
-  libLLVM80AArch64Desc \
-  libLLVM80AArch64AsmPrinter \
-  libLLVM80AArch64Utils \
-  libLLVM80AArch64Disassembler \
-  libLLVM80MipsCodeGen \
-  libLLVM80MipsInfo \
-  libLLVM80MipsAsmParser \
-  libLLVM80MipsDesc \
-  libLLVM80MipsAsmPrinter \
-  libLLVM80MipsDisassembler \
-  libLLVM80X86Info \
-  libLLVM80X86Desc \
-  libLLVM80X86AsmPrinter \
-  libLLVM80X86AsmParser \
-  libLLVM80X86CodeGen \
-  libLLVM80X86Utils \
-  libLLVM80X86Disassembler \
-  libLLVM80CodeGen \
-  libLLVM80TransformUtils \
-  libLLVM80Target \
-  libLLVM80Analysis \
-  libLLVM80Object             \
-  libLLVM80BitReader          \
-  libLLVM80MC                 \
-  libLLVM80MCParser           \
-  libLLVM80Core               \
-  libLLVM80Support            \
-  libLLVM80MCDisassembler \
+  libLLVM90ARMCodeGen \
+  libLLVM90ARMInfo \
+  libLLVM90ARMDesc \
+  libLLVM90ARMAsmPrinter \
+  libLLVM90ARMAsmParser \
+  libLLVM90ARMDisassembler \
+  libLLVM90AArch64CodeGen \
+  libLLVM90AArch64Info \
+  libLLVM90AArch64AsmParser \
+  libLLVM90AArch64Desc \
+  libLLVM90AArch64AsmPrinter \
+  libLLVM90AArch64Utils \
+  libLLVM90AArch64Disassembler \
+  libLLVM90MipsCodeGen \
+  libLLVM90MipsInfo \
+  libLLVM90MipsAsmParser \
+  libLLVM90MipsDesc \
+  libLLVM90MipsAsmPrinter \
+  libLLVM90MipsDisassembler \
+  libLLVM90X86Info \
+  libLLVM90X86Desc \
+  libLLVM90X86AsmPrinter \
+  libLLVM90X86AsmParser \
+  libLLVM90X86CodeGen \
+  libLLVM90X86Utils \
+  libLLVM90X86Disassembler \
+  libLLVM90CodeGen \
+  libLLVM90TransformUtils \
+  libLLVM90Target \
+  libLLVM90Analysis \
+  libLLVM90Object             \
+  libLLVM90BitReader          \
+  libLLVM90MC                 \
+  libLLVM90MCParser           \
+  libLLVM90Core               \
+  libLLVM90Support            \
+  libLLVM90MCDisassembler \
 
 include $(CLEAR_VARS)
 
@@ -62,8 +62,8 @@ LOCAL_STATIC_LIBRARIES := $(llvm_nm_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM80_ROOT_PATH)/llvm.mk
-include $(LLVM80_HOST_BUILD_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_ROOT_PATH)/llvm.mk
+include $(LLVM90_HOST_BUILD_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)

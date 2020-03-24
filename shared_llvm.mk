@@ -1,107 +1,107 @@
 LOCAL_PATH:= $(call my-dir)
 
 llvm_pre_static_libraries := \
-  libLLVM80Linker \
-  libLLVM80ipo \
-  libLLVM80DebugInfoDWARF \
-  libLLVM80DebugInfoPDB \
-  libLLVM80Symbolize \
-  libLLVM80DebugInfoMSF \
-  libLLVM80DebugInfoCodeView \
-  libLLVM80Demangle \
-  libLLVM80IRReader \
-  libLLVM80BitWriter \
-  libLLVM80BitReader \
-  libLLVM80GlobalISel
+  libLLVM90Linker \
+  libLLVM90ipo \
+  libLLVM90DebugInfoDWARF \
+  libLLVM90DebugInfoPDB \
+  libLLVM90Symbolize \
+  libLLVM90DebugInfoMSF \
+  libLLVM90DebugInfoCodeView \
+  libLLVM90Demangle \
+  libLLVM90IRReader \
+  libLLVM90BitWriter \
+  libLLVM90BitReader \
+  libLLVM90GlobalISel
 
 llvm_arm_static_libraries := \
-  libLLVM80ARMCodeGen \
-  libLLVM80ARMAsmParser \
-  libLLVM80ARMAsmPrinter \
-  libLLVM80ARMInfo \
-  libLLVM80ARMDesc \
-  libLLVM80ARMDisassembler \
-  libLLVM80ARMUtils
+  libLLVM90ARMCodeGen \
+  libLLVM90ARMAsmParser \
+  libLLVM90ARMAsmPrinter \
+  libLLVM90ARMInfo \
+  libLLVM90ARMDesc \
+  libLLVM90ARMDisassembler \
+  libLLVM90ARMUtils
 
 llvm_x86_static_libraries := \
-  libLLVM80X86CodeGen \
-  libLLVM80X86Info \
-  libLLVM80X86Desc \
-  libLLVM80X86AsmParser \
-  libLLVM80X86AsmPrinter \
-  libLLVM80X86Utils \
-  libLLVM80X86Disassembler
+  libLLVM90X86CodeGen \
+  libLLVM90X86Info \
+  libLLVM90X86Desc \
+  libLLVM90X86AsmParser \
+  libLLVM90X86AsmPrinter \
+  libLLVM90X86Utils \
+  libLLVM90X86Disassembler
 
 ifneq ($(filter radeonsi,$(BOARD_GPU_DRIVERS)),)
 llvm_x86_static_libraries += \
-  libLLVM80AMDGPUCodeGen \
-  libLLVM80AMDGPUInfo \
-  libLLVM80AMDGPUDesc \
-  libLLVM80AMDGPUAsmParser \
-  libLLVM80AMDGPUAsmPrinter \
-  libLLVM80AMDGPUUtils \
-  libLLVM80AMDGPUDisassembler
+  libLLVM90AMDGPUCodeGen \
+  libLLVM90AMDGPUInfo \
+  libLLVM90AMDGPUDesc \
+  libLLVM90AMDGPUAsmParser \
+  libLLVM90AMDGPUAsmPrinter \
+  libLLVM90AMDGPUUtils \
+  libLLVM90AMDGPUDisassembler
 endif
 
 llvm_mips_static_libraries := \
-  libLLVM80MipsCodeGen \
-  libLLVM80MipsInfo \
-  libLLVM80MipsDesc \
-  libLLVM80MipsAsmParser \
-  libLLVM80MipsAsmPrinter \
-  libLLVM80MipsDisassembler
+  libLLVM90MipsCodeGen \
+  libLLVM90MipsInfo \
+  libLLVM90MipsDesc \
+  libLLVM90MipsAsmParser \
+  libLLVM90MipsAsmPrinter \
+  libLLVM90MipsDisassembler
 
 llvm_aarch64_static_libraries := \
-  libLLVM80AArch64CodeGen \
-  libLLVM80AArch64Info \
-  libLLVM80AArch64Desc \
-  libLLVM80AArch64AsmParser \
-  libLLVM80AArch64AsmPrinter \
-  libLLVM80AArch64Utils \
-  libLLVM80AArch64Disassembler
+  libLLVM90AArch64CodeGen \
+  libLLVM90AArch64Info \
+  libLLVM90AArch64Desc \
+  libLLVM90AArch64AsmParser \
+  libLLVM90AArch64AsmPrinter \
+  libLLVM90AArch64Utils \
+  libLLVM90AArch64Disassembler
 
 llvm_post_static_libraries := \
-  libLLVM80AsmPrinter \
-  libLLVM80SelectionDAG \
-  libLLVM80CodeGen \
-  libLLVM80Object \
-  libLLVM80ScalarOpts \
-  libLLVM80AggressiveInstCombine \
-  libLLVM80InstCombine \
-  libLLVM80Instrumentation \
-  libLLVM80TransformObjCARC \
-  libLLVM80TransformUtils \
-  libLLVM80Analysis \
-  libLLVM80Target \
-  libLLVM80MCDisassembler \
-  libLLVM80MC \
-  libLLVM80MCParser \
-  libLLVM80Core \
-  libLLVM80AsmParser \
-  libLLVM80Option \
-  libLLVM80Support \
-  libLLVM80Vectorize \
-  libLLVM80ProfileData \
-  libLLVM80LibDriver \
-  libLLVM80BinaryFormat \
-  libLLVM80Coroutines
+  libLLVM90AsmPrinter \
+  libLLVM90SelectionDAG \
+  libLLVM90CodeGen \
+  libLLVM90Object \
+  libLLVM90ScalarOpts \
+  libLLVM90AggressiveInstCombine \
+  libLLVM90InstCombine \
+  libLLVM90Instrumentation \
+  libLLVM90TransformObjCARC \
+  libLLVM90TransformUtils \
+  libLLVM90Analysis \
+  libLLVM90Target \
+  libLLVM90MCDisassembler \
+  libLLVM90MC \
+  libLLVM90MCParser \
+  libLLVM90Core \
+  libLLVM90AsmParser \
+  libLLVM90Option \
+  libLLVM90Support \
+  libLLVM90Vectorize \
+  libLLVM90ProfileData \
+  libLLVM90LibDriver \
+  libLLVM90BinaryFormat \
+  libLLVM90Coroutines
 
 llvm_host_static_libraries := \
-  libLLVM80ExecutionEngine \
-  libLLVM80RuntimeDyld \
-  libLLVM80MCJIT \
-  libLLVM80OrcJIT
+  libLLVM90ExecutionEngine \
+  libLLVM90RuntimeDyld \
+  libLLVM90MCJIT \
+  libLLVM90OrcJIT
 
 llvm_device_static_libraries := \
-  libLLVM80ExecutionEngine \
-  libLLVM80RuntimeDyld \
-  libLLVM80MCJIT
+  libLLVM90ExecutionEngine \
+  libLLVM90RuntimeDyld \
+  libLLVM90MCJIT
 
 # HOST LLVM shared library build
 include $(CLEAR_VARS)
 LOCAL_IS_HOST_MODULE := true
 
-LOCAL_MODULE:= libLLVM80
+LOCAL_MODULE:= libLLVM90
 
 LOCAL_MODULE_TAGS := optional
 
@@ -127,10 +127,10 @@ else
 LOCAL_MODULE_HOST_OS := linux
 endif
 
-include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM90_HOST_BUILD_MK)
 include $(BUILD_HOST_SHARED_LIBRARY)
 
-ifeq (,$(filter $(TARGET_ARCH),$(LLVM80_SUPPORTED_ARCH)))
+ifeq (,$(filter $(TARGET_ARCH),$(LLVM90_SUPPORTED_ARCH)))
 $(warning TODO $(TARGET_ARCH): Enable llvm build)
 endif
 
@@ -138,7 +138,7 @@ ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
 # DEVICE LLVM shared library build
 include $(CLEAR_VARS)
 
-LOCAL_MODULE:= libLLVM80
+LOCAL_MODULE:= libLLVM90
 
 LOCAL_MODULE_TAGS := optional
 
@@ -171,9 +171,9 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
   $(LOCAL_PATH)/device/include \
   $(call local-generated-sources-dir)
 
-include $(LLVM80_DEVICE_BUILD_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_DEVICE_BUILD_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_SHARED_LIBRARY)
 
 endif

@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM90_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -11,8 +11,8 @@ not_SRC_FILES := \
   not.cpp
 
 not_STATIC_LIBRARIES := \
-  libLLVM80Core               \
-  libLLVM80Support            \
+  libLLVM90Core               \
+  libLLVM90Support            \
 
 include $(CLEAR_VARS)
 
@@ -27,6 +27,6 @@ LOCAL_STATIC_LIBRARIES := $(not_STATIC_LIBRARIES)
 
 LOCAL_LDLIBS += -lpthread -lm -ldl
 
-include $(LLVM80_ROOT_PATH)/llvm.mk
-include $(LLVM80_HOST_BUILD_MK)
+include $(LLVM90_ROOT_PATH)/llvm.mk
+include $(LLVM90_HOST_BUILD_MK)
 include $(BUILD_HOST_EXECUTABLE)

@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-LLVM80_ROOT_PATH := $(LOCAL_PATH)/../..
+LLVM90_ROOT_PATH := $(LOCAL_PATH)/../..
 
 
 #===---------------------------------------------------------------===
@@ -19,27 +19,27 @@ bugpoint_SRC_FILES := \
   bugpoint.cpp        \
 
 bugpoint_STATIC_LIBRARIES := \
-  libLLVM80BitWriter \
-  libLLVM80CodeGen \
-  libLLVM80ipo \
-  libLLVM80IRReader \
-  libLLVM80BitReader \
-  libLLVM80AsmParser \
-  libLLVM80InstCombine \
-  libLLVM80Instrumentation \
-  libLLVM80Linker \
-  libLLVM80TransformObjCARC \
-  libLLVM80Object \
-  libLLVM80ScalarOpts \
-  libLLVM80TransformUtils \
-  libLLVM80Analysis \
-  libLLVM80Target \
-  libLLVM80Core \
-  libLLVM80MC \
-  libLLVM80MCParser \
-  libLLVM80ProfileData \
-  libLLVM80Vectorize \
-  libLLVM80Support \
+  libLLVM90BitWriter \
+  libLLVM90CodeGen \
+  libLLVM90ipo \
+  libLLVM90IRReader \
+  libLLVM90BitReader \
+  libLLVM90AsmParser \
+  libLLVM90InstCombine \
+  libLLVM90Instrumentation \
+  libLLVM90Linker \
+  libLLVM90TransformObjCARC \
+  libLLVM90Object \
+  libLLVM90ScalarOpts \
+  libLLVM90TransformUtils \
+  libLLVM90Analysis \
+  libLLVM90Target \
+  libLLVM90Core \
+  libLLVM90MC \
+  libLLVM90MCParser \
+  libLLVM90ProfileData \
+  libLLVM90Vectorize \
+  libLLVM90Support \
 
 include $(CLEAR_VARS)
 
@@ -55,8 +55,8 @@ LOCAL_LDLIBS += -lpthread -lm -ldl
 LOCAL_LDFLAGS_darwin := -Wl,-export_dynamic
 LOCAL_LDFLAGS_linux := -Wl,--export-dynamic
 
-include $(LLVM80_ROOT_PATH)/llvm.mk
-include $(LLVM80_HOST_BUILD_MK)
-include $(LLVM80_GEN_ATTRIBUTES_MK)
-include $(LLVM80_GEN_INTRINSICS_MK)
+include $(LLVM90_ROOT_PATH)/llvm.mk
+include $(LLVM90_HOST_BUILD_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
+include $(LLVM90_GEN_INTRINSICS_MK)
 include $(BUILD_HOST_EXECUTABLE)
