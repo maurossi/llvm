@@ -20,6 +20,7 @@ LOCAL_MODULE_HOST_OS := darwin linux windows
 
 include $(LLVM90_HOST_BUILD_MK)
 include $(LLVM90_TBLGEN_RULES_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 # For the device
@@ -36,5 +37,6 @@ LOCAL_MODULE:= libLLVM90LibDriver
 
 include $(LLVM90_DEVICE_BUILD_MK)
 include $(LLVM90_TBLGEN_RULES_MK)
+include $(LLVM90_GEN_ATTRIBUTES_MK)
 include $(BUILD_STATIC_LIBRARY)
 endif
