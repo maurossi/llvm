@@ -51,6 +51,7 @@ amdgpu_codegen_SRC_FILES := \
   AMDGPUMCInstLower.cpp \
   AMDGPUOpenCLEnqueuedBlockLowering.cpp \
   AMDGPUPromoteAlloca.cpp \
+  AMDGPUPropagateAttributes.cpp \
   AMDGPURegisterInfo.cpp \
   AMDGPURewriteOutArguments.cpp \
   AMDGPUSubtarget.cpp \
@@ -86,6 +87,7 @@ amdgpu_codegen_SRC_FILES := \
   SIFixSGPRCopies.cpp \
   SIFixupVectorISel.cpp \
   SIFixVGPRCopies.cpp \
+  SIPreAllocateWWMRegs.cpp \
   SIFoldOperands.cpp \
   SIFormMemoryClauses.cpp \
   SIFrameLowering.cpp \
@@ -96,6 +98,7 @@ amdgpu_codegen_SRC_FILES := \
   SILoadStoreOptimizer.cpp \
   SILowerControlFlow.cpp \
   SILowerI1Copies.cpp \
+  SILowerSGPRSpills.cpp \
   SIMachineFunctionInfo.cpp \
   SIMachineScheduler.cpp \
   SIMemoryLegalizer.cpp \
@@ -106,6 +109,8 @@ amdgpu_codegen_SRC_FILES := \
   SIShrinkInstructions.cpp \
   SIWholeQuadMode.cpp \
   GCNILPSched.cpp \
+  GCNRegBankReassign.cpp \
+  GCNNSAReassign.cpp \
   GCNDPPCombine.cpp \
   SIModeRegister.cpp
 
